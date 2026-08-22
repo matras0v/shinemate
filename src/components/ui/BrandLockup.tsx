@@ -37,7 +37,7 @@ export function BrandLockup({ variant = 'compact', className = '' }: Props) {
       alt="ShineMate"
       width={1650}
       height={1159}
-      className={`h-8 w-auto shrink-0 md:h-9 ${className}`}
+      className={`h-8 w-auto shrink-0 md:h-11 lg:h-12 ${className}`}
     />
   )
 }
