@@ -1,6 +1,6 @@
 # ShineMate × Правильные технологии
 
-Client-facing product presentation and catalogue for ShineMate detailing equipment in Russia, built for ООО «Правильные Технологии» (official ShineMate representative).
+Client-facing product presentation and catalogue for ShineMate detailing equipment in Russia.
 
 **Live:** https://matras0v.github.io/shinemate/
 

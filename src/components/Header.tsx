@@ -4,7 +4,7 @@ import { ChevronDown, Menu, Search, X } from 'lucide-react'
 
 import { categoryGroups, categories, countByCategory } from '../data/catalog'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
-import { company, nav } from '../data/company'
+import { nav } from '../data/company'
 import { useLead } from '../lib/leadContext'
 import { EASE } from '../lib/motion'
 import { navigateTo } from '../lib/router'
@@ -74,7 +74,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
             e.preventDefault()
             go('/')
           }}
-          aria-label={`${company.legalName} — оборудование ShineMate`}
+          aria-label="ShineMate — на главную"
           className="shrink-0"
         >
           <BrandLockup />

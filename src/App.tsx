@@ -28,8 +28,8 @@ export default function App() {
   useEffect(() => {
     document.title =
       route.name === 'catalog'
-        ? 'Каталог ShineMate | Правильные Технологии'
-        : 'ShineMate — профессиональное полировальное оборудование | Правильные Технологии'
+        ? 'Каталог ShineMate'
+        : 'ShineMate — профессиональное полировальное оборудование'
   }, [route])
 
   // Cmd/Ctrl+K открывает поиск из любого места сайта.

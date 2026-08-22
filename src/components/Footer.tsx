@@ -8,9 +8,6 @@ export function Footer() {
       <div className="shell grid gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
         <div>
           <BrandLockup variant="full" />
-          <p className="mt-6 max-w-[34ch] text-[0.8125rem] leading-relaxed text-graphite/50">
-            {company.tagline}
-          </p>
           <p className="mt-4 text-[0.75rem] leading-relaxed text-graphite/40">{company.role}</p>
         </div>
 
@@ -44,14 +41,6 @@ export function Footer() {
               </li>
             ))}
           </ul>
-          <p className="eyebrow mt-8">Реквизиты</p>
-          <p className="mt-3 text-[0.8125rem] leading-relaxed text-graphite/60">
-            {company.legalName}
-            <br />
-            ИНН {company.inn}
-            <br />
-            ОГРН {company.ogrn}
-          </p>
         </div>
 
         <div>
@@ -69,14 +58,6 @@ export function Footer() {
               </li>
             ))}
             <li className="pt-1">
-              <a
-                href={`mailto:${company.leadEmail}`}
-                className="transition-colors duration-500 ease-premium hover:text-graphite"
-              >
-                {company.leadEmail}
-              </a>
-            </li>
-            <li>
               <a
                 href={`mailto:${company.email}`}
                 className="transition-colors duration-500 ease-premium hover:text-graphite"
