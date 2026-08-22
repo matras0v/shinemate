@@ -80,7 +80,17 @@ export function Hero() {
 
       <motion.div
         style={reduced ? undefined : { y: copyY, opacity: copyOpacity }}
-        className="shell absolute inset-x-0 bottom-0 top-[46dvh] z-20 flex flex-col justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:top-0 lg:justify-end lg:pb-14"
+        /*
+         * До lg текст был просто "inset-x-0" на всю ширину секции, а от
+         * наплыва на картинку его удерживал только max-w у самого h1 (в ch).
+         * На part десктопных ширин заголовок при увеличенном clamp()-размере
+         * шрифта оказывался шире своего "отведённого" отступа от картинки
+         * (правый край текста реально заезжал под кадр — не на скриншоте
+         * дефект, а в самой геометрии). Явная ширина колонки в 44% (кадр
+         * занимает 56%) закрывает это на уровне контейнера, а не отдельных
+         * элементов — и уже не зависит от языка, длины слов или брейкпоинта.
+         */
+        className="shell absolute inset-x-0 bottom-0 top-[46dvh] z-20 flex flex-col justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:inset-x-auto lg:left-0 lg:top-0 lg:w-[44%] lg:justify-end lg:pb-14"
       >
         <motion.p
           {...enter(0.15)}

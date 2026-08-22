@@ -923,6 +923,29 @@ export const minPrice = (p: Product) => {
   return Number.isFinite(value) ? value : null
 }
 
+/**
+ * Соседние модели той же категории, ближайшие по цене — как в магазине,
+ * где рядом с товаром стоят реальные альтернативы, а не случайный набор.
+ * Ничего не придумывается: и состав, и подписи ниже читаются из тех же
+ * полей, что уже есть в карточке товара.
+ */
+export const getRelatedProducts = (product: Product, max = 3): Product[] => {
+  const base = minPrice(product) ?? 0
+  return productsByCategory(product.category)
+    .filter((p) => p.slug !== product.slug)
+    .sort((a, b) => Math.abs((minPrice(a) ?? 0) - base) - Math.abs((minPrice(b) ?? 0) - base))
+    .slice(0, max)
+}
+
+/** Короткая, честная причина посмотреть на альтернативу — только из реальных полей. */
+export const relatedNote = (candidate: Product, current: Product) => {
+  const a = minPrice(candidate)
+  const b = minPrice(current)
+  if (a != null && b != null && a !== b) return a < b ? 'Дешевле' : 'Дороже'
+  if (candidate.kind !== current.kind) return candidate.kind
+  return categoryTitle(candidate.category)
+}
+
 const money = (fractionDigits: number) =>
   new Intl.NumberFormat('ru-RU', {
     style: 'currency',

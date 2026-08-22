@@ -1,8 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import { ArrowRight, X } from 'lucide-react'
 
-import { categoryTitle, formatPrice, priceNote, type Product } from '../../data/catalog'
+import {
+  categoryTitle,
+  formatPrice,
+  getRelatedProducts,
+  minPrice,
+  priceNote,
+  relatedNote,
+  type Product,
+} from '../../data/catalog'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 import { useLead } from '../../lib/leadContext'
 import { EASE } from '../../lib/motion'
@@ -10,6 +18,7 @@ import { EASE } from '../../lib/motion'
 type Props = {
   product: Product | null
   onClose: () => void
+  onSwitchProduct: (product: Product) => void
 }
 
 /**
@@ -18,7 +27,7 @@ type Props = {
  * Выбран выезжающий drawer, а не отдельный маршрут: пользователь смотрит
  * несколько позиций подряд и не должен каждый раз терять место в сетке.
  */
-export function ProductDialog({ product, onClose }: Props) {
+export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
   const panel = useRef<HTMLDivElement>(null)
   const { requestProduct, requestWholesale } = useLead()
 
@@ -35,6 +44,17 @@ export function ProductDialog({ product, onClose }: Props) {
       document.removeEventListener('keydown', onKey)
     }
   }, [product, onClose])
+
+  // Переключение на рекомендованный товар не переоткрывает drawer заново
+  // (product меняется, а не появляется), поэтому скролл содержимого сам
+  // не возвращается наверх — делаем это явно, чтобы новая карточка
+  // открывалась с заголовка, а не с той же прокрутки, где был клик.
+  const productSlug = product?.slug
+  useEffect(() => {
+    if (productSlug) panel.current?.scrollTo({ top: 0, behavior: 'instant' })
+  }, [productSlug])
+
+  const related = product ? getRelatedProducts(product) : []
 
   return (
     <AnimatePresence>
@@ -79,7 +99,7 @@ export function ProductDialog({ product, onClose }: Props) {
               </button>
             </div>
 
-            <div className="px-6 pb-12 sm:px-8">
+            <div className="px-6 pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-8">
               <div className="mt-6 flex h-60 items-center justify-center rounded-[1.5rem] bg-mist p-6 sm:h-72">
                 <img
                   src={product.image}
@@ -174,6 +194,54 @@ export function ProductDialog({ product, onClose }: Props) {
                   Нужна партия? Получить оптовый прайс →
                 </button>
               </div>
+
+              {related.length > 0 && (
+                <div className="mt-11 border-t border-graphite/[0.12] pt-8">
+                  <h3 className="eyebrow">Смотрите также</h3>
+                  <ul className="mt-4 space-y-3">
+                    {related.map((candidate) => {
+                      const price = minPrice(candidate)
+                      return (
+                        <li key={candidate.slug}>
+                          <button
+                            type="button"
+                            onClick={() => onSwitchProduct(candidate)}
+                            className="group flex w-full items-center gap-4 rounded-2xl border border-graphite/[0.1] p-3 text-left transition-colors duration-400 ease-premium hover:border-graphite/30 hover:bg-mist/60"
+                          >
+                            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-mist p-2">
+                              <img
+                                src={candidate.image}
+                                alt={`ShineMate ${candidate.model}`}
+                                className="max-h-full w-auto max-w-full object-contain"
+                              />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[0.9375rem] tracking-tight">
+                                {candidate.model}
+                              </span>
+                              <span className="mt-0.5 block truncate text-[0.8125rem] text-graphite/50">
+                                {relatedNote(candidate, product)}
+                              </span>
+                            </span>
+                            <span className="flex shrink-0 items-center gap-2">
+                              {price != null && (
+                                <span className="text-[0.875rem] tracking-tight text-graphite/80">
+                                  {candidate.variants.length > 1 ? 'от ' : ''}
+                                  {formatPrice(price)}
+                                </span>
+                              )}
+                              <ArrowRight
+                                size={15}
+                                className="shrink-0 text-graphite/30 transition-transform duration-400 ease-premium group-hover:translate-x-0.5 group-hover:text-graphite/60"
+                              />
+                            </span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>

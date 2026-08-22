@@ -228,8 +228,16 @@ export function ReflectionReveal() {
             </div>
           )}
 
+          {/*
+            Подписи лежат прямо на фото, а его тон непредсказуем (то светлый
+            лак, то тёмный) — поэтому одной прозрачности текста недостаточно,
+            под ним всегда должна быть тёмная подложка. Сплошная плашка на
+            каждой подписи выглядела бы тяжело, поэтому вместо неё — общий
+            градиент через весь низ кадра, на котором держатся обе подписи.
+          */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/80 via-ink/25 to-transparent md:h-32" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 md:p-8">
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.22em] text-porcelain/50">
+            <span className="font-mono text-[0.625rem] uppercase tracking-[0.22em] text-porcelain [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]">
               До обработки
             </span>
             <span
@@ -239,7 +247,7 @@ export function ReflectionReveal() {
             >
               {showSlider ? 'Потяните границу' : 'Проведите по поверхности'}
             </span>
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.22em] text-porcelain/80">
+            <span className="font-mono text-[0.625rem] uppercase tracking-[0.22em] text-porcelain [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]">
               После полировки
             </span>
           </div>

@@ -25,10 +25,18 @@ export function ProductObject() {
       ref={section}
       className="scene relative overflow-hidden bg-porcelain py-24 sm:py-28 md:py-36"
     >
-      <div className="shell grid items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-24">
+      {/*
+        На мобильном текст и картинка идут прямо в DOM-порядке одной колонкой,
+        поэтому фото стоит между вводным абзацем и блоком характеристик — так
+        длинная текстовая простыня разбивается визуально, а не откладывается
+        на самый конец секции. На lg — явная раскладка по col/row-start:
+        фото занимает вторую колонку на всю высоту, оба текстовых блока
+        держатся в первой друг под другом, ровно как раньше в едином блоке.
+      */}
+      <div className="shell grid items-center gap-10 lg:grid-cols-2 lg:items-stretch lg:gap-16 xl:gap-24">
         <motion.div
           {...revealProps(reduced, stagger(0, 0.09))}
-          className="order-1 min-w-0"
+          className="min-w-0 lg:col-start-1 lg:row-start-1"
         >
           <motion.p variants={rise} className="eyebrow">
             О ShineMate
@@ -42,8 +50,33 @@ export function ProductObject() {
             платформы, подложки, круги и составы. Линейка собрана так, чтобы машина,
             подложка и круг работали как один инструмент.
           </motion.p>
+        </motion.div>
 
-          <motion.div variants={rise} className="mt-9 border-t border-graphite/[0.12] pt-6">
+        <div className="relative min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <motion.div
+            aria-hidden
+            style={reduced ? undefined : { opacity: glow }}
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[62%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,#DCE7EA_0%,rgba(220,231,234,0)_70%)] blur-2xl"
+          />
+          <motion.img
+            src="media/product-1600.webp"
+            srcSet="media/product-640.webp 640w, media/product-1000.webp 1000w, media/product-1600.webp 1600w"
+            sizes="(min-width: 1024px) 48vw, 92vw"
+            width={1600}
+            height={1195}
+            alt="Роторная полировальная машина ShineMate в студийном свете"
+            loading="lazy"
+            decoding="async"
+            style={reduced ? undefined : { y, scale }}
+            className="relative w-full select-none rounded-[1.5rem] md:rounded-[2rem]"
+          />
+        </div>
+
+        <motion.div
+          {...revealProps(reduced, stagger(0, 0.09))}
+          className="min-w-0 lg:col-start-1 lg:row-start-2"
+        >
+          <motion.div variants={rise} className="border-t border-graphite/[0.12] pt-6">
             <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
               Флагман линейки · {hero.model}
             </p>
@@ -77,26 +110,6 @@ export function ProductObject() {
             />
           </motion.a>
         </motion.div>
-
-        <div className="relative order-2 min-w-0">
-          <motion.div
-            aria-hidden
-            style={reduced ? undefined : { opacity: glow }}
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[62%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,#DCE7EA_0%,rgba(220,231,234,0)_70%)] blur-2xl"
-          />
-          <motion.img
-            src="media/product-1600.webp"
-            srcSet="media/product-640.webp 640w, media/product-1000.webp 1000w, media/product-1600.webp 1600w"
-            sizes="(min-width: 1024px) 48vw, 92vw"
-            width={1600}
-            height={1195}
-            alt="Роторная полировальная машина ShineMate в студийном свете"
-            loading="lazy"
-            decoding="async"
-            style={reduced ? undefined : { y, scale }}
-            className="relative w-full select-none rounded-[1.5rem] md:rounded-[2rem]"
-          />
-        </div>
       </div>
     </section>
   )

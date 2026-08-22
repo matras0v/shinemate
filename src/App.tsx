@@ -67,7 +67,11 @@ export default function App() {
       )}
 
       <Footer />
-      <ProductDialog product={openProduct} onClose={() => setOpenProduct(null)} />
+      <ProductDialog
+        product={openProduct}
+        onClose={() => setOpenProduct(null)}
+        onSwitchProduct={setOpenProduct}
+      />
       <SearchOverlay
         open={searchOpen}
         onClose={() => setSearchOpen(false)}

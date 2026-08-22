@@ -24,13 +24,20 @@ export function Header({ onHome, onOpenSearch }: Props) {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { requestWholesale, requestGeneral } = useLead()
 
-  // Хедер становится контрастнее, как только пользователь ушёл с hero.
+  // Хедер становится контрастнее почти сразу после начала скролла — фиксированный
+  // порог в пикселях, а не доля window.innerHeight. На мобильном Safari
+  // innerHeight меняется прямо во время скролла (сворачивается адресная
+  // строка), поэтому доля от него плавает и порог «срабатывает» в разных
+  // местах на разных кадрах — из-за этого хедер подолгу оставался прозрачным
+  // и контент hero просвечивал сквозь него. Небольшая фиксированная величина
+  // не зависит от высоты вьюпорта и решает это архитектурно, а не подгонкой
+  // под один скриншот.
   useEffect(() => {
     if (!onHome) {
       setLifted(true)
       return
     }
-    const onScroll = () => setLifted(window.scrollY > window.innerHeight * 0.7)
+    const onScroll = () => setLifted(window.scrollY > 24)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)

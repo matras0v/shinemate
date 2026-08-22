@@ -89,10 +89,6 @@ export function Footer() {
           </ul>
         </div>
       </div>
-
-      <div className="shell mt-12 border-t border-graphite/[0.12] pt-7 text-[0.75rem] text-graphite/40">
-        <p>Цены на сайте — рекомендованные розничные, по предоставленному прайсу.</p>
-      </div>
     </footer>
   )
 }
