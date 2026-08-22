@@ -7,17 +7,24 @@ type Props = {
 /**
  * Замок бренда.
  *
- * Сайт — самостоятельный продукт под брендом ShineMate, без сторонней
- * фирменной графики: используется только текстовый вордмарк.
+ * Официальный лого-локап ShineMate (текст + силуэт авто), перекрашенный в
+ * графит под светлые фоны сайта. Файл один на оба варианта — это не
+ * иконка-квадрат, а горизонтальный вордмарк, поэтому масштабируется только
+ * по высоте с сохранением пропорций.
  */
 export function BrandLockup({ variant = 'compact', className = '' }: Props) {
   if (variant === 'full') {
     return (
       <div className={className}>
-        <p className="text-[1.0625rem] font-medium uppercase leading-none tracking-[0.1em]">
-          ShineMate
-        </p>
-        <p className="mt-2 text-[0.8125rem] leading-relaxed text-graphite/50">
+        <img
+          src="brand/logo-shinemate.webp"
+          alt="ShineMate"
+          width={1650}
+          height={1159}
+          loading="lazy"
+          className="h-16 w-auto"
+        />
+        <p className="mt-3 text-[0.8125rem] leading-relaxed text-graphite/50">
           Профессиональное полировальное оборудование
         </p>
       </div>
@@ -25,13 +32,12 @@ export function BrandLockup({ variant = 'compact', className = '' }: Props) {
   }
 
   return (
-    <span className={`flex min-w-0 flex-col leading-none ${className}`}>
-      <span className="text-[0.8125rem] font-medium uppercase tracking-[0.13em] text-graphite md:text-sm">
-        ShineMate
-      </span>
-      <span className="mt-1 text-[0.625rem] uppercase tracking-[0.13em] text-graphite/40 md:text-[0.6875rem]">
-        Профессиональное оборудование
-      </span>
-    </span>
+    <img
+      src="brand/logo-shinemate.webp"
+      alt="ShineMate"
+      width={1650}
+      height={1159}
+      className={`h-8 w-auto shrink-0 md:h-9 ${className}`}
+    />
   )
 }
