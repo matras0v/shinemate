@@ -1,0 +1,382 @@
+{
+  "ep820": {
+    "w": 333,
+    "h": 232,
+    "source": "Rotary Polisher EP820"
+  },
+  "ep801": {
+    "w": 324,
+    "h": 217,
+    "source": "Rotary Polisher EP801"
+  },
+  "ep802": {
+    "w": 321,
+    "h": 254,
+    "source": "Rotary Polisher EP802"
+  },
+  "ep803": {
+    "w": 331,
+    "h": 206,
+    "source": "Rotary Polisher EP803"
+  },
+  "ep804": {
+    "w": 301,
+    "h": 239,
+    "source": "Rotary Polisher EP804"
+  },
+  "ep809": {
+    "w": 372,
+    "h": 277,
+    "source": "Rotary Polisher EP809"
+  },
+  "ex620": {
+    "w": 358,
+    "h": 248,
+    "source": "Orbital Polisher EX620"
+  },
+  "ex605": {
+    "w": 308,
+    "h": 238,
+    "source": "Orbital Polisher EX605"
+  },
+  "ex603": {
+    "w": 367,
+    "h": 248,
+    "source": "Orbital Polisher EX603"
+  },
+  "ex610": {
+    "w": 355,
+    "h": 227,
+    "source": "Orbital Polisher EX610"
+  },
+  "ero600g2": {
+    "w": 510,
+    "h": 389,
+    "source": "Orbital Polisher ERO600 G2"
+  },
+  "es516": {
+    "w": 325,
+    "h": 263,
+    "source": "Electric Sander ES516"
+  },
+  "es550": {
+    "w": 370,
+    "h": 265,
+    "source": "Electric Sander ES550"
+  },
+  "es700": {
+    "w": 358,
+    "h": 363,
+    "source": "Random Orbital Sander ES700"
+  },
+  "es502": {
+    "w": 346,
+    "h": 315,
+    "source": "Electric Sander ES502"
+  },
+  "es517": {
+    "w": 390,
+    "h": 282,
+    "source": "Electric Sander ES517"
+  },
+  "es526": {
+    "w": 397,
+    "h": 354,
+    "source": "Electric Sander ES526"
+  },
+  "es527": {
+    "w": 404,
+    "h": 355,
+    "source": "Electric Square Sander ES527"
+  },
+  "sanding-block": {
+    "w": 700,
+    "h": 454,
+    "source": "Dust-free Hand Sanding Block"
+  },
+  "eb251": {
+    "w": 419,
+    "h": 331,
+    "source": "Rotary Polisher EB251-6"
+  },
+  "eb230": {
+    "w": 349,
+    "h": 298,
+    "source": "Rotary Polisher EB230"
+  },
+  "eb351-5": {
+    "w": 401,
+    "h": 324,
+    "source": "Orbital Polisher EB351-5/15"
+  },
+  "eb351-3": {
+    "w": 384,
+    "h": 318,
+    "source": "Orbital Polisher EB351-3/12"
+  },
+  "eb350-5": {
+    "w": 378,
+    "h": 298,
+    "source": "Orbital Polisher EB350-5/9"
+  },
+  "eb350-3": {
+    "w": 386,
+    "h": 303,
+    "source": "Orbital Polisher EB350-3/12"
+  },
+  "eb210": {
+    "w": 390,
+    "h": 347,
+    "source": "Rotary & Orbital Polisher EB210"
+  },
+  "eb212": {
+    "w": 284,
+    "h": 267,
+    "source": "Orbital Polisher EB212"
+  },
+  "eb213": {
+    "w": 347,
+    "h": 284,
+    "source": "Rotary Polisher EB213"
+  },
+  "eb200a": {
+    "w": 456,
+    "h": 482,
+    "source": "Spot Sander EB200A / EB201A"
+  },
+  "battery-18v": {
+    "w": 700,
+    "h": 498,
+    "source": "18V Li-ion Battery"
+  },
+  "battery-108v": {
+    "w": 338,
+    "h": 301,
+    "source": "10.8V Li-ion Battery Pack"
+  },
+  "charger-18v": {
+    "w": 318,
+    "h": 251,
+    "source": "18V Li-ion Battery Charger"
+  },
+  "charger-108v": {
+    "w": 418,
+    "h": 220,
+    "source": "10.8V Li-ion Battery Charger"
+  },
+  "plate-flexedge": {
+    "w": 700,
+    "h": 382,
+    "source": "FlexEdge Backing Plate"
+  },
+  "plate-flexedge-small": {
+    "w": 388,
+    "h": 282,
+    "source": "FlexEdge Backing Plate 1.2-3\""
+  },
+  "plate-multihole": {
+    "w": 652,
+    "h": 390,
+    "source": "Multi-hole Backing Plate"
+  },
+  "plate-sanding": {
+    "w": 661,
+    "h": 299,
+    "source": "Sanding Backing Plate"
+  },
+  "plate-square": {
+    "w": 700,
+    "h": 349,
+    "source": "Square Sanding Backing Plate"
+  },
+  "plate-square-multihole": {
+    "w": 532,
+    "h": 379,
+    "source": "Multi-hole Square Sanding Backing Plate"
+  },
+  "interface-pad": {
+    "w": 700,
+    "h": 577,
+    "source": "Interface Cushion Pad"
+  },
+  "velcro-protector": {
+    "w": 576,
+    "h": 591,
+    "source": "Pad Velcro Protector"
+  },
+  "foam-diamond-t10": {
+    "w": 690,
+    "h": 460,
+    "source": "Diamond Foam Pad T10"
+  },
+  "foam-diamond-t40": {
+    "w": 629,
+    "h": 416,
+    "source": "Diamond Foam Pad T40"
+  },
+  "foam-diamond-t60": {
+    "w": 688,
+    "h": 600,
+    "source": "Diamond Foam Pad T60"
+  },
+  "foam-diamond-t80": {
+    "w": 629,
+    "h": 418,
+    "source": "Diamond Foam Pad T80"
+  },
+  "foam-diamond-t120": {
+    "w": 603,
+    "h": 415,
+    "source": "Diamond Foam Pad T120"
+  },
+  "foam-flat-t10": {
+    "w": 630,
+    "h": 465,
+    "source": "Flat-face Foam Pad T10"
+  },
+  "foam-flat-t40": {
+    "w": 700,
+    "h": 472,
+    "source": "Flat-face Foam Pad T40"
+  },
+  "foam-flat-t60": {
+    "w": 641,
+    "h": 467,
+    "source": "Flat-face Foam Pad T60"
+  },
+  "foam-flat-t80": {
+    "w": 632,
+    "h": 452,
+    "source": "Flat-face Foam Pad T80"
+  },
+  "foam-flat-t120": {
+    "w": 671,
+    "h": 473,
+    "source": "Flat-face Foam Pad T120"
+  },
+  "wool-t140": {
+    "w": 682,
+    "h": 469,
+    "source": "Heavy-Cut Wool Pad T140"
+  },
+  "wool-t160": {
+    "w": 700,
+    "h": 430,
+    "source": "Heavy-Cut Wool Pad T160"
+  },
+  "wool-t130": {
+    "w": 671,
+    "h": 502,
+    "source": "High-Nap Wool Pad T130"
+  },
+  "wool-lambswool": {
+    "w": 667,
+    "h": 441,
+    "source": "Lambswool(sheepskin) Pad"
+  },
+  "microfiber-t100": {
+    "w": 660,
+    "h": 464,
+    "source": "Microfiber Pad T100"
+  },
+  "microfiber-t20": {
+    "w": 621,
+    "h": 454,
+    "source": "Microfiber Pad T20"
+  },
+  "mpk3": {
+    "w": 308,
+    "h": 235,
+    "source": "Mini Polisher MPK-3"
+  },
+  "v82": {
+    "w": 478,
+    "h": 609,
+    "source": "Fast Polish V82"
+  },
+  "v20": {
+    "w": 475,
+    "h": 617,
+    "source": "Final Polish V20"
+  },
+  "v80": {
+    "w": 481,
+    "h": 630,
+    "source": "Heavy-Cut Compound V80"
+  },
+  "v40": {
+    "w": 484,
+    "h": 628,
+    "source": "Medium Polish V40"
+  },
+  "tool-cart": {
+    "w": 472,
+    "h": 606,
+    "source": "Mobile Tool Cart"
+  },
+  "tool-bag": {
+    "w": 700,
+    "h": 487,
+    "source": "Tool Bag"
+  },
+  "tool-box": {
+    "w": 676,
+    "h": 486,
+    "source": "Tool Box"
+  },
+  "polisher-hanger": {
+    "w": 491,
+    "h": 631,
+    "source": "Polisher Hanger"
+  },
+  "pegboard": {
+    "w": 678,
+    "h": 566,
+    "source": "Pegboard"
+  },
+  "pegboard-hooks": {
+    "w": 700,
+    "h": 494,
+    "source": "Pegboard Hooks"
+  },
+  "stool": {
+    "w": 528,
+    "h": 613,
+    "source": "Mobile Stool"
+  },
+  "apron": {
+    "w": 605,
+    "h": 606,
+    "source": "Apron"
+  },
+  "bucket": {
+    "w": 490,
+    "h": 653,
+    "source": "Car Wash Bucket"
+  },
+  "grit-separator": {
+    "w": 700,
+    "h": 360,
+    "source": "Grit Separator"
+  },
+  "towel": {
+    "w": 597,
+    "h": 384,
+    "source": "Car Wash Towel"
+  },
+  "vac40": {
+    "w": 231,
+    "h": 348,
+    "source": "Mobile Dust Extractor VAC40"
+  },
+  "ec405": {
+    "w": 267,
+    "h": 236,
+    "source": "Cordless Dust Extractor EC405"
+  },
+  "ec400": {
+    "w": 602,
+    "h": 532,
+    "source": "Li-ion Vacuum Cleaner EC400/EC405"
+  }
+}

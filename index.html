@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!--
+      Сайт публикуется на GitHub Pages как /shinemate/, а не в корне домена.
+      <base> — единственный источник истины для этого подпути: все
+      относительные href/src/srcSet ниже и во всём приложении резолвятся
+      через него. %BASE_URL% подставляется Vite-ом — "/" в dev, "/shinemate/"
+      в production build (см. vite.config.ts). Должен идти как можно раньше
+      в <head>, до первой ссылки, которую он должен затронуть.
+    -->
+    <base href="%BASE_URL%" />
+    <title>ShineMate — профессиональное полировальное оборудование | Правильные Технологии</title>
+    <meta
+      name="description"
+      content="ShineMate — роторные и эксцентриковые полировальные машины, шлифовальное и аккумуляторное оборудование для детейлинга. Представительство SHINE MATE в России, ООО «Правильные Технологии», Ростов-на-Дону."
+    />
+    <meta name="theme-color" content="#F7F6F2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="brand/favicon-512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="brand/favicon-180.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:title" content="ShineMate — технология безупречного отражения" />
+    <meta
+      property="og:description"
+      content="Профессиональное оборудование для полировки и подготовки поверхности. Представительство SHINE MATE в России."
+    />
+    <!-- Абсолютный URL: OG-краулеры не всегда учитывают <base> или относительные пути. -->
+    <meta property="og:url" content="https://matras0v.github.io/shinemate/" />
+    <meta property="og:image" content="https://matras0v.github.io/shinemate/media/hero-1280.webp" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Кадр hero предзагружается только на главной: в каталоге он не нужен,
+      // и браузер справедливо ругался на неиспользованный preload. Сравнение
+      // идёт с базовым путём (а не буквально с "/"), иначе на GitHub Pages
+      // (где путь на главной — "/shinemate/", а не "/") условие никогда не
+      // выполнялось бы и хайрес-кадр не предзагружался бы вовсе.
+      var BASE = '%BASE_URL%'
+      if (location.pathname === BASE) {
+        var l = document.createElement('link')
+        l.rel = 'preload'
+        l.as = 'image'
+        l.href = 'media/hero-1920.webp'
+        // Атрибуты, а не свойства: иначе браузер предзагружает href-кандидата,
+        // а разметка выбирает другой файл из srcset — и preload пропадает зря.
+        l.setAttribute(
+          'imagesrcset',
+          'media/hero-800.webp 800w, media/hero-1280.webp 1280w, media/hero-1920.webp 1920w'
+        )
+        l.setAttribute('imagesizes', '(min-width: 1024px) 56vw, 100vw')
+        l.setAttribute('fetchpriority', 'high')
+        document.head.appendChild(l)
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+node_modules
+dist
+assets/raw
+.DS_Store
+
+# env / secrets — на случай, если когда-нибудь появятся
+.env
+.env.local
+.env.*.local
+
+# редакторские и системные артефакты
+*.log
+.vscode
+*.tsbuildinfo
+
+# внутренние рабочие заметки и локальная конфигурация инструмента —
+# не для публичного репозитория
+PROJECT_STATE.md
+.claude/
