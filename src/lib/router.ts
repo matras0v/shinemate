@@ -58,15 +58,49 @@ export function navigate(appPath: string, options: { replace?: boolean } = {}) {
 const reducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
 /**
- * Скроллит к якорю в пределах уже открытой страницы — курсивный,
- * анимированный переход, потому что layout здесь уже стабилен.
+ * Ручной rAF-скролл вместо `scrollIntoView({behavior:'smooth'})`.
+ *
+ * На проде обнаружилось: нативный CSS-плавный скролл (через глобальный
+ * `scroll-behavior: smooth` на <html>) стабильно обрывается через
+ * доли секунды и на пару сотен пикселей — клик по «Запросить прайс» с hero
+ * визуально не доводил до формы, пользователь просто не понимал, что
+ * переход вообще случился. Причина — конкуренция с parallax-трансформами
+ * сцен (framer-motion `useScroll`), которые в проде отменяют браузерную
+ * анимацию скролла раньше, чем она доезжает до цели. Собственный цикл,
+ * который сам на каждом кадре пишет `window.scrollTo`, этой конкуренции не
+ * подвержен и всегда доезжает до конца.
+ *
+ * Шаг анимации идёт через `setTimeout`, а не `requestAnimationFrame` — по
+ * той же причине, что и в scrollToHashAfterNavigate ниже: rAF браузер
+ * приостанавливает для неактивной/свёрнутой вкладки, и анимация просто
+ * замирает на середине, если пользователь в этот момент переключился в
+ * другую вкладку. Таймер всё равно довозит скролл до цели.
  */
 function scrollToHash(hash: string) {
-  document.getElementById(hash)?.scrollIntoView({
-    behavior: reducedMotion() ? 'instant' : 'smooth',
-    block: 'start',
-  })
+  const el = document.getElementById(hash)
+  if (!el) return
+
+  const targetY = el.getBoundingClientRect().top + window.scrollY
+  if (reducedMotion()) {
+    window.scrollTo(0, targetY)
+    return
+  }
+
+  const startY = window.scrollY
+  const delta = targetY - startY
+  if (Math.abs(delta) < 1) return
+  const duration = 650
+  const startTime = performance.now()
+
+  function step() {
+    const progress = Math.min((performance.now() - startTime) / duration, 1)
+    window.scrollTo(0, startY + delta * easeOutCubic(progress))
+    if (progress < 1) setTimeout(step, 16)
+  }
+  step()
 }
 
 /**
