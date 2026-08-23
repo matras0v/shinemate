@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, Mail, MapPin, X } from 'lucide-react'
 
-import { formatPrice, minPrice } from '../../data/catalog'
+import { formatPrice } from '../../data/catalog'
 import { company } from '../../data/company'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useLead } from '../../lib/leadContext'
@@ -15,7 +15,7 @@ const field =
 export function Contact() {
   const [sent, setSent] = useState(false)
   const reduced = useReducedMotion()
-  const { product, intent, clearProduct } = useLead()
+  const { product, variant, intent, clearProduct } = useLead()
   const [tab, setTab] = useState<'retail' | 'wholesale'>(intent)
 
   // Форма подхватывает намерение из карточки товара или шапки; дальше
@@ -28,7 +28,6 @@ export function Contact() {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
     const value = (key: string) => String(data.get(key) ?? '').trim()
-    const price = product ? minPrice(product) : null
     submitLead({
       intent: 'retail',
       name: value('name'),
@@ -36,8 +35,10 @@ export function Contact() {
       email: value('email'),
       message: value('message'),
       productModel: product?.model,
-      productSku: product?.variants[0]?.sku,
-      productPrice: price !== null ? formatPrice(price) : undefined,
+      // Именно то исполнение, что выбрали в drawer — раньше сюда всегда
+      // уходило первое по списку, независимо от того, что смотрел человек.
+      productSku: variant?.sku,
+      productPrice: variant ? formatPrice(variant.rrp) : undefined,
     })
     setSent(true)
   }
@@ -107,6 +108,11 @@ export function Contact() {
                     Вы интересовались
                   </p>
                   <p className="mt-0.5 truncate text-[0.9375rem] tracking-tight">{product.model}</p>
+                  {product.variants.length > 1 && variant && (
+                    <p className="mt-0.5 truncate text-[0.8125rem] text-graphite/50">
+                      {variant.label}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"

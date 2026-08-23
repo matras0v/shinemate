@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, X } from 'lucide-react'
+import { ArrowRight, Check, X } from 'lucide-react'
 
 import {
   categoryTitle,
@@ -10,6 +10,7 @@ import {
   priceNote,
   relatedNote,
   type Product,
+  type Variant,
 } from '../../data/catalog'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 import { useLead } from '../../lib/leadContext'
@@ -53,6 +54,16 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
   useEffect(() => {
     if (productSlug) panel.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [productSlug])
+
+  // Строки исполнений выглядели как список опций, но нажатие на них ничего
+  // не делало — выбор всегда уходил как первое исполнение. Теперь строка
+  // реально выбирается, и именно она попадает в заявку.
+  const [selectedSku, setSelectedSku] = useState<string | undefined>(product?.variants[0]?.sku)
+  useEffect(() => {
+    setSelectedSku(product?.variants[0]?.sku)
+  }, [productSlug, product?.variants])
+  const selectedVariant: Variant | undefined =
+    product?.variants.find((v) => v.sku === selectedSku) ?? product?.variants[0]
 
   const related = product ? getRelatedProducts(product) : []
 
@@ -148,25 +159,67 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
               <h3 className="eyebrow mt-9">
                 {product.variants.length > 1 ? 'Исполнения и РРЦ' : 'Артикул и РРЦ'}
               </h3>
-              <ul className="mt-4 border-t border-graphite/[0.12]">
-                {product.variants.map((variant) => (
-                  <li
-                    key={variant.sku}
-                    className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-graphite/[0.08] py-3.5"
-                  >
-                    <span className="min-w-0">
-                      <span className="block font-mono text-[0.8125rem] tracking-tight">
-                        {variant.sku}
+              {product.variants.length > 1 ? (
+                <p className="mt-1 text-[0.8125rem] text-graphite/45">
+                  Выберите нужное — оно попадёт в заявку.
+                </p>
+              ) : null}
+              <ul className="mt-4 space-y-2">
+                {product.variants.map((variant) =>
+                  product.variants.length > 1 ? (
+                    <li key={variant.sku}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSku(variant.sku)}
+                        aria-pressed={selectedVariant?.sku === variant.sku}
+                        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors duration-300 ease-premium ${
+                          selectedVariant?.sku === variant.sku
+                            ? 'border-graphite bg-mist'
+                            : 'border-graphite/[0.12] hover:border-graphite/30 hover:bg-mist/50'
+                        }`}
+                      >
+                        <span
+                          aria-hidden
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ease-premium ${
+                            selectedVariant?.sku === variant.sku
+                              ? 'border-graphite bg-graphite text-porcelain'
+                              : 'border-graphite/25'
+                          }`}
+                        >
+                          {selectedVariant?.sku === variant.sku && <Check size={12} />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-mono text-[0.8125rem] tracking-tight">
+                            {variant.sku}
+                          </span>
+                          <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">
+                            {variant.label}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-[1.0625rem] tracking-tight">
+                          {formatPrice(variant.rrp)}
+                        </span>
+                      </button>
+                    </li>
+                  ) : (
+                    <li
+                      key={variant.sku}
+                      className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-graphite/[0.12] py-3.5"
+                    >
+                      <span className="min-w-0">
+                        <span className="block font-mono text-[0.8125rem] tracking-tight">
+                          {variant.sku}
+                        </span>
+                        <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">
+                          {variant.label}
+                        </span>
                       </span>
-                      <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">
-                        {variant.label}
+                      <span className="shrink-0 text-[1.0625rem] tracking-tight">
+                        {formatPrice(variant.rrp)}
                       </span>
-                    </span>
-                    <span className="shrink-0 text-[1.0625rem] tracking-tight">
-                      {formatPrice(variant.rrp)}
-                    </span>
-                  </li>
-                ))}
+                    </li>
+                  ),
+                )}
               </ul>
               <p className="mt-3 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
                 {priceNote}
@@ -176,7 +229,7 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                 <button
                   type="button"
                   onClick={() => {
-                    requestProduct(product)
+                    requestProduct(product, selectedVariant)
                     onClose()
                   }}
                   className="inline-flex items-center rounded-full bg-graphite px-6 py-3.5 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
