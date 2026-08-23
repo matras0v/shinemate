@@ -817,23 +817,66 @@ export const products: Product[] = [
   },
 
   // ───────────────────── Составы V-Range ─────────────────────
+  // Четыре реально разных состава под разные этапы обработки — раньше были
+  // собраны в одну карточку как "исполнения", хотя это не варианты одного
+  // товара (как размер круга), а разные позиции с разными задачами и ценой.
+  // В таком виде раздел на витрине выглядел как один товар вместо четырёх.
   {
-    slug: 'v-range',
-    model: 'V-Range',
+    slug: 'v80-heavy-cut',
+    model: 'V80 Heavy-Cut',
     category: 'chemistry',
-    kind: 'Абразивные пасты, 500 мл',
-    lead:
-      'Четыре состава закрывают весь цикл: от снятия глубоких рисок до финишной полировки. V82 и V40 работают в одну стадию, когда время дороже идеала.',
+    kind: 'Абразивная паста, тяжёлый рез, 500 мл',
+    lead: 'Состав тяжёлого реза линейки V-Range — для снятия глубоких рисок и серьёзных дефектов лака перед более мягкими этапами полировки.',
     specs: [
       { label: 'Объём', value: '500 мл' },
-      { label: 'Линейка', value: 'V80 · V82 · V40 · V20' },
+      { label: 'Тип', value: 'Тяжёлый рез' },
     ],
-    variants: [
-      { sku: '001310', label: 'V80 Heavy-Cut — тяжёлый рез', rrp: 2180 },
-      { sku: '001315', label: 'V40 Medium Polish — средний рез, одна стадия', rrp: 2580 },
-      { sku: '001305', label: 'V82 Fast Polish — быстрая полировка, одна стадия', rrp: 2800 },
-      { sku: '001320', label: 'V20 Final Finish — финиш', rrp: 2800 },
+    variants: [{ sku: '001310', label: '500 мл', rrp: 2180 }],
+    image: 'catalog-media/v40.webp',
+    imageWidth: 484,
+    imageHeight: 628,
+  },
+  {
+    slug: 'v40-medium-polish',
+    model: 'V40 Medium Polish',
+    category: 'chemistry',
+    kind: 'Абразивная паста, средний рез, 500 мл',
+    lead: 'Состав среднего реза линейки V-Range для одностадийной обработки — убирает голограммы и лёгкие риски за один проход, без отдельного финиша.',
+    specs: [
+      { label: 'Объём', value: '500 мл' },
+      { label: 'Тип', value: 'Средний рез, одна стадия' },
     ],
+    variants: [{ sku: '001315', label: '500 мл', rrp: 2580 }],
+    image: 'catalog-media/v40.webp',
+    imageWidth: 484,
+    imageHeight: 628,
+  },
+  {
+    slug: 'v82-fast-polish',
+    model: 'V82 Fast Polish',
+    category: 'chemistry',
+    kind: 'Абразивная паста, быстрая полировка, 500 мл',
+    lead: 'Быстрый одностадийный состав линейки V-Range — для задач, где время дороже идеальной глубины реза.',
+    specs: [
+      { label: 'Объём', value: '500 мл' },
+      { label: 'Тип', value: 'Быстрая полировка, одна стадия' },
+    ],
+    variants: [{ sku: '001305', label: '500 мл', rrp: 2800 }],
+    image: 'catalog-media/v40.webp',
+    imageWidth: 484,
+    imageHeight: 628,
+  },
+  {
+    slug: 'v20-final-finish',
+    model: 'V20 Final Finish',
+    category: 'chemistry',
+    kind: 'Абразивная паста, финиш, 500 мл',
+    lead: 'Финишный состав линейки V-Range — завершающий проход после реза для чистого результата.',
+    specs: [
+      { label: 'Объём', value: '500 мл' },
+      { label: 'Тип', value: 'Финиш' },
+    ],
+    variants: [{ sku: '001320', label: '500 мл', rrp: 2800 }],
     image: 'catalog-media/v40.webp',
     imageWidth: 484,
     imageHeight: 628,
@@ -921,6 +964,19 @@ export const countByCategory = (id: CategoryId) =>
 export const minPrice = (p: Product) => {
   const value = Math.min(...p.variants.map((v) => v.rrp))
   return Number.isFinite(value) ? value : null
+}
+
+/** «1 вариант / 2 варианта / 5 вариантов» — русское склонение по числу. */
+export const variantsLabel = (count: number) => {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  const word =
+    mod10 === 1 && mod100 !== 11
+      ? 'вариант'
+      : [2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)
+        ? 'варианта'
+        : 'вариантов'
+  return `${count} ${word}`
 }
 
 /**

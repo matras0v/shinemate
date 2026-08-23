@@ -216,6 +216,10 @@ export function Contact() {
               >
                 {phone.display}
               </a>
+              <p className="mt-1.5 flex items-center gap-2 text-[0.9375rem] text-graphite/60">
+                <MapPin size={15} className="shrink-0 text-titanium" />
+                {phone.address}
+              </p>
             </motion.div>
           ))}
 
@@ -227,10 +231,6 @@ export function Contact() {
               <Mail size={17} className="shrink-0 text-titanium" />
               {company.email}
             </a>
-            <p className="flex items-center gap-3 text-[1.0625rem] text-graphite/70">
-              <MapPin size={17} className="shrink-0 text-titanium" />
-              {company.address}
-            </p>
             <p className="flex items-center gap-3 text-[1.0625rem] text-graphite/70">
               <Clock size={17} className="shrink-0 text-titanium" />
               {company.schedule}

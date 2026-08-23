@@ -1,6 +1,7 @@
+import { ArrowUpRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-import { formatPriceOrInquire, minPrice, type Product } from '../../data/catalog'
+import { formatPriceOrInquire, minPrice, variantsLabel, type Product } from '../../data/catalog'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { riseProps } from '../../lib/motion'
 
@@ -32,7 +33,18 @@ export function ProductCard({ product, index, onOpen }: Props) {
           {product.kind}
         </p>
 
-        <div className="mt-5 flex h-32 items-center justify-center overflow-hidden sm:h-36">
+        <div className="relative mt-5 flex h-32 items-center justify-center overflow-hidden sm:h-36">
+          {/*
+            Бейдж числа вариантов виден всегда, не только на hover — на
+            touch-экране hover не срабатывает вовсе, и было неясно, что за
+            карточкой скрывается несколько позиций (например, 4 состава
+            V-Range или 5 градаций круга), а не одна.
+          */}
+          {multi && (
+            <span className="absolute right-0 top-0 rounded-full border border-graphite/15 bg-porcelain px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-graphite/70">
+              {variantsLabel(product.variants.length)}
+            </span>
+          )}
           <img
             src={thumb}
             srcSet={`${thumb} 300w, ${product.image} 700w`}
@@ -67,10 +79,17 @@ export function ProductCard({ product, index, onOpen }: Props) {
         <div className="mt-5 flex items-end justify-between gap-4 border-t border-graphite/[0.12] pt-4">
           <div className="min-w-0">
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
-              {multi ? `РРЦ от · ${product.variants.length} исполнения` : 'РРЦ'}
+              {multi ? `РРЦ от · ${variantsLabel(product.variants.length)}` : 'РРЦ'}
             </p>
             <p className="mt-1 truncate text-lg tracking-tight">{formatPriceOrInquire(price)}</p>
           </div>
+          {/* Всегда видимая стрелка — сигнал «нажми, откроется подробнее», не завязанный на hover. */}
+          <span
+            aria-hidden
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-graphite/15 text-graphite/50 transition-colors duration-500 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
+          >
+            <ArrowUpRight size={15} />
+          </span>
         </div>
       </button>
     </motion.article>

@@ -47,14 +47,17 @@ export function Footer() {
           <p className="eyebrow">Контакты</p>
           <ul className="mt-4 space-y-2 text-[0.8125rem] leading-relaxed text-graphite/60">
             {company.phones.map((phone) => (
-              <li key={phone.href}>
+              <li key={phone.href} className="pt-1 first:pt-0">
+                <span className="block text-[0.75rem] uppercase tracking-[0.08em] text-graphite/35">
+                  {phone.region}
+                </span>
                 <a
                   href={phone.href}
                   className="transition-colors duration-500 ease-premium hover:text-graphite"
                 >
                   {phone.display}
                 </a>
-                <span className="block text-[0.75rem] text-graphite/35">{phone.region}</span>
+                <span className="block text-[0.75rem] text-graphite/35">{phone.address}</span>
               </li>
             ))}
             <li className="pt-1">
@@ -65,7 +68,6 @@ export function Footer() {
                 {company.email}
               </a>
             </li>
-            <li className="pt-1">{company.address}</li>
             <li>{company.schedule}</li>
           </ul>
         </div>
