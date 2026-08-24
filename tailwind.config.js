@@ -9,7 +9,10 @@ export default {
         pearl: '#E6E9EA',
         frost: '#DCE7EA',
         steel: '#C9D7DA',
-        titanium: '#9DAAAF',
+        // Было #9DAAAF — контраст на porcelain/mist всего ~2.2:1, надписи
+        // вроде типа товара на карточке реально сливались с фоном (клиент
+        // жаловался на видео). Тот же оттенок, но темнее — контраст ~5:1.
+        titanium: '#5E6C72',
         graphite: '#1A1C1E',
         ink: '#0B0C0D',
       },

@@ -84,7 +84,7 @@ export const categories: {
   {
     id: 'da',
     index: '02',
-    title: 'Эксцентриковые (DA)',
+    title: 'Эксцентриковые',
     subtitle: 'Ход эксцентрика от 9 до 21 мм — от финиша до тяжёлой коррекции.',
     image: 'catalog-media/ex620-thumb.webp',
   },
@@ -98,7 +98,7 @@ export const categories: {
   {
     id: 'cordless',
     index: '04',
-    title: 'Аккумуляторные решения',
+    title: 'Аккумуляторные машины',
     subtitle: 'Платформы 18 В и 10,8 В: полировка и шлифование без кабеля.',
     image: 'catalog-media/eb251-thumb.webp',
   },
@@ -112,7 +112,7 @@ export const categories: {
   {
     id: 'pads',
     index: '06',
-    title: 'Круги и оснастка',
+    title: 'Полировальные круги',
     subtitle: 'Шерсть, микрофибра и поролон в градациях от T10 до T160.',
     image: 'catalog-media/foam-flat-t40-thumb.webp',
   },
@@ -126,7 +126,7 @@ export const categories: {
   {
     id: 'workshop',
     index: '08',
-    title: 'Оснащение поста',
+    title: 'Аксессуары',
     subtitle: 'Хранение, транспортировка и организация рабочего места.',
     image: 'catalog-media/tool-cart-thumb.webp',
   },
@@ -259,7 +259,7 @@ export const products: Product[] = [
     imageHeight: 235,
   },
 
-  // ───────────────────── Эксцентриковые (DA) ─────────────────────
+  // ───────────────────── Эксцентриковые ─────────────────────
   {
     slug: 'ex620',
     model: 'EX620',
@@ -415,7 +415,7 @@ export const products: Product[] = [
     imageHeight: 393,
   },
 
-  // ───────────────────── Аккумуляторные решения ─────────────────────
+  // ───────────────────── Аккумуляторные машины ─────────────────────
   {
     slug: 'eb251-5',
     model: 'EB251-5',
@@ -701,7 +701,7 @@ export const products: Product[] = [
     imageHeight: 393,
   },
 
-  // ───────────────────── Круги и оснастка ─────────────────────
+  // ───────────────────── Полировальные круги ─────────────────────
   {
     slug: 'foam-flat',
     model: 'Поролоновые круги Flat-face',
@@ -941,7 +941,7 @@ export const products: Product[] = [
     sortOrder: 40,
   },
 
-  // ───────────────────── Оснащение поста ─────────────────────
+  // ───────────────────── Аксессуары ─────────────────────
   {
     slug: 'tool-cart',
     model: 'Пост полировщика TC026',

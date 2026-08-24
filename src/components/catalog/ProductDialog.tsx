@@ -147,6 +147,18 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                   className="max-h-full w-auto max-w-full object-contain"
                 />
               </div>
+              {/*
+                На линейке одно фото представляет все градации — у нас нет
+                отдельного снимка под каждый цвет. Клиент на записи видел,
+                как выбирает "T120, зелёный", а на фото остаётся кружок
+                другого цвета, и решил, что это баг. Честно объясняем, а не
+                делаем вид, что фото меняется под выбор.
+              */}
+              {isTwoAxis && (
+                <p className="mt-2 text-[0.75rem] text-graphite/45">
+                  Фото — общее для линейки, цвет круга смотрите в исполнении ниже.
+                </p>
+              )}
 
               <h2 className="mt-7 text-[clamp(1.75rem,5vw,2.5rem)] leading-[1.05] tracking-tight">
                 {product.model}
