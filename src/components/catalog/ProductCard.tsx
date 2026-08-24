@@ -59,6 +59,12 @@ export function ProductCard({ product, index, onOpen }: Props) {
         </div>
 
         <h3 className="mt-5 text-xl tracking-tight sm:text-2xl">{product.model}</h3>
+        {/* Артикул виден сразу на карточке, а не только внутри drawer — для
+            товара с одним исполнением это его SKU, для многовариантного —
+            SKU того, что выбрано по умолчанию (бейдж выше поясняет, что есть ещё). */}
+        <p className="mt-1 font-mono text-[0.75rem] tracking-tight text-graphite/45">
+          Арт. {product.variants[0]?.sku}
+        </p>
         <p className="mt-2.5 line-clamp-2 text-[0.875rem] leading-relaxed text-graphite/60">
           {product.lead}
         </p>

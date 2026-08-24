@@ -65,6 +65,33 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
   const selectedVariant: Variant | undefined =
     product?.variants.find((v) => v.sku === selectedSku) ?? product?.variants[0]
 
+  // Круги и похожие товары физически различаются по двум независимым
+  // осям — градация/тип и размер. Раньше это склеивалось в одну строку
+  // вида "34114-9 / 34116-9 / 34117-9", где артикул было не разобрать.
+  // Когда обе оси заданы у каждого исполнения — показываем два ряда
+  // переключателей вместо плоского списка.
+  const isTwoAxis =
+    !!product && product.variants.length > 1 && product.variants.every((v) => v.axis1 && v.axis2)
+  const axis1Options = isTwoAxis
+    ? Array.from(new Set(product!.variants.map((v) => v.axis1!)))
+    : []
+  const axis2Options = isTwoAxis
+    ? Array.from(
+        new Set(
+          product!.variants.filter((v) => v.axis1 === selectedVariant?.axis1).map((v) => v.axis2!),
+        ),
+      )
+    : []
+  const selectAxis1 = (axis1: string) => {
+    const candidates = product!.variants.filter((v) => v.axis1 === axis1)
+    const keepSame = candidates.find((v) => v.axis2 === selectedVariant?.axis2)
+    setSelectedSku((keepSame ?? candidates[0])?.sku)
+  }
+  const selectAxis2 = (axis2: string) => {
+    const match = product!.variants.find((v) => v.axis1 === selectedVariant?.axis1 && v.axis2 === axis2)
+    if (match) setSelectedSku(match.sku)
+  }
+
   const related = product ? getRelatedProducts(product) : []
 
   return (
@@ -125,6 +152,11 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                 {product.model}
               </h2>
               <p className="mt-1.5 text-[0.9375rem] text-graphite/45">{product.kind}</p>
+              {/* Артикул сразу под названием и всегда актуален выбранному
+                  исполнению — не нужно долистывать до списка вариантов. */}
+              <p className="mt-2 font-mono text-[0.8125rem] tracking-tight text-graphite/60">
+                Артикул: {selectedVariant?.sku}
+              </p>
               <p className="mt-5 text-[0.9375rem] leading-relaxed text-graphite/70">{product.lead}</p>
 
               <h3 className="eyebrow mt-9">Характеристики</h3>
@@ -159,68 +191,142 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
               <h3 className="eyebrow mt-9">
                 {product.variants.length > 1 ? 'Исполнения и РРЦ' : 'Артикул и РРЦ'}
               </h3>
-              {product.variants.length > 1 ? (
-                <p className="mt-1 text-[0.8125rem] text-graphite/45">
-                  Выберите нужное — оно попадёт в заявку.
-                </p>
-              ) : null}
-              <ul className="mt-4 space-y-2">
-                {product.variants.map((variant) =>
-                  product.variants.length > 1 ? (
-                    <li key={variant.sku}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedSku(variant.sku)}
-                        aria-pressed={selectedVariant?.sku === variant.sku}
-                        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors duration-300 ease-premium ${
-                          selectedVariant?.sku === variant.sku
-                            ? 'border-graphite bg-mist'
-                            : 'border-graphite/[0.12] hover:border-graphite/30 hover:bg-mist/50'
-                        }`}
-                      >
-                        <span
-                          aria-hidden
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ease-premium ${
-                            selectedVariant?.sku === variant.sku
+
+              {isTwoAxis ? (
+                // Две независимые оси (например, градация и размер) — выбор
+                // чипами вместо списка склеенных артикулов вида
+                // "34114-9 / 34116-9 / 34117-9", где не разобрать, какой SKU
+                // относится к какому размеру.
+                <div className="mt-4 space-y-5">
+                  <div>
+                    <p className="text-[0.75rem] uppercase tracking-[0.1em] text-graphite/40">
+                      Градация
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {axis1Options.map((axis1) => (
+                        <button
+                          key={axis1}
+                          type="button"
+                          onClick={() => selectAxis1(axis1)}
+                          aria-pressed={selectedVariant?.axis1 === axis1}
+                          className={`rounded-full border px-4 py-2 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
+                            selectedVariant?.axis1 === axis1
                               ? 'border-graphite bg-graphite text-porcelain'
-                              : 'border-graphite/25'
+                              : 'border-graphite/[0.15] text-graphite hover:border-graphite/40'
                           }`}
                         >
-                          {selectedVariant?.sku === variant.sku && <Check size={12} />}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-mono text-[0.8125rem] tracking-tight">
-                            {variant.sku}
+                          {axis1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[0.75rem] uppercase tracking-[0.1em] text-graphite/40">
+                      Размер
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {axis2Options.map((axis2) => (
+                        <button
+                          key={axis2}
+                          type="button"
+                          onClick={() => selectAxis2(axis2)}
+                          aria-pressed={selectedVariant?.axis2 === axis2}
+                          className={`rounded-full border px-4 py-2 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
+                            selectedVariant?.axis2 === axis2
+                              ? 'border-graphite bg-graphite text-porcelain'
+                              : 'border-graphite/[0.15] text-graphite hover:border-graphite/40'
+                          }`}
+                        >
+                          {axis2}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {selectedVariant && (
+                    <div className="flex items-center justify-between rounded-2xl bg-mist p-4">
+                      <div className="min-w-0">
+                        <p className="font-mono text-[0.8125rem] tracking-tight">
+                          {selectedVariant.sku}
+                        </p>
+                        {selectedVariant.label && (
+                          <p className="mt-0.5 text-[0.8125rem] text-graphite/50">
+                            {selectedVariant.label}
+                          </p>
+                        )}
+                      </div>
+                      <p className="shrink-0 text-[1.0625rem] tracking-tight">
+                        {formatPrice(selectedVariant.rrp)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {product.variants.length > 1 && (
+                    <p className="mt-1 text-[0.8125rem] text-graphite/45">
+                      Выберите нужное — оно попадёт в заявку.
+                    </p>
+                  )}
+                  <ul className="mt-4 space-y-2">
+                    {product.variants.map((variant) =>
+                      product.variants.length > 1 ? (
+                        <li key={variant.sku}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSku(variant.sku)}
+                            aria-pressed={selectedVariant?.sku === variant.sku}
+                            className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors duration-300 ease-premium ${
+                              selectedVariant?.sku === variant.sku
+                                ? 'border-graphite bg-mist'
+                                : 'border-graphite/[0.12] hover:border-graphite/30 hover:bg-mist/50'
+                            }`}
+                          >
+                            <span
+                              aria-hidden
+                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ease-premium ${
+                                selectedVariant?.sku === variant.sku
+                                  ? 'border-graphite bg-graphite text-porcelain'
+                                  : 'border-graphite/25'
+                              }`}
+                            >
+                              {selectedVariant?.sku === variant.sku && <Check size={12} />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block font-mono text-[0.8125rem] tracking-tight">
+                                {variant.sku}
+                              </span>
+                              <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">
+                                {variant.label}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-[1.0625rem] tracking-tight">
+                              {formatPrice(variant.rrp)}
+                            </span>
+                          </button>
+                        </li>
+                      ) : (
+                        <li
+                          key={variant.sku}
+                          className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-graphite/[0.12] py-3.5"
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-mono text-[0.8125rem] tracking-tight">
+                              {variant.sku}
+                            </span>
+                            <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">
+                              {variant.label}
+                            </span>
                           </span>
-                          <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">
-                            {variant.label}
+                          <span className="shrink-0 text-[1.0625rem] tracking-tight">
+                            {formatPrice(variant.rrp)}
                           </span>
-                        </span>
-                        <span className="shrink-0 text-[1.0625rem] tracking-tight">
-                          {formatPrice(variant.rrp)}
-                        </span>
-                      </button>
-                    </li>
-                  ) : (
-                    <li
-                      key={variant.sku}
-                      className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-graphite/[0.12] py-3.5"
-                    >
-                      <span className="min-w-0">
-                        <span className="block font-mono text-[0.8125rem] tracking-tight">
-                          {variant.sku}
-                        </span>
-                        <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">
-                          {variant.label}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-[1.0625rem] tracking-tight">
-                        {formatPrice(variant.rrp)}
-                      </span>
-                    </li>
-                  ),
-                )}
-              </ul>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </>
+              )}
+
               <p className="mt-3 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
                 {priceNote}
               </p>
