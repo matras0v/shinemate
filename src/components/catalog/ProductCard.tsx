@@ -14,7 +14,14 @@ type Props = {
 export function ProductCard({ product, index, onOpen }: Props) {
   const reduced = useReducedMotion()
   const multi = product.variants.length > 1
-  const thumb = product.image.replace('.webp', '-thumb.webp')
+  // Артикул на карточке — это variants[0], так что фото должно быть от
+  // того же исполнения, а не товара по умолчанию: иначе показывали бы
+  // зелёный T120 в артикуле рядом с оранжевым кругом на фото.
+  const defaultVariant = product.variants[0]
+  const cardImage = defaultVariant?.image ?? product.image
+  const cardImageWidth = defaultVariant?.imageWidth ?? product.imageWidth
+  const cardImageHeight = defaultVariant?.imageHeight ?? product.imageHeight
+  const thumb = cardImage.replace('.webp', '-thumb.webp')
   const price = minPrice(product)
   const topSpecs = product.specs.slice(0, 2)
 
@@ -47,10 +54,10 @@ export function ProductCard({ product, index, onOpen }: Props) {
           )}
           <img
             src={thumb}
-            srcSet={`${thumb} 300w, ${product.image} 700w`}
+            srcSet={`${thumb} 300w, ${cardImage} 700w`}
             sizes="(min-width: 1280px) 280px, (min-width: 640px) 40vw, 80vw"
-            width={product.imageWidth}
-            height={product.imageHeight}
+            width={cardImageWidth}
+            height={cardImageHeight}
             alt={`ShineMate ${product.model}`}
             loading="lazy"
             decoding="async"

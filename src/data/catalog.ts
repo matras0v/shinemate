@@ -38,6 +38,14 @@ export type Variant = {
   axis1?: string
   /** Вторая ось выбора: размер/диаметр. */
   axis2?: string
+  /**
+   * Официальное фото именно этого исполнения (например, зелёный T120),
+   * когда оно реально отличается от фото товара по умолчанию — иначе
+   * выбор градации визуально ничего не менял, хотя цвет в тексте другой.
+   */
+  image?: string
+  imageWidth?: number
+  imageHeight?: number
 }
 
 export type Spec = { label: string; value: string }
@@ -716,21 +724,21 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34124-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '4"' },
-      { sku: '34126-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '6"' },
-      { sku: '34127-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '7"' },
-      { sku: '34124-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '4"' },
-      { sku: '34126-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '6"' },
-      { sku: '34127-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '7"' },
-      { sku: '34124-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '4"' },
-      { sku: '34126-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '6"' },
-      { sku: '34127-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '7"' },
+      { sku: '34124-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '4"', image: 'catalog-media/foam-flat-t120.webp', imageWidth: 671, imageHeight: 473 },
+      { sku: '34126-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '6"', image: 'catalog-media/foam-flat-t120.webp', imageWidth: 671, imageHeight: 473 },
+      { sku: '34127-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '7"', image: 'catalog-media/foam-flat-t120.webp', imageWidth: 671, imageHeight: 473 },
+      { sku: '34124-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '4"', image: 'catalog-media/foam-flat-t80.webp', imageWidth: 632, imageHeight: 452 },
+      { sku: '34126-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '6"', image: 'catalog-media/foam-flat-t80.webp', imageWidth: 632, imageHeight: 452 },
+      { sku: '34127-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '7"', image: 'catalog-media/foam-flat-t80.webp', imageWidth: 632, imageHeight: 452 },
+      { sku: '34124-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '4"', image: 'catalog-media/foam-flat-t60.webp', imageWidth: 641, imageHeight: 467 },
+      { sku: '34126-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '6"', image: 'catalog-media/foam-flat-t60.webp', imageWidth: 641, imageHeight: 467 },
+      { sku: '34127-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '7"', image: 'catalog-media/foam-flat-t60.webp', imageWidth: 641, imageHeight: 467 },
       { sku: '34124-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '4"' },
       { sku: '34126-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '6"' },
       { sku: '34127-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '7"' },
-      { sku: '34124-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '4"' },
-      { sku: '34126-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '6"' },
-      { sku: '34127-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '7"' },
+      { sku: '34124-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '4"', image: 'catalog-media/foam-flat-t10.webp', imageWidth: 630, imageHeight: 465 },
+      { sku: '34126-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '6"', image: 'catalog-media/foam-flat-t10.webp', imageWidth: 630, imageHeight: 465 },
+      { sku: '34127-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '7"', image: 'catalog-media/foam-flat-t10.webp', imageWidth: 630, imageHeight: 465 },
     ],
     image: 'catalog-media/foam-flat-t40.webp',
     imageWidth: 700,
@@ -750,21 +758,21 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34114-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '4"' },
-      { sku: '34116-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '6"' },
-      { sku: '34117-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '7"' },
-      { sku: '34114-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '4"' },
-      { sku: '34116-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '6"' },
-      { sku: '34117-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '7"' },
+      { sku: '34114-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '4"', image: 'catalog-media/foam-diamond-t120.webp', imageWidth: 603, imageHeight: 415 },
+      { sku: '34116-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '6"', image: 'catalog-media/foam-diamond-t120.webp', imageWidth: 603, imageHeight: 415 },
+      { sku: '34117-9', label: 'зелёный, тяжёлый рез', rrp: 635, axis1: 'T120', axis2: '7"', image: 'catalog-media/foam-diamond-t120.webp', imageWidth: 603, imageHeight: 415 },
+      { sku: '34114-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '4"', image: 'catalog-media/foam-diamond-t80.webp', imageWidth: 629, imageHeight: 418 },
+      { sku: '34116-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '6"', image: 'catalog-media/foam-diamond-t80.webp', imageWidth: 629, imageHeight: 418 },
+      { sku: '34117-1', label: 'жёлтый, сильный рез', rrp: 635, axis1: 'T80', axis2: '7"', image: 'catalog-media/foam-diamond-t80.webp', imageWidth: 629, imageHeight: 418 },
       { sku: '34114-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '4"' },
       { sku: '34116-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '6"' },
       { sku: '34117-6', label: 'синий, средний рез', rrp: 635, axis1: 'T60', axis2: '7"' },
-      { sku: '34114-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '4"' },
-      { sku: '34116-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '6"' },
-      { sku: '34117-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '7"' },
-      { sku: '34114-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '4"' },
-      { sku: '34116-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '6"' },
-      { sku: '34117-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '7"' },
+      { sku: '34114-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '4"', image: 'catalog-media/foam-diamond-t40.webp', imageWidth: 629, imageHeight: 416 },
+      { sku: '34116-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '6"', image: 'catalog-media/foam-diamond-t40.webp', imageWidth: 629, imageHeight: 416 },
+      { sku: '34117-4', label: 'оранжевый, лёгкий рез', rrp: 635, axis1: 'T40', axis2: '7"', image: 'catalog-media/foam-diamond-t40.webp', imageWidth: 629, imageHeight: 416 },
+      { sku: '34114-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '4"', image: 'catalog-media/foam-diamond-t10.webp', imageWidth: 690, imageHeight: 460 },
+      { sku: '34116-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '6"', image: 'catalog-media/foam-diamond-t10.webp', imageWidth: 690, imageHeight: 460 },
+      { sku: '34117-7', label: 'красный, финиш', rrp: 635, axis1: 'T10', axis2: '7"', image: 'catalog-media/foam-diamond-t10.webp', imageWidth: 690, imageHeight: 460 },
     ],
     image: 'catalog-media/foam-diamond-t60.webp',
     imageWidth: 700,
@@ -884,9 +892,9 @@ export const products: Product[] = [
       { label: 'Совместимость', value: 'Мягкие поролоновые подложки, микрофибра' },
     ],
     variants: [{ sku: '001320', label: '500 мл', rrp: 2800 }],
-    image: 'catalog-media/v40.webp',
-    imageWidth: 484,
-    imageHeight: 628,
+    image: 'catalog-media/v20.webp',
+    imageWidth: 475,
+    imageHeight: 617,
     sortOrder: 10,
   },
   {
@@ -918,9 +926,9 @@ export const products: Product[] = [
       { label: 'Совместимость', value: 'Подложки T80–T240, шерсть' },
     ],
     variants: [{ sku: '001310', label: '500 мл', rrp: 2180 }],
-    image: 'catalog-media/v40.webp',
-    imageWidth: 484,
-    imageHeight: 628,
+    image: 'catalog-media/v80.webp',
+    imageWidth: 481,
+    imageHeight: 630,
     sortOrder: 30,
   },
   {
@@ -935,9 +943,9 @@ export const products: Product[] = [
       { label: 'Совместимость', value: 'Подложки T40–T240, шерсть' },
     ],
     variants: [{ sku: '001305', label: '500 мл', rrp: 2800 }],
-    image: 'catalog-media/v40.webp',
-    imageWidth: 484,
-    imageHeight: 628,
+    image: 'catalog-media/v82.webp',
+    imageWidth: 478,
+    imageHeight: 609,
     sortOrder: 40,
   },
 

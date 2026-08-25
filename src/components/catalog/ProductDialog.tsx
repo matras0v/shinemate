@@ -138,27 +138,22 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
             </div>
 
             <div className="px-6 pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-8">
+              {/*
+                Официальное фото именно выбранного исполнения, если оно
+                есть (см. Variant.image) — иначе фото товара по умолчанию.
+                Раньше на кругах фото было одно на всю линейку: человек
+                выбирал "T120, зелёный", а видел кружок другого цвета и
+                решал, что это баг.
+              */}
               <div className="mt-6 flex h-60 items-center justify-center rounded-[1.5rem] bg-mist p-6 sm:h-72">
                 <img
-                  src={product.image}
-                  width={product.imageWidth}
-                  height={product.imageHeight}
-                  alt={`ShineMate ${product.model}`}
+                  src={selectedVariant?.image ?? product.image}
+                  width={selectedVariant?.imageWidth ?? product.imageWidth}
+                  height={selectedVariant?.imageHeight ?? product.imageHeight}
+                  alt={`ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}
                   className="max-h-full w-auto max-w-full object-contain"
                 />
               </div>
-              {/*
-                На линейке одно фото представляет все градации — у нас нет
-                отдельного снимка под каждый цвет. Клиент на записи видел,
-                как выбирает "T120, зелёный", а на фото остаётся кружок
-                другого цвета, и решил, что это баг. Честно объясняем, а не
-                делаем вид, что фото меняется под выбор.
-              */}
-              {isTwoAxis && (
-                <p className="mt-2 text-[0.75rem] text-graphite/45">
-                  Фото — общее для линейки, цвет круга смотрите в исполнении ниже.
-                </p>
-              )}
 
               <h2 className="mt-7 text-[clamp(1.75rem,5vw,2.5rem)] leading-[1.05] tracking-tight">
                 {product.model}
