@@ -36,7 +36,11 @@ export function ProductCard({ product, index, onOpen }: Props) {
         aria-label={`Открыть карточку ${product.model}`}
         className="flex flex-1 flex-col p-5 text-left outline-none focus-visible:ring-1 focus-visible:ring-graphite/40 sm:p-6"
       >
-        <p className="font-mono text-[0.625rem] uppercase leading-relaxed tracking-[0.14em] text-titanium">
+        {/* Клиент дважды отмечал, что подпись типа товара над фото плохо
+            видна — titanium технически проходит контраст, но на мелком
+            моноширинном тексте субъективно читается тускло. graphite/80
+            + чуть более жирное начертание решает это радикальнее. */}
+        <p className="font-mono text-[0.625rem] font-medium uppercase leading-relaxed tracking-[0.14em] text-graphite/80">
           {product.kind}
         </p>
 

@@ -60,11 +60,11 @@ export function ProductObject() {
           />
           <motion.img
             src="media/product-1600.webp"
-            srcSet="media/product-640.webp 640w, media/product-1000.webp 1000w, media/product-1600.webp 1600w"
+            srcSet="media/product-640.webp 420w, media/product-1000.webp 650w, media/product-1600.webp 900w"
             sizes="(min-width: 1024px) 48vw, 92vw"
-            width={1600}
-            height={1195}
-            alt="Роторная полировальная машина ShineMate в студийном свете"
+            width={900}
+            height={673}
+            alt={`Роторная полировальная машина ShineMate ${hero.model} в студийном свете`}
             loading="lazy"
             decoding="async"
             style={reduced ? undefined : { y, scale }}

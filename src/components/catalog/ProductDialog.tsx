@@ -81,20 +81,26 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
   const selectedVariant: Variant | undefined =
     product?.variants.find((v) => v.sku === selectedSku) ?? product?.variants[0]
 
-  // Круги и похожие товары физически различаются по двум независимым
-  // осям — градация/тип и размер. Раньше это склеивалось в одну строку
-  // вида "34114-9 / 34116-9 / 34117-9", где артикул было не разобрать.
-  // Когда обе оси заданы у каждого исполнения — показываем два ряда
-  // переключателей вместо плоского списка.
-  const isTwoAxis =
-    !!product && product.variants.length > 1 && product.variants.every((v) => v.axis1 && v.axis2)
-  const axis1Options = isTwoAxis
+  // Круги и похожие товары физически различаются по одной или двум
+  // независимым осям — градация/тип и, если это реально разные диаметры
+  // одного круга, ещё и размер. Раньше это склеивалось в одну строку вида
+  // "34114-9 / 34116-9 / 34117-9", где артикул было не разобрать. Когда
+  // хотя бы axis1 задан у каждого исполнения — показываем ряд переключателей
+  // вместо плоского списка; второй ряд появляется только если у выбранного
+  // исполнения реально есть несколько значений axis2 (для товаров, где
+  // градация уже вынесена в отдельную карточку, axis2 не используется).
+  const showAxisChips =
+    !!product && product.variants.length > 1 && product.variants.every((v) => v.axis1)
+  const axis1Options = showAxisChips
     ? Array.from(new Set(product!.variants.map((v) => v.axis1!)))
     : []
-  const axis2Options = isTwoAxis
+  const axis2Options = showAxisChips
     ? Array.from(
         new Set(
-          product!.variants.filter((v) => v.axis1 === selectedVariant?.axis1).map((v) => v.axis2!),
+          product!.variants
+            .filter((v) => v.axis1 === selectedVariant?.axis1)
+            .map((v) => v.axis2)
+            .filter((v): v is string => Boolean(v)),
         ),
       )
     : []
@@ -140,7 +146,7 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
             className="relative flex h-full w-full max-w-[34rem] flex-col overflow-y-auto overscroll-contain bg-porcelain outline-none"
           >
             <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-graphite/[0.1] bg-porcelain/90 px-6 py-4 backdrop-blur-xl sm:px-8">
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">
+              <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.16em] text-graphite/80">
                 {categoryTitle(product.category)}
               </p>
               <button
@@ -226,15 +232,18 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                 {product.variants.length > 1 ? 'Исполнения и РРЦ' : 'Артикул и РРЦ'}
               </h3>
 
-              {isTwoAxis ? (
-                // Две независимые оси (например, градация и размер) — выбор
-                // чипами вместо списка склеенных артикулов вида
+              {showAxisChips ? (
+                // Одна или две независимые оси (градация и/или размер) —
+                // выбор чипами вместо списка склеенных артикулов вида
                 // "34114-9 / 34116-9 / 34117-9", где не разобрать, какой SKU
-                // относится к какому размеру.
+                // относится к какому размеру. Второй ряд рендерится только
+                // если у выбранной градации реально больше одного размера —
+                // для карточек, где градация уже вынесена в отдельный товар
+                // (см. axisLabel), остаётся один ряд «Размер».
                 <div className="mt-4 space-y-5">
                   <div>
                     <p className="text-[0.75rem] uppercase tracking-[0.1em] text-graphite/40">
-                      Градация
+                      {product.axisLabel ?? 'Градация'}
                     </p>
                     <div className="mt-2.5 flex flex-wrap gap-2">
                       {axis1Options.map((axis1) => (
@@ -254,6 +263,7 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                       ))}
                     </div>
                   </div>
+                  {axis2Options.length > 0 && (
                   <div>
                     <p className="text-[0.75rem] uppercase tracking-[0.1em] text-graphite/40">
                       Размер
@@ -276,6 +286,7 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                       ))}
                     </div>
                   </div>
+                  )}
                   {selectedVariant && (
                     <div className="flex items-center justify-between rounded-2xl bg-mist p-4">
                       <div className="min-w-0">
