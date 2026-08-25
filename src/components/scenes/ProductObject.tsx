@@ -60,11 +60,11 @@ export function ProductObject() {
           />
           <motion.img
             src="media/product-1600.webp"
-            srcSet="media/product-640.webp 420w, media/product-1000.webp 650w, media/product-1600.webp 900w"
+            srcSet="media/product-640.webp 420w, media/product-1000.webp 650w, media/product-1600.webp 890w"
             sizes="(min-width: 1024px) 48vw, 92vw"
-            width={900}
-            height={673}
-            alt={`Роторная полировальная машина ShineMate ${hero.model} в студийном свете`}
+            width={890}
+            height={725}
+            alt="Роторная машина ShineMate с подложкой, поролоновым кругом и составами V-Range"
             loading="lazy"
             decoding="async"
             style={reduced ? undefined : { y, scale }}

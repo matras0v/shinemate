@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 
 import { CatalogView } from './components/catalog/CatalogView'
 import { ProductDialog } from './components/catalog/ProductDialog'
+import { CookieNotice } from './components/CookieNotice'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
+import { LegalOverlay } from './components/LegalOverlay'
 import { SearchOverlay } from './components/SearchOverlay'
 import { CategoryNavigator } from './components/scenes/CategoryNavigator'
 import { Contact } from './components/scenes/Contact'
@@ -15,6 +17,7 @@ import { ReflectionReveal } from './components/scenes/ReflectionReveal'
 import { ScrollStage } from './components/scenes/ScrollStage'
 import { ScrollProgress } from './components/ui/ScrollProgress'
 import type { Product } from './data/catalog'
+import { privacyPolicy, termsOfUse, type LegalDocument } from './data/legal'
 import { LeadProvider } from './lib/leadContext'
 import { useLinkInterceptor, useRoute } from './lib/router'
 
@@ -23,6 +26,7 @@ export default function App() {
   useLinkInterceptor()
   const [openProduct, setOpenProduct] = useState<Product | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null)
 
   // Заголовок вкладки следует за разделом.
   useEffect(() => {
@@ -66,7 +70,10 @@ export default function App() {
         </main>
       )}
 
-      <Footer />
+      <Footer
+        onOpenPrivacy={() => setLegalDoc(privacyPolicy)}
+        onOpenTerms={() => setLegalDoc(termsOfUse)}
+      />
       <ProductDialog
         product={openProduct}
         onClose={() => setOpenProduct(null)}
@@ -77,6 +84,8 @@ export default function App() {
         onClose={() => setSearchOpen(false)}
         onOpenProduct={setOpenProduct}
       />
+      <LegalOverlay document={legalDoc} onClose={() => setLegalDoc(null)} />
+      <CookieNotice onOpenPrivacy={() => setLegalDoc(privacyPolicy)} />
     </LeadProvider>
   )
 }

@@ -2,7 +2,12 @@ import { company, nav } from '../data/company'
 import { categories } from '../data/catalog'
 import { BrandLockup } from './ui/BrandLockup'
 
-export function Footer() {
+type Props = {
+  onOpenPrivacy: () => void
+  onOpenTerms: () => void
+}
+
+export function Footer({ onOpenPrivacy, onOpenTerms }: Props) {
   return (
     <footer className="border-t border-graphite/[0.12] bg-mist py-14 md:py-16">
       <div className="shell grid gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
@@ -71,6 +76,23 @@ export function Footer() {
             <li>{company.schedule}</li>
           </ul>
         </div>
+      </div>
+
+      <div className="shell mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6">
+        <button
+          type="button"
+          onClick={onOpenPrivacy}
+          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+        >
+          Политика конфиденциальности
+        </button>
+        <button
+          type="button"
+          onClick={onOpenTerms}
+          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+        >
+          Пользовательское соглашение
+        </button>
       </div>
     </footer>
   )
