@@ -12,8 +12,8 @@ export const company = {
   phones: [
     {
       region: 'Москва',
-      display: '+7 989 128-37-47',
-      href: 'tel:+79891283747',
+      display: '+7 961 432-99-99',
+      href: 'tel:+79614329999',
       address: 'ул. Рябиновая, 43 к 2',
     },
     {
