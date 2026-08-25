@@ -57,9 +57,9 @@ export function Hero() {
             src="media/hero-1920.webp"
             srcSet="media/hero-800.webp 800w, media/hero-1280.webp 1280w, media/hero-1920.webp 1920w"
             sizes="(min-width: 1024px) 56vw, 100vw"
-            alt="Полировальная машина ShineMate на лаковой поверхности кузова в детейлинг-студии"
+            alt="Линейка оборудования ShineMate: роторная и эксцентриковые машинки, полировальный круг и состав V-Range"
             decoding="async"
-            className="h-full w-full object-cover object-[58%_center] lg:object-[72%_center]"
+            className="h-full w-full object-cover object-center"
             style={{ backgroundImage: 'url(media/hero-poster.webp)', backgroundSize: 'cover' }}
           />
         </motion.div>
