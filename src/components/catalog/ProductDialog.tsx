@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Check, X } from 'lucide-react'
+import { ArrowRight, Check, X, ZoomIn } from 'lucide-react'
 
 import {
   categoryTitle,
@@ -54,6 +54,22 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
   useEffect(() => {
     if (productSlug) panel.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [productSlug])
+
+  // Увеличение фото по клику — на телефоне товарное фото в карточке
+  // маленькое, а рассмотреть цвет/рельеф круга или маркировку на бутылке
+  // иначе негде.
+  const [zoomOpen, setZoomOpen] = useState(false)
+  useEffect(() => {
+    setZoomOpen(false)
+  }, [productSlug])
+  useEffect(() => {
+    if (!zoomOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZoomOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [zoomOpen])
 
   // Строки исполнений выглядели как список опций, но нажатие на них ничего
   // не делало — выбор всегда уходил как первое исполнение. Теперь строка
@@ -145,7 +161,12 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                 выбирал "T120, зелёный", а видел кружок другого цвета и
                 решал, что это баг.
               */}
-              <div className="mt-6 flex h-60 items-center justify-center rounded-[1.5rem] bg-mist p-6 sm:h-72">
+              <button
+                type="button"
+                onClick={() => setZoomOpen(true)}
+                aria-label="Увеличить фото"
+                className="group relative mt-6 flex h-60 w-full items-center justify-center rounded-[1.5rem] bg-mist p-6 sm:h-72"
+              >
                 <img
                   src={selectedVariant?.image ?? product.image}
                   width={selectedVariant?.imageWidth ?? product.imageWidth}
@@ -153,7 +174,13 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                   alt={`ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}
                   className="max-h-full w-auto max-w-full object-contain"
                 />
-              </div>
+                <span
+                  aria-hidden
+                  className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/90 text-graphite/60 backdrop-blur-sm transition-colors duration-300 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
+                >
+                  <ZoomIn size={15} />
+                </span>
+              </button>
 
               <h2 className="mt-7 text-[clamp(1.75rem,5vw,2.5rem)] leading-[1.05] tracking-tight">
                 {product.model}
@@ -410,6 +437,44 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
               )}
             </div>
           </motion.div>
+
+          <AnimatePresence>
+            {zoomOpen && (
+              <motion.div
+                className="fixed inset-0 z-[90] flex items-center justify-center p-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: EASE }}
+              >
+                <button
+                  type="button"
+                  aria-label="Закрыть увеличенное фото"
+                  onClick={() => setZoomOpen(false)}
+                  className="absolute inset-0 cursor-zoom-out bg-ink/85 backdrop-blur-sm"
+                />
+                <motion.img
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.3, ease: EASE }}
+                  src={selectedVariant?.image ?? product.image}
+                  width={selectedVariant?.imageWidth ?? product.imageWidth}
+                  height={selectedVariant?.imageHeight ?? product.imageHeight}
+                  alt={`ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}
+                  className="relative max-h-[85vh] max-w-[92vw] object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={() => setZoomOpen(false)}
+                  aria-label="Закрыть"
+                  className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full border border-porcelain/25 text-porcelain transition-colors duration-300 ease-premium hover:border-porcelain/50"
+                >
+                  <X size={17} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>
