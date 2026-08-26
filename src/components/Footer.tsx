@@ -5,9 +5,10 @@ import { BrandLockup } from './ui/BrandLockup'
 type Props = {
   onOpenPrivacy: () => void
   onOpenTerms: () => void
+  onOpenConsent: () => void
 }
 
-export function Footer({ onOpenPrivacy, onOpenTerms }: Props) {
+export function Footer({ onOpenPrivacy, onOpenTerms, onOpenConsent }: Props) {
   return (
     <footer className="border-t border-graphite/[0.12] bg-mist py-14 md:py-16">
       <div className="shell grid gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
@@ -92,6 +93,13 @@ export function Footer({ onOpenPrivacy, onOpenTerms }: Props) {
           className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Пользовательское соглашение
+        </button>
+        <button
+          type="button"
+          onClick={onOpenConsent}
+          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+        >
+          Согласие на обработку данных
         </button>
       </div>
     </footer>

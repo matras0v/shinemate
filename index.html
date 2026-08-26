@@ -34,12 +34,15 @@
     <meta property="og:image" content="https://matras0v.github.io/shinemate/media/hero-1280.webp" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <!--
+      Шрифты — локальные копии Google Fonts (public/fonts/), а не запрос к
+      fonts.googleapis.com на каждой загрузке страницы. Обращение к Google
+      с браузера посетителя передаёт его IP на серверы Google — по 152-ФЗ
+      это лишняя точка передачи персональных данных за пределы сайта,
+      которую юристы прямо просят убрать. Файлы и веса те же (Inter Tight,
+      JetBrains Mono), просто раздаются с этого же домена.
+    -->
+    <link href="fonts.css" rel="stylesheet" />
     <script>
       // Кадр hero предзагружается только на главной: в каталоге он не нужен,
       // и браузер справедливо ругался на неиспользованный preload. Сравнение

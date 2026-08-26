@@ -12,7 +12,11 @@ import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
 const field =
   'w-full border-b border-graphite/20 bg-transparent pb-3 pt-2 text-[1.0625rem] text-graphite outline-none transition-colors duration-500 ease-premium placeholder:text-graphite/30 focus:border-graphite'
 
-export function Contact() {
+type Props = {
+  onOpenConsent: () => void
+}
+
+export function Contact({ onOpenConsent }: Props) {
   const [sent, setSent] = useState(false)
   const reduced = useReducedMotion()
   const { product, variant, intent, clearProduct } = useLead()
@@ -146,9 +150,11 @@ export function Contact() {
               />
             </div>
 
+            <ConsentCheckbox id="consent-retail" onOpenConsent={onOpenConsent} />
+
             <button
               type="submit"
-              className="mt-9 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
+              className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
             >
               Отправить заявку
             </button>
@@ -201,9 +207,11 @@ export function Contact() {
               />
             </div>
 
+            <ConsentCheckbox id="consent-wholesale" onOpenConsent={onOpenConsent} />
+
             <button
               type="submit"
-              className="mt-9 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
+              className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
             >
               Получить оптовый прайс
             </button>
@@ -268,6 +276,42 @@ function TabButton({
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * Не отмечена по умолчанию и обязательна — required на нативном checkbox
+ * блокирует submit браузером ещё до onSubmit, отдельной проверки в JS не
+ * нужно. Ссылка открывает тот же документ, что и в футере (LegalOverlay).
+ */
+function ConsentCheckbox({ id, onOpenConsent }: { id: string; onOpenConsent: () => void }) {
+  return (
+    <label htmlFor={id} className="mt-7 flex items-start gap-2.5 text-[0.8125rem] text-graphite/60">
+      <input
+        id={id}
+        name="consent"
+        type="checkbox"
+        required
+        className="mt-0.5 h-4 w-4 shrink-0 accent-graphite"
+      />
+      <span>
+        Согласен(на) на{' '}
+        <button
+          type="button"
+          onClick={(e) => {
+            // Кнопка вложена в <label> ради общей области клика на текст —
+            // без stopPropagation клик по ссылке ещё и переключил бы саму
+            // галочку через родительский label.
+            e.preventDefault()
+            e.stopPropagation()
+            onOpenConsent()
+          }}
+          className="underline decoration-graphite/30 underline-offset-2 transition-colors duration-300 ease-premium hover:text-graphite"
+        >
+          обработку персональных данных
+        </button>
+      </span>
+    </label>
   )
 }
 
