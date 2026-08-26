@@ -187,6 +187,11 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                   <ZoomIn size={15} />
                 </span>
               </button>
+              {selectedVariant?.note && (
+                <p className="mt-2.5 text-[0.75rem] leading-relaxed text-graphite/45">
+                  {selectedVariant.note}
+                </p>
+              )}
 
               <h2 className="mt-7 text-[clamp(1.75rem,5vw,2.5rem)] leading-[1.05] tracking-tight">
                 {product.model}
