@@ -1,14 +1,14 @@
 import { company, nav } from '../data/company'
 import { categories } from '../data/catalog'
+import { aboutCompany, paymentDelivery, publicOffer, returns } from '../data/info'
+import { dataProcessingConsent, privacyPolicy, termsOfUse, type LegalDocument } from '../data/legal'
 import { BrandLockup } from './ui/BrandLockup'
 
 type Props = {
-  onOpenPrivacy: () => void
-  onOpenTerms: () => void
-  onOpenConsent: () => void
+  onOpenDoc: (doc: LegalDocument) => void
 }
 
-export function Footer({ onOpenPrivacy, onOpenTerms, onOpenConsent }: Props) {
+export function Footer({ onOpenDoc }: Props) {
   return (
     <footer className="border-t border-graphite/[0.12] bg-mist py-14 md:py-16">
       <div className="shell grid gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
@@ -79,24 +79,59 @@ export function Footer({ onOpenPrivacy, onOpenTerms, onOpenConsent }: Props) {
         </div>
       </div>
 
+      {/*
+        Тот же набор ссылок, что в футере у autech.ru/zvizzer.org/leraton.ru
+        (О компании, Оплата и доставка, Возврат, Договор оферты) — плюс три
+        обязательных юридических документа. Все открываются тем же
+        LegalOverlay, что и раньше — просто общий колбэк вместо отдельного
+        пропа на каждый документ.
+      */}
       <div className="shell mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6">
         <button
           type="button"
-          onClick={onOpenPrivacy}
+          onClick={() => onOpenDoc(aboutCompany)}
+          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+        >
+          О компании
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenDoc(paymentDelivery)}
+          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+        >
+          Оплата и доставка
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenDoc(returns)}
+          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+        >
+          Возврат
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenDoc(publicOffer)}
+          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+        >
+          Договор оферты
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenDoc(privacyPolicy)}
           className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Политика конфиденциальности
         </button>
         <button
           type="button"
-          onClick={onOpenTerms}
+          onClick={() => onOpenDoc(termsOfUse)}
           className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Пользовательское соглашение
         </button>
         <button
           type="button"
-          onClick={onOpenConsent}
+          onClick={() => onOpenDoc(dataProcessingConsent)}
           className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Согласие на обработку данных

@@ -17,7 +17,7 @@ import { ReflectionReveal } from './components/scenes/ReflectionReveal'
 import { ScrollStage } from './components/scenes/ScrollStage'
 import { ScrollProgress } from './components/ui/ScrollProgress'
 import type { Product } from './data/catalog'
-import { dataProcessingConsent, privacyPolicy, termsOfUse, type LegalDocument } from './data/legal'
+import { dataProcessingConsent, privacyPolicy, type LegalDocument } from './data/legal'
 import { LeadProvider } from './lib/leadContext'
 import { useLinkInterceptor, useRoute } from './lib/router'
 
@@ -70,11 +70,7 @@ export default function App() {
         </main>
       )}
 
-      <Footer
-        onOpenPrivacy={() => setLegalDoc(privacyPolicy)}
-        onOpenTerms={() => setLegalDoc(termsOfUse)}
-        onOpenConsent={() => setLegalDoc(dataProcessingConsent)}
-      />
+      <Footer onOpenDoc={setLegalDoc} />
       <ProductDialog
         product={openProduct}
         onClose={() => setOpenProduct(null)}
