@@ -67,7 +67,21 @@ export function Contact({ onOpenConsent }: Props) {
 
   return (
     <section id="contacts" className="scene relative bg-porcelain py-28 md:py-40">
-      <motion.div {...revealProps(reduced, stagger(0, 0.08))} className="shell">
+      <motion.div {...riseProps(reduced, { y: 24, amount: 0.3 })} className="shell">
+        <div className="overflow-hidden rounded-3xl">
+          <img
+            src="media/stage-1920.webp"
+            srcSet="media/stage-800.webp 800w, media/stage-1280.webp 1280w, media/stage-1920.webp 1920w"
+            sizes="(min-width: 1024px) 1200px, 100vw"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-[220px] w-full object-cover sm:h-[280px] md:h-[340px]"
+          />
+        </div>
+      </motion.div>
+
+      <motion.div {...revealProps(reduced, stagger(0, 0.08))} className="shell mt-14">
         <motion.p variants={rise} className="eyebrow">
           Контакты
         </motion.p>
