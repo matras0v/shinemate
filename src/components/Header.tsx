@@ -141,7 +141,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
             }}
             className="whitespace-nowrap text-[0.9375rem] text-graphite/70 transition-colors duration-500 ease-premium hover:text-graphite"
           >
-            Оптовикам
+            Розница/Опт
           </a>
         </nav>
 
@@ -272,7 +272,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                 }}
                 className="border-b border-graphite/[0.06] py-4 text-lg text-graphite last:border-0"
               >
-                Оптовикам
+                Розница/Опт
               </a>
 
               <a
