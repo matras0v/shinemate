@@ -72,6 +72,11 @@ export function Hero() {
   useEffect(() => {
     if (reduced || paused) return
     const id = window.setInterval(() => {
+      // Вкладка, свёрнутая в фон, не выполняет rAF — таймер продолжает
+      // тикать, а CSS-переход нет. Без этой проверки за время в фоне могло
+      // накопиться несколько смен слайда разом, и по возвращении на вкладку
+      // фото и текст оказывались от разных слайдов (десинхрон).
+      if (document.hidden) return
       setIndex((i) => (i + 1) % SLIDES.length)
     }, AUTOPLAY_MS)
     return () => window.clearInterval(id)
@@ -119,7 +124,7 @@ export function Hero() {
           style={reduced ? undefined : { y: mediaY, scale: mediaScale }}
           className="absolute inset-0 origin-center lg:left-auto lg:w-[56%]"
         >
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} mode="wait">
             <motion.img
               key={slide.slug}
               src={`media/${slide.slug}-1920.webp`}
@@ -156,18 +161,18 @@ export function Hero() {
             type="button"
             onClick={() => go(-1)}
             aria-label="Предыдущий слайд"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/70 text-graphite/60 backdrop-blur-sm transition-colors duration-400 ease-premium hover:border-graphite/40 hover:text-graphite"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-graphite/20 bg-porcelain text-graphite shadow-[0_4px_16px_rgba(26,28,30,0.14)] backdrop-blur-sm transition-colors duration-400 ease-premium hover:border-graphite/40 hover:bg-ink hover:text-porcelain"
           >
             <ChevronLeft size={15} />
           </button>
-          <span className="font-mono text-[0.6875rem] tabular-nums tracking-[0.1em] text-graphite/50">
+          <span className="rounded-full bg-porcelain px-2.5 py-1 font-mono text-[0.6875rem] tabular-nums tracking-[0.1em] text-graphite shadow-[0_4px_16px_rgba(26,28,30,0.14)]">
             {String(index + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
           </span>
           <button
             type="button"
             onClick={() => go(1)}
             aria-label="Следующий слайд"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/70 text-graphite/60 backdrop-blur-sm transition-colors duration-400 ease-premium hover:border-graphite/40 hover:text-graphite"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-graphite/20 bg-porcelain text-graphite shadow-[0_4px_16px_rgba(26,28,30,0.14)] backdrop-blur-sm transition-colors duration-400 ease-premium hover:border-graphite/40 hover:bg-ink hover:text-porcelain"
           >
             <ChevronRight size={15} />
           </button>
