@@ -47,8 +47,16 @@ export function ProductObject() {
           <motion.p variants={rise} className="lead mt-6 max-w-[46ch] text-graphite/65">
             ShineMate выпускает полный цикл оборудования для подготовки и полировки
             кузова: роторные и эксцентриковые машины, шлифование, аккумуляторные
-            платформы, подложки, круги и составы. Линейка собрана так, чтобы машина,
+            платформы, подложки, круги и пасты. Линейка собрана так, чтобы машина,
             подложка и круг работали как один инструмент.
+          </motion.p>
+          {/* Компания продаёт не только в РФ — до бренда доходит контекст масштаба,
+              а не сразу спецификация одной модели. Цифры — с shinemate.com/globals
+              и news.html (раздел Application fields), не выдуманы. */}
+          <motion.p variants={rise} className="mt-4 max-w-[46ch] text-[0.9375rem] leading-relaxed text-graphite/60">
+            Завод в провинции Чжэцзян (Китай) — 15 000+ м² — производит оборудование,
+            которое продаётся в 80+ странах для 1000+ компаний: автополировка, мебель,
+            судостроение и промышленное производство.
           </motion.p>
         </motion.div>
 
@@ -64,7 +72,7 @@ export function ProductObject() {
             sizes="(min-width: 1024px) 48vw, 92vw"
             width={890}
             height={725}
-            alt="Роторная машина ShineMate с подложкой, поролоновым кругом и составами V-Range"
+            alt="Роторная машина ShineMate с подложкой, поролоновым кругом и полировальными пастами V-Range"
             loading="lazy"
             decoding="async"
             style={reduced ? undefined : { y, scale }}

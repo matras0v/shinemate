@@ -137,7 +137,7 @@ export const categories: {
   {
     id: 'chemistry',
     index: '07',
-    title: 'Составы V-Range',
+    title: 'Полировальные пасты V-Range',
     subtitle: 'Абразивная линейка под роторную и эксцентриковую обработку.',
     image: 'catalog-media/v40-thumb.webp',
   },
@@ -161,7 +161,7 @@ export const categoryTitle = (id: CategoryId) =>
 export const categoryGroups: { title: string; ids: CategoryId[] }[] = [
   { title: 'Оборудование', ids: ['rotary', 'da', 'sander', 'cordless'] },
   { title: 'Оснастка', ids: ['plates', 'pads'] },
-  { title: 'Химия', ids: ['chemistry'] },
+  { title: 'Полировальные пасты', ids: ['chemistry'] },
   { title: 'Рабочее место', ids: ['workshop'] },
 ]
 
@@ -1204,7 +1204,7 @@ export const products: Product[] = [
     category: 'workshop',
     kind: 'Мобильная тележка для инструмента',
     lead:
-      'Мобильный пост под весь инструмент и расходники: машины, круги, составы и оснастка собраны в одном месте и переезжают вместе с работой.',
+      'Мобильный пост под весь инструмент и расходники: машины, круги, пасты и оснастка собраны в одном месте и переезжают вместе с работой.',
     specs: [{ label: 'Артикул', value: 'TC026' }],
     variants: [{ sku: 'TC026', label: 'тележка в сборе', rrp: 48150 }],
     image: 'catalog-media/tool-cart.webp',

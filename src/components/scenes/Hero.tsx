@@ -11,7 +11,7 @@ import { StaggerText } from '../ui/StaggerText'
 
 /**
  * Слайды карусели — один и тот же товарный ряд ShineMate, показанный с
- * разных ракурсов (общий лайнап / DA-машинка / круги / химия V-Range).
+ * разных ракурсов (общий лайнап / DA-машинка / круги / пасты V-Range).
  * CTA у всех слайдов одинаковые: сайт продаёт весь каталог, а не что-то
  * одно, поэтому разводить кнопки по слайдам было бы нечестным акцентом.
  */
@@ -48,10 +48,10 @@ const SLIDES: Slide[] = [
   },
   {
     slug: 'hero-chemistry',
-    alt: 'Полироли и защитные составы ShineMate V-Range',
-    lines: ['Химия', 'V-Range', 'для результата'],
+    alt: 'Полировальные пасты ShineMate V-Range',
+    lines: ['Пасты', 'V-Range', 'для результата'],
     dim: [1],
-    lead: 'Полироли и защитные составы V-Range — предсказуемый результат на любом типе лакокрасочного покрытия.',
+    lead: 'Полировальные пасты V-Range — предсказуемый результат на любом типе лакокрасочного покрытия.',
   },
 ]
 
@@ -66,6 +66,22 @@ export function Hero() {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const slide = SLIDES[index]
+
+  /*
+   * Заголовок первого слайда "выезжает" из-под маски пословно (см.
+   * StaggerText) — это красиво один раз при заходе на сайт, но при
+   * автопрокрутке та же анимация повторялась на КАЖДОЙ смене слайда: пока
+   * старый текст гас (0.5с) и новый только начинал выезжать (ещё ~1.2с),
+   * заголовок почти секунду-полторы выглядел пустым/обрезанным — это и
+   * поймал Андрей на скрине. После первого захода смена слайдов — простой
+   * быстрый кроссфейд без пословной анимации.
+   */
+  const [introDone, setIntroDone] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setIntroDone(true), 1600)
+    return () => window.clearTimeout(t)
+  }, [])
+  const showIntroReveal = !introDone && index === 0 && !reduced
 
   useClearCoat(canvas, { pointer, intensity: 0.9, enabled: !reduced })
 
@@ -124,7 +140,7 @@ export function Hero() {
           style={reduced ? undefined : { y: mediaY, scale: mediaScale }}
           className="absolute inset-0 origin-center lg:left-auto lg:w-[56%]"
         >
-          <AnimatePresence initial={false} mode="wait">
+          <AnimatePresence initial={false}>
             <motion.img
               key={slide.slug}
               src={`media/${slide.slug}-1920.webp`}
@@ -135,7 +151,7 @@ export function Hero() {
               initial={reduced ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduced ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.9, ease: EASE }}
+              transition={{ duration: 0.5, ease: EASE }}
               className="absolute inset-0 h-full w-full object-cover object-center"
               style={{ backgroundImage: `url(media/${slide.slug}-poster.webp)`, backgroundSize: 'cover' }}
             />
@@ -204,41 +220,65 @@ export function Hero() {
           ShineMate · Представительство в России
         </motion.p>
 
-        <h1 className="h1 mt-5 max-w-[13ch] font-medium lg:mt-6">
-          <AnimatePresence mode="wait" initial={false}>
+        <h1 className="h1 mt-5 grid max-w-[13ch] font-medium lg:mt-6">
+          {/*
+            Раньше слайды при смене крестфейдили оба в потоке — старый и
+            новый текст просто накладывались друг на друга в разметке
+            (толкали высоту), а не визуально поверх друг друга. Grid с общей
+            ячейкой (все элементы на col/row-start:1) держит их в одном
+            месте: у кого выше opacity, тот и виден, высота блока не прыгает.
+          */}
+          <AnimatePresence initial={false}>
             <motion.span
               key={slide.slug}
-              className="block"
+              className="col-start-1 row-start-1 block"
               initial={reduced ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduced ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.5, ease: EASE }}
+              transition={{ duration: 0.4, ease: EASE }}
             >
-              <StaggerText text={slide.lines[0]} delay={index === 0 ? 0.3 : 0} />
-              <br />
-              <StaggerText
-                text={slide.lines[1]}
-                delay={index === 0 ? 0.4 : 0.06}
-                className={slide.dim.includes(1) ? 'text-graphite/45' : undefined}
-              />
-              <br />
-              <StaggerText
-                text={slide.lines[2]}
-                delay={index === 0 ? 0.5 : 0.12}
-                className={slide.dim.includes(2) ? 'text-graphite/45' : undefined}
-              />
+              {showIntroReveal ? (
+                <>
+                  <StaggerText text={slide.lines[0]} delay={0.3} />
+                  <br />
+                  <StaggerText
+                    text={slide.lines[1]}
+                    delay={0.4}
+                    className={slide.dim.includes(1) ? 'text-graphite/45' : undefined}
+                  />
+                  <br />
+                  <StaggerText
+                    text={slide.lines[2]}
+                    delay={0.5}
+                    className={slide.dim.includes(2) ? 'text-graphite/45' : undefined}
+                  />
+                </>
+              ) : (
+                <>
+                  {slide.lines[0]}
+                  <br />
+                  <span className={slide.dim.includes(1) ? 'text-graphite/45' : undefined}>
+                    {slide.lines[1]}
+                  </span>
+                  <br />
+                  <span className={slide.dim.includes(2) ? 'text-graphite/45' : undefined}>
+                    {slide.lines[2]}
+                  </span>
+                </>
+              )}
             </motion.span>
           </AnimatePresence>
         </h1>
 
-        <div className="lead mt-6 max-w-[42ch] text-graphite/65 lg:mt-8">
-          <AnimatePresence mode="wait" initial={false}>
+        <div className="lead mt-6 grid max-w-[42ch] text-graphite/65 lg:mt-8">
+          <AnimatePresence initial={false}>
             <motion.p
               key={slide.slug}
+              className="col-start-1 row-start-1"
               initial={reduced ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduced ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.5, ease: EASE, delay: index === 0 ? 0.85 : 0 }}
+              transition={{ duration: 0.4, ease: EASE, delay: showIntroReveal ? 0.85 : 0 }}
             >
               {slide.lead}
             </motion.p>
