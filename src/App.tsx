@@ -12,6 +12,7 @@ import { Contact } from './components/scenes/Contact'
 import { Engineering } from './components/scenes/Engineering'
 import { FeaturedModels } from './components/scenes/FeaturedModels'
 import { Hero } from './components/scenes/Hero'
+import { PolishingProcess } from './components/scenes/PolishingProcess'
 import { ProductObject } from './components/scenes/ProductObject'
 import { ReflectionReveal } from './components/scenes/ReflectionReveal'
 import { ScrollStage } from './components/scenes/ScrollStage'
@@ -64,14 +65,19 @@ export default function App() {
           <CatalogView category={route.category} onOpenProduct={setOpenProduct} />
         </main>
       ) : route.name === 'about' ? (
-        // Отдельная страница "О ShineMate" — тот же блок, что и на главной,
-        // но по своему URL: клик по пункту меню открывает новую страницу,
-        // а не скроллит к разделу на главной (см. router.ts).
+        // Страница бренда: кто такие + из чего состоит линейка. Разделы
+        // каталога здесь дают то, чего нет в коротком блоке на главной —
+        // обзор всего ассортимента, а не одной флагманской модели.
         <main className="pt-[4.5rem]">
           <ProductObject />
+          <CategoryNavigator />
         </main>
       ) : route.name === 'technologies' ? (
+        // "Технологии" — это не рассказ про завод (мы дилер, а не
+        // производитель), а практическая карта подбора связки
+        // «паста + круг» по стадиям обработки, плюс ключевые цифры линейки.
         <main className="pt-[4.5rem]">
+          <PolishingProcess />
           <Engineering />
         </main>
       ) : route.name === 'contacts' ? (
