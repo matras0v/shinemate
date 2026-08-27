@@ -12,8 +12,10 @@ import { Contact } from './components/scenes/Contact'
 import { Engineering } from './components/scenes/Engineering'
 import { FeaturedModels } from './components/scenes/FeaturedModels'
 import { Hero } from './components/scenes/Hero'
+import { BrandStory } from './components/scenes/BrandStory'
 import { PolishingProcess } from './components/scenes/PolishingProcess'
 import { ProductObject } from './components/scenes/ProductObject'
+import { TechFeatures } from './components/scenes/TechFeatures'
 import { ReflectionReveal } from './components/scenes/ReflectionReveal'
 import { ScrollStage } from './components/scenes/ScrollStage'
 import { ScrollProgress } from './components/ui/ScrollProgress'
@@ -65,20 +67,20 @@ export default function App() {
           <CatalogView category={route.category} onOpenProduct={setOpenProduct} />
         </main>
       ) : route.name === 'about' ? (
-        // Страница бренда: кто такие + из чего состоит линейка. Разделы
-        // каталога здесь дают то, чего нет в коротком блоке на главной —
-        // обзор всего ассортимента, а не одной флагманской модели.
+        // Ни один блок с главной здесь не повторяется: клиент отметил, что
+        // переход в пункт меню, где показывают уже пролистанное, лишён
+        // смысла. BrandStory — отдельный материал: из чего собрана система,
+        // совместимость внутри линейки и сферы применения.
         <main className="pt-[4.5rem]">
-          <ProductObject />
-          <CategoryNavigator />
+          <BrandStory />
         </main>
       ) : route.name === 'technologies' ? (
-        // "Технологии" — это не рассказ про завод (мы дилер, а не
-        // производитель), а практическая карта подбора связки
-        // «паста + круг» по стадиям обработки, плюс ключевые цифры линейки.
+        // Тоже полностью своё наполнение: карта подбора связки по стадиям
+        // обработки и технологии самого оборудования. Про завод здесь
+        // ничего нет — сайт дилерский, мы продаём, а не производим.
         <main className="pt-[4.5rem]">
           <PolishingProcess />
-          <Engineering />
+          <TechFeatures />
         </main>
       ) : route.name === 'contacts' ? (
         <main className="pt-[4.5rem]">
