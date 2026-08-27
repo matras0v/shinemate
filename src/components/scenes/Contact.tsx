@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, Mail, MapPin, X } from 'lucide-react'
 
@@ -16,26 +16,19 @@ type Props = {
   onOpenConsent: () => void
 }
 
+/**
+ * Только розница: карты, адреса, телефоны, почта и форма заявки. Оптовый
+ * сценарий — отдельная страница (/wholesale, компонент Wholesale.tsx), а
+ * не вкладка здесь — клиент отметил, что общий контент "Контактов" не
+ * должен зависеть от переключателя розница/опт, это должны быть две
+ * самостоятельные кнопки в шапке.
+ */
 export function Contact({ onOpenConsent }: Props) {
   const [sent, setSent] = useState(false)
   const reduced = useReducedMotion()
-  const { product, variant, intent, requestToken, clearProduct } = useLead()
-  const [tab, setTab] = useState<'retail' | 'wholesale'>(intent)
+  const { product, variant, clearProduct } = useLead()
 
-  // Форма подхватывает намерение из карточки товара или шапки; дальше
-  // пользователь волен переключаться между вкладками сам. Триггер —
-  // requestToken, а не intent: пользователь может локально переключить
-  // вкладку кнопкой на самой странице, не трогая intent в контексте, и
-  // тогда повторный клик по «Контакты»/«Розница/Опт» в шапке с тем же
-  // intent, что уже был, не менял бы значение — эффект по одному только
-  // intent не сработал бы, и вкладка осталась бы залипшей на старом
-  // выборе. requestToken увеличивается при КАЖДОМ явном запросе.
-  useEffect(() => {
-    setTab(intent)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestToken])
-
-  const onSubmitRetail = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
     const value = (key: string) => String(data.get(key) ?? '').trim()
@@ -50,24 +43,6 @@ export function Contact({ onOpenConsent }: Props) {
       // уходило первое по списку, независимо от того, что смотрел человек.
       productSku: variant?.sku,
       productPrice: variant ? formatPrice(variant.rrp) : undefined,
-    })
-    setSent(true)
-  }
-
-  const onSubmitWholesale = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const data = new FormData(e.currentTarget)
-    const value = (key: string) => String(data.get(key) ?? '').trim()
-    submitLead({
-      intent: 'wholesale',
-      name: value('name'),
-      company: value('company'),
-      phone: value('phone'),
-      email: value('email'),
-      city: value('city'),
-      inn: value('inn'),
-      businessType: value('businessType'),
-      message: value('message'),
     })
     setSent(true)
   }
@@ -93,181 +68,84 @@ export function Contact({ onOpenConsent }: Props) {
           Контакты
         </motion.p>
         <motion.h2 variants={rise} className="h1 mt-5 max-w-[18ch]">
-          {tab === 'wholesale' ? 'Оптовые условия и поставки' : 'Подберём ShineMate под вашу задачу'}
+          Подберём ShineMate под вашу задачу
         </motion.h2>
         <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-graphite/60">
-          {tab === 'wholesale'
-            ? 'Для детейлинг-студий, малярных производств, магазинов и сервисных компаний — оптовый прайс, подбор ассортимента и условия сотрудничества.'
-            : 'Расскажите, с какими покрытиями и объёмами работаете — предложим конфигурацию машины, подложек и кругов и пришлём актуальный прайс.'}
+          Расскажите, с какими покрытиями и объёмами работаете — предложим конфигурацию машины,
+          подложек и кругов и пришлём актуальный прайс.
         </motion.p>
-
-        <motion.div variants={rise} className="mt-8 inline-flex rounded-full border border-graphite/15 p-1">
-          <TabButton active={tab === 'retail'} onClick={() => setTab('retail')}>
-            Розница
-          </TabButton>
-          <TabButton active={tab === 'wholesale'} onClick={() => setTab('wholesale')}>
-            Оптовикам
-          </TabButton>
-        </motion.div>
       </motion.div>
 
-      {/*
-        Розница и опт вели на одну и ту же страницу с одинаковой раскладкой
-        "форма + карта" — разница была только в подписи, из-за чего обе
-        кнопки казались одним и тем же (Андрей отметил это отдельно). Опт —
-        это конкретный запрос прайса, ему карта не нужна, поэтому в этом
-        режиме форма занимает всю ширину и без блока с картами; розница
-        остаётся как есть — общая страница контактов с адресами на карте.
-      */}
-      <div
-        className={`shell mt-12 grid gap-14 ${tab === 'retail' ? 'lg:grid-cols-[1fr_0.85fr] lg:gap-24' : 'lg:grid-cols-1'}`}
-      >
-        {tab === 'retail' ? (
-          <motion.form
-            key="retail"
-            {...riseProps(reduced, { y: 28, amount: 0.15 })}
-            onSubmit={onSubmitRetail}
-            className="min-w-0"
-          >
-            {product && (
-              <div className="mb-8 flex items-center gap-4 rounded-2xl bg-mist p-4">
-                <img
-                  src={product.image}
-                  alt=""
-                  width={product.imageWidth}
-                  height={product.imageHeight}
-                  className="h-14 w-14 shrink-0 object-contain"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
-                    Вы интересовались
+      <div className="shell mt-12 grid gap-14 lg:grid-cols-[1fr_0.85fr] lg:gap-24">
+        <motion.form
+          {...riseProps(reduced, { y: 28, amount: 0.15 })}
+          onSubmit={onSubmit}
+          className="min-w-0"
+        >
+          {product && (
+            <div className="mb-8 flex items-center gap-4 rounded-2xl bg-mist p-4">
+              <img
+                src={product.image}
+                alt=""
+                width={product.imageWidth}
+                height={product.imageHeight}
+                className="h-14 w-14 shrink-0 object-contain"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  Вы интересовались
+                </p>
+                <p className="mt-0.5 truncate text-[0.9375rem] tracking-tight">{product.model}</p>
+                {product.variants.length > 1 && variant && (
+                  <p className="mt-0.5 truncate text-[0.8125rem] text-graphite/50">
+                    {variant.label}
                   </p>
-                  <p className="mt-0.5 truncate text-[0.9375rem] tracking-tight">{product.model}</p>
-                  {product.variants.length > 1 && variant && (
-                    <p className="mt-0.5 truncate text-[0.8125rem] text-graphite/50">
-                      {variant.label}
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={clearProduct}
-                  aria-label="Убрать товар из заявки"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-graphite/40 transition-colors duration-500 ease-premium hover:bg-graphite/10 hover:text-graphite"
-                >
-                  <X size={14} />
-                </button>
+                )}
               </div>
-            )}
-
-            <div className="grid gap-7 sm:grid-cols-2">
-              <Field id="name" label="Имя" required placeholder="Как к вам обращаться" />
-              <Field id="phone" label="Телефон" required type="tel" placeholder="+7 900 000-00-00" />
+              <button
+                type="button"
+                onClick={clearProduct}
+                aria-label="Убрать товар из заявки"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-graphite/40 transition-colors duration-500 ease-premium hover:bg-graphite/10 hover:text-graphite"
+              >
+                <X size={14} />
+              </button>
             </div>
-            <div className="mt-7">
-              <Field id="email" label="Email" type="email" placeholder="you@company.ru" />
-            </div>
+          )}
 
-            <div className="mt-7">
-              <label htmlFor="message" className="eyebrow block">
-                Сообщение
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows={3}
-                placeholder="С какими покрытиями и объёмами работаете"
-                className={`${field} mt-3 resize-none`}
-              />
-            </div>
+          <div className="grid gap-7 sm:grid-cols-2">
+            <Field id="name" label="Имя" required placeholder="Как к вам обращаться" />
+            <Field id="phone" label="Телефон" required type="tel" placeholder="+7 900 000-00-00" />
+          </div>
+          <div className="mt-7">
+            <Field id="email" label="Email" type="email" placeholder="you@company.ru" />
+          </div>
 
-            <ConsentCheckbox id="consent-retail" onOpenConsent={onOpenConsent} />
+          <div className="mt-7">
+            <label htmlFor="message" className="eyebrow block">
+              Сообщение
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              rows={3}
+              placeholder="С какими покрытиями и объёмами работаете"
+              className={`${field} mt-3 resize-none`}
+            />
+          </div>
 
-            <button
-              type="submit"
-              className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
-            >
-              Отправить заявку
-            </button>
+          <ConsentCheckbox id="consent-retail" onOpenConsent={onOpenConsent} />
 
-            <StatusLine sent={sent} />
-          </motion.form>
-        ) : (
-          <motion.form
-            key="wholesale"
-            {...riseProps(reduced, { y: 28, amount: 0.15 })}
-            onSubmit={onSubmitWholesale}
-            className="min-w-0 max-w-2xl"
+          <button
+            type="submit"
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
           >
-            <div className="grid gap-7 sm:grid-cols-2">
-              <Field id="name" label="Имя" required placeholder="Контактное лицо" />
-              <Field id="company" label="Компания" required placeholder="Название компании" />
-              <Field id="phone" label="Телефон" required type="tel" placeholder="+7 900 000-00-00" />
-              <Field id="email" label="Email" type="email" placeholder="you@company.ru" />
-            </div>
+            Отправить заявку
+          </button>
 
-            <div className="mt-7 grid gap-7 sm:grid-cols-2">
-              <Field id="city" label="Город / регион" placeholder="Ростов-на-Дону" />
-              <Field id="inn" label="ИНН" placeholder="Если уже есть под рукой" />
-            </div>
+          <StatusLine sent={sent} />
+        </motion.form>
 
-            <div className="mt-7">
-              <label htmlFor="businessType" className="eyebrow block">
-                Тип бизнеса
-              </label>
-              <select id="businessType" name="businessType" defaultValue="" className={`${field} mt-3`}>
-                <option value="">Выберите вариант</option>
-                <option value="Детейлинг-студия">Детейлинг-студия</option>
-                <option value="Малярное производство">Малярное производство</option>
-                <option value="Магазин">Магазин автохимии / инструмента</option>
-                <option value="Сервисная компания">Сервисная компания</option>
-                <option value="Другое">Другое</option>
-              </select>
-            </div>
-
-            <div className="mt-7">
-              <label htmlFor="message" className="eyebrow block">
-                Комментарий
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows={3}
-                placeholder="Что интересует, ориентировочный объём"
-                className={`${field} mt-3 resize-none`}
-              />
-            </div>
-
-            <ConsentCheckbox id="consent-wholesale" onOpenConsent={onOpenConsent} />
-
-            <button
-              type="submit"
-              className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
-            >
-              Получить оптовый прайс
-            </button>
-
-            <StatusLine sent={sent} />
-
-            <p className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6 text-[0.8125rem] text-graphite/55">
-              <span>Или напрямую:</span>
-              <a href={`mailto:${company.email}`} className="transition-colors duration-500 ease-premium hover:text-graphite">
-                {company.email}
-              </a>
-              {company.phones.map((phone) => (
-                <a
-                  key={phone.href}
-                  href={phone.href}
-                  className="transition-colors duration-500 ease-premium hover:text-graphite"
-                >
-                  {phone.display}
-                </a>
-              ))}
-            </p>
-          </motion.form>
-        )}
-
-        {tab === 'retail' && (
         <motion.div {...revealProps(reduced, stagger(0.15, 0.07))} className="space-y-10">
           {company.phones.map((phone) => (
             <motion.div key={phone.href} variants={rise}>
@@ -311,32 +189,8 @@ export function Contact({ onOpenConsent }: Props) {
             </p>
           </motion.div>
         </motion.div>
-        )}
       </div>
     </section>
-  )
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-full px-5 py-2 text-[0.8125rem] transition-colors duration-400 ease-premium ${
-        active ? 'bg-graphite text-porcelain' : 'text-graphite/60 hover:text-graphite'
-      }`}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -345,7 +199,7 @@ function TabButton({
  * блокирует submit браузером ещё до onSubmit, отдельной проверки в JS не
  * нужно. Ссылка открывает тот же документ, что и в футере (LegalOverlay).
  */
-function ConsentCheckbox({ id, onOpenConsent }: { id: string; onOpenConsent: () => void }) {
+export function ConsentCheckbox({ id, onOpenConsent }: { id: string; onOpenConsent: () => void }) {
   return (
     <label htmlFor={id} className="mt-7 flex items-start gap-2.5 text-[0.8125rem] text-graphite/60">
       <input
@@ -376,7 +230,7 @@ function ConsentCheckbox({ id, onOpenConsent }: { id: string; onOpenConsent: () 
   )
 }
 
-function StatusLine({ sent }: { sent: boolean }) {
+export function StatusLine({ sent }: { sent: boolean }) {
   return (
     <p aria-live="polite" className="mt-5 max-w-[46ch] text-[0.8125rem] leading-relaxed text-graphite/45">
       {sent
@@ -386,7 +240,7 @@ function StatusLine({ sent }: { sent: boolean }) {
   )
 }
 
-function Field({
+export function Field({
   id,
   label,
   placeholder,

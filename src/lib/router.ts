@@ -8,6 +8,7 @@ export type Route =
   | { name: 'about' }
   | { name: 'technologies' }
   | { name: 'contacts' }
+  | { name: 'wholesale' }
 
 const CATEGORY_IDS = categories.map((c) => c.id)
 
@@ -40,6 +41,7 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'about') return { name: 'about' }
   if (parts[0] === 'technologies') return { name: 'technologies' }
   if (parts[0] === 'contacts') return { name: 'contacts' }
+  if (parts[0] === 'wholesale') return { name: 'wholesale' }
   if (parts[0] !== 'catalog') return { name: 'home' }
   const slug = parts[1]
   const category = CATEGORY_IDS.find((id) => id === slug)
@@ -51,6 +53,7 @@ export function routePath(route: Route) {
   if (route.name === 'about') return '/about'
   if (route.name === 'technologies') return '/technologies'
   if (route.name === 'contacts') return '/contacts'
+  if (route.name === 'wholesale') return '/wholesale'
   return route.category === 'all' ? '/catalog' : `/catalog/${route.category}`
 }
 

@@ -18,6 +18,7 @@ import { ProductObject } from './components/scenes/ProductObject'
 import { TechFeatures } from './components/scenes/TechFeatures'
 import { ReflectionReveal } from './components/scenes/ReflectionReveal'
 import { ScrollStage } from './components/scenes/ScrollStage'
+import { Wholesale } from './components/scenes/Wholesale'
 import { ScrollProgress } from './components/ui/ScrollProgress'
 import type { Product } from './data/catalog'
 import { dataProcessingConsent, privacyPolicy, type LegalDocument } from './data/legal'
@@ -42,7 +43,9 @@ export default function App() {
             ? 'Технологии ShineMate'
             : route.name === 'contacts'
               ? 'Контакты ShineMate'
-              : 'ShineMate — профессиональное полировальное оборудование'
+              : route.name === 'wholesale'
+                ? 'Оптовикам — ShineMate'
+                : 'ShineMate — профессиональное полировальное оборудование'
   }, [route])
 
   // Cmd/Ctrl+K открывает поиск из любого места сайта.
@@ -85,6 +88,10 @@ export default function App() {
       ) : route.name === 'contacts' ? (
         <main className="pt-[4.5rem]">
           <Contact onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
+        </main>
+      ) : route.name === 'wholesale' ? (
+        <main className="pt-[4.5rem]">
+          <Wholesale onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
         </main>
       ) : (
         <main>

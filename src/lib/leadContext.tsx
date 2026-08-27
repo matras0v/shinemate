@@ -56,7 +56,10 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     setVariant(null)
     setIntent('wholesale')
     setRequestToken((t) => t + 1)
-    navigateTo('/contacts')
+    // Отдельная страница, а не вкладка внутри /contacts — клиент отметил,
+    // что общий контент "Контактов" (карты, адреса) не должен зависеть от
+    // переключателя розница/опт: это должны быть две самостоятельные кнопки.
+    navigateTo('/wholesale')
   }, [])
 
   const requestGeneral = useCallback(() => {
