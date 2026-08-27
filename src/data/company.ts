@@ -26,7 +26,7 @@ export const company = {
 } as const
 
 export const nav = [
-  { href: '#about', label: 'О ShineMate' },
-  { href: '#tech', label: 'Технологии' },
-  { href: '#contacts', label: 'Контакты' },
+  { href: 'about', label: 'О ShineMate' },
+  { href: 'technologies', label: 'Технологии' },
+  { href: 'contacts', label: 'Контакты' },
 ] as const

@@ -5,6 +5,9 @@ import { categories, type CategoryId } from '../data/catalog'
 export type Route =
   | { name: 'home' }
   | { name: 'catalog'; category: CategoryId | 'all' }
+  | { name: 'about' }
+  | { name: 'technologies' }
+  | { name: 'contacts' }
 
 const CATEGORY_IDS = categories.map((c) => c.id)
 
@@ -34,6 +37,9 @@ function stripBase(realPath: string): string {
 export function parseRoute(pathname: string): Route {
   const appPath = stripBase(pathname)
   const parts = appPath.replace(/^\/+|\/+$/g, '').split('/')
+  if (parts[0] === 'about') return { name: 'about' }
+  if (parts[0] === 'technologies') return { name: 'technologies' }
+  if (parts[0] === 'contacts') return { name: 'contacts' }
   if (parts[0] !== 'catalog') return { name: 'home' }
   const slug = parts[1]
   const category = CATEGORY_IDS.find((id) => id === slug)
@@ -42,6 +48,9 @@ export function parseRoute(pathname: string): Route {
 
 export function routePath(route: Route) {
   if (route.name === 'home') return '/'
+  if (route.name === 'about') return '/about'
+  if (route.name === 'technologies') return '/technologies'
+  if (route.name === 'contacts') return '/contacts'
   return route.category === 'all' ? '/catalog' : `/catalog/${route.category}`
 }
 

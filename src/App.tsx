@@ -33,7 +33,13 @@ export default function App() {
     document.title =
       route.name === 'catalog'
         ? 'Каталог ShineMate'
-        : 'ShineMate — профессиональное полировальное оборудование'
+        : route.name === 'about'
+          ? 'О ShineMate'
+          : route.name === 'technologies'
+            ? 'Технологии ShineMate'
+            : route.name === 'contacts'
+              ? 'Контакты ShineMate'
+              : 'ShineMate — профессиональное полировальное оборудование'
   }, [route])
 
   // Cmd/Ctrl+K открывает поиск из любого места сайта.
@@ -56,6 +62,21 @@ export default function App() {
       {route.name === 'catalog' ? (
         <main>
           <CatalogView category={route.category} onOpenProduct={setOpenProduct} />
+        </main>
+      ) : route.name === 'about' ? (
+        // Отдельная страница "О ShineMate" — тот же блок, что и на главной,
+        // но по своему URL: клик по пункту меню открывает новую страницу,
+        // а не скроллит к разделу на главной (см. router.ts).
+        <main className="pt-[4.5rem]">
+          <ProductObject />
+        </main>
+      ) : route.name === 'technologies' ? (
+        <main className="pt-[4.5rem]">
+          <Engineering />
+        </main>
+      ) : route.name === 'contacts' ? (
+        <main className="pt-[4.5rem]">
+          <Contact onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
         </main>
       ) : (
         <main>
