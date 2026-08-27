@@ -133,7 +133,7 @@ export function CatalogView({ category, onOpenProduct }: Props) {
               конфигурацию под ваши задачи и объёмы.
             </p>
             <a
-              href="#contacts"
+              href="contacts"
               className="mt-7 inline-flex items-center rounded-full bg-graphite px-7 py-3.5 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
             >
               Запросить прайс

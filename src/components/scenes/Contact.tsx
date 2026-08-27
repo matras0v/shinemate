@@ -234,6 +234,18 @@ export function Contact({ onOpenConsent }: Props) {
                 <MapPin size={15} className="shrink-0 text-titanium" />
                 {phone.address}
               </p>
+              {/* Публичный embed Google Maps по адресу — не требует API-ключа
+                  (параметр output=embed), поэтому карта видна сразу, без
+                  подключения биллинга. Адрес — тот же, что и текстом выше. */}
+              <div className="mt-4 overflow-hidden rounded-2xl border border-graphite/[0.12]">
+                <iframe
+                  title={`Карта: ${phone.region}, ${phone.address}`}
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(`${phone.region}, ${phone.address}`)}&output=embed`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-40 w-full grayscale-[0.2]"
+                />
+              </div>
             </motion.div>
           ))}
 

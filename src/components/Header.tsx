@@ -133,7 +133,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
           ))}
 
           <a
-            href="#contacts"
+            href="contacts"
             onClick={(e) => {
               e.preventDefault()
               setOpen(false)
@@ -155,7 +155,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
             <Search size={17} />
           </button>
           <a
-            href="#contacts"
+            href="contacts"
             onClick={(e) => {
               e.preventDefault()
               setOpen(false)
@@ -264,7 +264,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
               ))}
 
               <a
-                href="#contacts"
+                href="contacts"
                 onClick={(e) => {
                   e.preventDefault()
                   setOpen(false)
@@ -276,7 +276,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
               </a>
 
               <a
-                href="#contacts"
+                href="contacts"
                 onClick={(e) => {
                   e.preventDefault()
                   setOpen(false)

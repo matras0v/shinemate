@@ -31,21 +31,25 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     setProduct(p)
     setVariant(v ?? p.variants[0] ?? null)
     setIntent('retail')
-    navigateTo('/#contacts')
+    // Раньше вело на "/#contacts" — это домашняя страница со скроллом к её
+    // собственному разделу контактов, а не отдельная страница /contacts.
+    // С любого места сайта (например, со страницы каталога) это выглядело
+    // как переход на главную, а не как открытие формы.
+    navigateTo('/contacts')
   }, [])
 
   const requestWholesale = useCallback(() => {
     setProduct(null)
     setVariant(null)
     setIntent('wholesale')
-    navigateTo('/#contacts')
+    navigateTo('/contacts')
   }, [])
 
   const requestGeneral = useCallback(() => {
     setProduct(null)
     setVariant(null)
     setIntent('retail')
-    navigateTo('/#contacts')
+    navigateTo('/contacts')
   }, [])
 
   const clearProduct = useCallback(() => {
