@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import { Download, X } from 'lucide-react'
 
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { EASE } from '../lib/motion'
@@ -58,14 +58,27 @@ export function LegalOverlay({ document, onClose }: Props) {
           >
             <div className="flex items-center justify-between gap-4 border-b border-graphite/[0.1] px-6 py-4 sm:px-8">
               <h2 className="text-[1.125rem] tracking-tight">{document.title}</h2>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Закрыть"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-graphite/40 transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
-              >
-                <X size={15} />
-              </button>
+              <div className="flex shrink-0 items-center gap-1">
+                {document.pdfSlug && (
+                  <a
+                    href={`documents/${document.pdfSlug}.pdf`}
+                    download
+                    aria-label="Скачать PDF"
+                    title="Скачать PDF"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-graphite/40 transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
+                  >
+                    <Download size={15} />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Закрыть"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-graphite/40 transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
+                >
+                  <X size={15} />
+                </button>
+              </div>
             </div>
 
             <div className="overflow-y-auto overscroll-contain px-6 py-6 sm:px-8">

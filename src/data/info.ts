@@ -16,6 +16,7 @@ import { legalUpdated, type LegalDocument } from './legal'
 
 export const aboutCompany: LegalDocument = {
   title: 'О компании',
+  pdfSlug: 'about',
   sections: [
     {
       heading: 'ShineMate в России',
@@ -35,6 +36,7 @@ export const aboutCompany: LegalDocument = {
 
 export const paymentDelivery: LegalDocument = {
   title: 'Оплата и доставка',
+  pdfSlug: 'payment-delivery',
   sections: [
     {
       heading: 'Оплата',
@@ -53,6 +55,7 @@ export const paymentDelivery: LegalDocument = {
 
 export const returns: LegalDocument = {
   title: 'Возврат',
+  pdfSlug: 'returns',
   sections: [
     {
       heading: 'Общие условия',
@@ -72,6 +75,7 @@ export const returns: LegalDocument = {
 
 export const publicOffer: LegalDocument = {
   title: 'Договор оферты',
+  pdfSlug: 'public-offer',
   sections: [
     {
       heading: '1. Статус каталога',

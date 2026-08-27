@@ -18,10 +18,21 @@
 export const legalUpdated = '25 августа 2026'
 
 export type LegalSection = { heading: string; body: string[] }
-export type LegalDocument = { title: string; sections: LegalSection[] }
+export type LegalDocument = {
+  title: string
+  sections: LegalSection[]
+  /**
+   * Имя файла (без .pdf) в public/documents/ — те же 7 документов, что
+   * сгенерированы scripts/build-legal-pdfs.py из этих же данных. Клиент
+   * прислал moysklad.ru как образец: там политика/согласие открываются
+   * отдельным PDF, а не только текстом на странице.
+   */
+  pdfSlug?: string
+}
 
 export const privacyPolicy: LegalDocument = {
   title: 'Политика конфиденциальности',
+  pdfSlug: 'privacy-policy',
   sections: [
     {
       heading: '1. Общие положения',
@@ -80,6 +91,7 @@ export const privacyPolicy: LegalDocument = {
  */
 export const dataProcessingConsent: LegalDocument = {
   title: 'Согласие на обработку персональных данных',
+  pdfSlug: 'data-consent',
   sections: [
     {
       heading: '1. Общие положения',
@@ -116,6 +128,7 @@ export const dataProcessingConsent: LegalDocument = {
 
 export const termsOfUse: LegalDocument = {
   title: 'Пользовательское соглашение',
+  pdfSlug: 'terms-of-use',
   sections: [
     {
       heading: '1. Предмет соглашения',
