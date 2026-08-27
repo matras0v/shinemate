@@ -123,7 +123,17 @@ export function Header({ onHome, onOpenSearch }: Props) {
               href={item.href}
               onClick={(e) => {
                 e.preventDefault()
-                go(item.href)
+                setOpen(false)
+                // "Контакты" — не просто маршрут: если человек только что был
+                // в режиме "Розница/Опт" (intent остаётся в контексте), клик
+                // сюда должен вернуть розничный вид, а не просто попытаться
+                // сменить путь на тот же самый /contacts, где React ничего
+                // не перерисует, раз адрес не изменился.
+                if (item.href === 'contacts') {
+                  requestGeneral()
+                } else {
+                  go(item.href)
+                }
               }}
               className="group relative whitespace-nowrap text-[0.9375rem] text-graphite/70 transition-colors duration-500 ease-premium hover:text-graphite"
             >
@@ -255,7 +265,12 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   href={item.href}
                   onClick={(e) => {
                     e.preventDefault()
-                    go(item.href)
+                    setOpen(false)
+                    if (item.href === 'contacts') {
+                      requestGeneral()
+                    } else {
+                      go(item.href)
+                    }
                   }}
                   className="border-b border-graphite/[0.06] py-4 text-lg text-graphite"
                 >

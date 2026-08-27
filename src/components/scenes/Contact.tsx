@@ -19,14 +19,21 @@ type Props = {
 export function Contact({ onOpenConsent }: Props) {
   const [sent, setSent] = useState(false)
   const reduced = useReducedMotion()
-  const { product, variant, intent, clearProduct } = useLead()
+  const { product, variant, intent, requestToken, clearProduct } = useLead()
   const [tab, setTab] = useState<'retail' | 'wholesale'>(intent)
 
   // Форма подхватывает намерение из карточки товара или шапки; дальше
-  // пользователь волен переключаться между вкладками сам.
+  // пользователь волен переключаться между вкладками сам. Триггер —
+  // requestToken, а не intent: пользователь может локально переключить
+  // вкладку кнопкой на самой странице, не трогая intent в контексте, и
+  // тогда повторный клик по «Контакты»/«Розница/Опт» в шапке с тем же
+  // intent, что уже был, не менял бы значение — эффект по одному только
+  // intent не сработал бы, и вкладка осталась бы залипшей на старом
+  // выборе. requestToken увеличивается при КАЖДОМ явном запросе.
   useEffect(() => {
     setTab(intent)
-  }, [intent])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestToken])
 
   const onSubmitRetail = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
