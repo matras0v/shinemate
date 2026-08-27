@@ -17,6 +17,7 @@ type Feature = {
   title: string
   lead: string
   points: string[]
+  image: string
 }
 
 const FEATURES: Feature[] = [
@@ -30,6 +31,7 @@ const FEATURES: Feature[] = [
       'Ровное пятно контакта — меньше голограмм',
       'Градации от T10 до T120 на одной посадке',
     ],
+    image: 'catalog-media/foam-diamond-t80.webp',
   },
   {
     index: '02',
@@ -40,6 +42,7 @@ const FEATURES: Feature[] = [
       'Ход эксцентрика 9, 12, 15 и 21 мм под задачу',
       'Круг не «прыгает» на кромках и рёбрах',
     ],
+    image: 'catalog-media/ex620.webp',
   },
   {
     index: '03',
@@ -51,6 +54,7 @@ const FEATURES: Feature[] = [
       'Отдельная платформа 10,8 В под компактные машины',
       'Мощность выдаётся ровно, пока не сядет банка',
     ],
+    image: 'catalog-media/battery-18v.webp',
   },
 ]
 
@@ -80,9 +84,21 @@ export function TechFeatures() {
               {...revealProps(reduced, stagger(Math.min(i, 2) * 0.1, 0.06))}
               className="flex flex-col bg-mist p-7 sm:p-9"
             >
+              <motion.div
+                variants={rise}
+                className="flex h-32 items-center justify-center rounded-xl bg-porcelain"
+              >
+                <img
+                  src={f.image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="max-h-28 max-w-[85%] object-contain"
+                />
+              </motion.div>
               <motion.p
                 variants={rise}
-                className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium"
+                className="mt-6 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium"
               >
                 {f.index}
               </motion.p>

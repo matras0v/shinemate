@@ -90,7 +90,17 @@ export function Contact({ onOpenConsent }: Props) {
         </motion.div>
       </motion.div>
 
-      <div className="shell mt-12 grid gap-14 lg:grid-cols-[1fr_0.85fr] lg:gap-24">
+      {/*
+        Розница и опт вели на одну и ту же страницу с одинаковой раскладкой
+        "форма + карта" — разница была только в подписи, из-за чего обе
+        кнопки казались одним и тем же (Андрей отметил это отдельно). Опт —
+        это конкретный запрос прайса, ему карта не нужна, поэтому в этом
+        режиме форма занимает всю ширину и без блока с картами; розница
+        остаётся как есть — общая страница контактов с адресами на карте.
+      */}
+      <div
+        className={`shell mt-12 grid gap-14 ${tab === 'retail' ? 'lg:grid-cols-[1fr_0.85fr] lg:gap-24' : 'lg:grid-cols-1'}`}
+      >
         {tab === 'retail' ? (
           <motion.form
             key="retail"
@@ -166,7 +176,7 @@ export function Contact({ onOpenConsent }: Props) {
             key="wholesale"
             {...riseProps(reduced, { y: 28, amount: 0.15 })}
             onSubmit={onSubmitWholesale}
-            className="min-w-0"
+            className="min-w-0 max-w-2xl"
           >
             <div className="grid gap-7 sm:grid-cols-2">
               <Field id="name" label="Имя" required placeholder="Контактное лицо" />
@@ -217,9 +227,26 @@ export function Contact({ onOpenConsent }: Props) {
             </button>
 
             <StatusLine sent={sent} />
+
+            <p className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6 text-[0.8125rem] text-graphite/55">
+              <span>Или напрямую:</span>
+              <a href={`mailto:${company.email}`} className="transition-colors duration-500 ease-premium hover:text-graphite">
+                {company.email}
+              </a>
+              {company.phones.map((phone) => (
+                <a
+                  key={phone.href}
+                  href={phone.href}
+                  className="transition-colors duration-500 ease-premium hover:text-graphite"
+                >
+                  {phone.display}
+                </a>
+              ))}
+            </p>
           </motion.form>
         )}
 
+        {tab === 'retail' && (
         <motion.div {...revealProps(reduced, stagger(0.15, 0.07))} className="space-y-10">
           {company.phones.map((phone) => (
             <motion.div key={phone.href} variants={rise}>
@@ -263,6 +290,7 @@ export function Contact({ onOpenConsent }: Props) {
             </p>
           </motion.div>
         </motion.div>
+        )}
       </div>
     </section>
   )

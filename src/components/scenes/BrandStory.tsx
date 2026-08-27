@@ -31,21 +31,25 @@ const SYSTEM = [
     step: '01',
     title: 'Машина',
     body: 'Роторные для предсказуемого съёма, эксцентриковые с ходом 9–21 мм для коррекции без риска пережога, шлифовальные под подготовку.',
+    image: 'catalog-media/ex620.webp',
   },
   {
     step: '02',
     title: 'Подложка',
     body: 'От 1,2" до 6" с резьбой M14, M8 и 5/16"-24 — под каждую машину своя, чтобы не рвался баланс на оборотах.',
+    image: 'catalog-media/plate-flexedge.webp',
   },
   {
     step: '03',
     title: 'Круг',
     body: 'Шерсть, микрофибра и поролон в градациях от T10 до T160 — один и тот же посадочный размер, меняется только жёсткость.',
+    image: 'catalog-media/foam-diamond-t80.webp',
   },
   {
     step: '04',
     title: 'Паста',
     body: 'V80 и V82 на рез, V40 на полировку, V20 на финиш — линейка рассчитана под те же круги, что и машина.',
+    image: 'catalog-media/v40.webp',
   },
 ]
 
@@ -124,9 +128,21 @@ export function BrandStory() {
                 {...revealProps(reduced, stagger(Math.min(i, 3) * 0.08, 0.06))}
                 className="bg-mist p-7 sm:p-8"
               >
+                <motion.div
+                  variants={rise}
+                  className="flex h-28 items-center justify-center rounded-xl bg-porcelain"
+                >
+                  <img
+                    src={item.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="max-h-24 max-w-[85%] object-contain"
+                  />
+                </motion.div>
                 <motion.p
                   variants={rise}
-                  className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium"
+                  className="mt-6 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium"
                 >
                   {item.step}
                 </motion.p>
