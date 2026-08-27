@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -13,6 +14,26 @@ type Props = {
 
 export function ProductCard({ product, index, onOpen }: Props) {
   const reduced = useReducedMotion()
+  const cardRef = useRef<HTMLElement>(null)
+
+  /*
+   * Свечение и 3D-наклон фото под курсором задаются напрямую через
+   * CSS-переменные на DOM-узле (минуя useState) — иначе каждое движение
+   * мыши перерисовывало бы всю карточку. При отключённом движении
+   * обработчик не вешаем вовсе.
+   */
+  const handlePointerMove = (event: React.MouseEvent<HTMLElement>) => {
+    if (reduced) return
+    const rect = cardRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const px = (event.clientX - rect.left) / rect.width
+    const py = (event.clientY - rect.top) / rect.height
+    cardRef.current?.style.setProperty('--glow-x', `${px * 100}%`)
+    cardRef.current?.style.setProperty('--glow-y', `${py * 100}%`)
+    // Наклон мягкий (±6deg) и инвертирован по Y — курсор сверху "приподнимает" фото на себя.
+    cardRef.current?.style.setProperty('--tilt-x', `${(px - 0.5) * 12}deg`)
+    cardRef.current?.style.setProperty('--tilt-y', `${(0.5 - py) * 12}deg`)
+  }
   const multi = product.variants.length > 1
   // Артикул на карточке — это variants[0], так что фото должно быть от
   // того же исполнения, а не товара по умолчанию: иначе показывали бы
@@ -28,13 +49,26 @@ export function ProductCard({ product, index, onOpen }: Props) {
   return (
     <motion.article
       {...riseProps(reduced, { y: 28, delay: Math.min(index, 5) * 0.05, amount: 0.15 })}
-      className="group relative flex flex-col bg-porcelain transition-colors duration-500 ease-premium hover:bg-mist"
+      ref={cardRef}
+      onMouseMove={handlePointerMove}
+      className="group relative flex flex-col overflow-hidden bg-porcelain transition-colors duration-500 ease-premium hover:bg-mist"
     >
+      {!reduced && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-500 ease-premium group-hover:opacity-100"
+          style={{
+            background:
+              'radial-gradient(280px circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(26,28,30,0.07), transparent 70%)',
+          }}
+        />
+      )}
+
       <button
         type="button"
         onClick={() => onOpen(product)}
         aria-label={`Открыть карточку ${product.model}`}
-        className="flex flex-1 flex-col p-5 text-left outline-none focus-visible:ring-1 focus-visible:ring-graphite/40 sm:p-6"
+        className="relative z-10 flex flex-1 flex-col p-5 text-left outline-none focus-visible:ring-1 focus-visible:ring-graphite/40 sm:p-6"
       >
         {/* Клиент дважды отмечал, что подпись типа товара над фото плохо
             видна — titanium технически проходит контраст, но на мелком
@@ -44,7 +78,7 @@ export function ProductCard({ product, index, onOpen }: Props) {
           {product.kind}
         </p>
 
-        <div className="relative mt-5 flex h-32 items-center justify-center overflow-hidden sm:h-36">
+        <div className="relative mt-5 flex h-32 items-center justify-center overflow-hidden sm:h-36 [perspective:700px]">
           {/*
             Бейдж числа вариантов виден всегда, не только на hover — на
             touch-экране hover не срабатывает вовсе, и было неясно, что за
@@ -65,7 +99,7 @@ export function ProductCard({ product, index, onOpen }: Props) {
             alt={`ShineMate ${product.model}`}
             loading="lazy"
             decoding="async"
-            className="max-h-full w-auto max-w-full object-contain transition-transform duration-[800ms] ease-premium group-hover:scale-[1.05]"
+            className="max-h-full w-auto max-w-full object-contain transition-transform duration-500 ease-premium group-hover:[transform:perspective(700px)_rotateX(var(--tilt-y,0deg))_rotateY(var(--tilt-x,0deg))_scale(1.05)]"
           />
         </div>
 
