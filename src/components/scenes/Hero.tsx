@@ -289,7 +289,7 @@ export function Hero() {
           {...enter(1)}
           className="mt-7 flex flex-wrap items-center gap-3 lg:mt-10"
         >
-          <MagneticButton href="#equipment">Смотреть оборудование</MagneticButton>
+          <MagneticButton href="catalog">Смотреть оборудование</MagneticButton>
           <MagneticButton href="#contacts" variant="ghost">
             Запросить прайс
           </MagneticButton>
