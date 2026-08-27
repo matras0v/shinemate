@@ -140,6 +140,33 @@ export function Hero() {
               style={{ backgroundImage: `url(media/${slide.slug}-poster.webp)`, backgroundSize: 'cover' }}
             />
           </AnimatePresence>
+
+          {/* Навигация карусели: единая "таблетка" со стрелками и счётчиком.
+              Лежит внутри контейнера фото (не всей секции) — раньше она была
+              привязана к левому краю всей секции и на lg заезжала прямо на
+              текстовую колонку и CTA-кнопки под ней. Внутри контейнера фото
+              она всегда остаётся над снимком, где бы текст ни заканчивался. */}
+          <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1 rounded-full bg-porcelain p-1 shadow-[0_4px_16px_rgba(26,28,30,0.14)] lg:bottom-8 lg:left-8">
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              aria-label="Предыдущий слайд"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
+            >
+              <ChevronLeft size={15} />
+            </button>
+            <span className="px-1.5 font-mono text-[0.6875rem] tabular-nums tracking-[0.1em] text-graphite">
+              {String(index + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
+            </span>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              aria-label="Следующий слайд"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
         </motion.div>
 
         {/* Слой живого света поверх кадра. */}
@@ -154,31 +181,6 @@ export function Hero() {
         {/* Растворение кадра в фоне страницы: вниз на мобильном, влево на десктопе. */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-porcelain via-porcelain/70 to-transparent lg:hidden" />
         <div className="pointer-events-none absolute inset-0 hidden lg:block lg:bg-[linear-gradient(96deg,#F7F6F2_0%,#F7F6F2_38%,rgba(247,246,242,0.72)_47%,rgba(247,246,242,0.22)_55%,rgba(247,246,242,0)_64%)]" />
-
-        {/* Навигация карусели: единая "таблетка" со стрелками и счётчиком —
-            раньше это были три отдельных элемента с собственными тенями,
-            и на стыке тени накладывались друг на друга, давая шов. */}
-        <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1 rounded-full bg-porcelain p-1 shadow-[0_4px_16px_rgba(26,28,30,0.14)] lg:bottom-8 lg:left-8">
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            aria-label="Предыдущий слайд"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <span className="px-1.5 font-mono text-[0.6875rem] tabular-nums tracking-[0.1em] text-graphite">
-            {String(index + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
-          </span>
-          <button
-            type="button"
-            onClick={() => go(1)}
-            aria-label="Следующий слайд"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
       </div>
 
       <motion.div
