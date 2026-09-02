@@ -133,9 +133,17 @@ const padGrade = (p: Product) => {
   return m ? Number(m[1]) : null
 }
 
-const isRotaryLike = (p: Product) => /роторн/i.test(p.kind)
-const isOrbitalLike = (p: Product) => /эксцентриков/i.test(p.kind)
+/*
+ * Порядок проверок важен: у ES516/ES700 kind — «Эксцентриковая
+ * шлифовальная машинка», и если сначала спросить про эксцентрик, шлифовалка
+ * будет описана как полировальная DA и получит подложку не своей серии.
+ * Поэтому «шлифовальная» проверяется первой, а гибкий вал (MPK-3) вынесен
+ * отдельно — он не роторная машинка и не аккумуляторная.
+ */
 const isSanderLike = (p: Product) => /шлифов/i.test(p.kind)
+const isShaftLike = (p: Product) => /гибкий вал/i.test(p.kind)
+const isRotaryLike = (p: Product) => !isSanderLike(p) && /роторн/i.test(p.kind)
+const isOrbitalLike = (p: Product) => !isSanderLike(p) && /эксцентриков/i.test(p.kind)
 
 /* ─────────────────────────── История: машинки ─────────────────────────── */
 
@@ -172,6 +180,14 @@ function machinePurpose(p: Product): ProductStory['purpose'] {
       title: 'Подготовка поверхности до полировки',
       body:
         'Шлифовальная машинка снимает то, что полировкой не убрать: перелив краски, апельсиновую корку, грубые дефекты после покраски. После неё поверхность уходит на коррекцию — след от диска выводится пастой и кругом соответствующей градации.',
+      points,
+    }
+  }
+  if (isShaftLike(p)) {
+    return {
+      title: 'Доступ туда, куда не заходит круг',
+      body:
+        'Гибкий вал выносит рабочую насадку вперёд и позволяет работать в местах, где полноразмерная машинка просто не встанет: кромки, стойки, рельеф, зоны у ручек. Основную площадь по-прежнему закрывает обычная машинка — это дополнение к ней, а не замена.',
       points,
     }
   }
@@ -307,7 +323,15 @@ function machineCompat(p: Product): CompatGroup[] {
     })
   }
 
-  if (!isSanderLike(p)) {
+  if (isShaftLike(p)) {
+    // Гибкому валу штатно нужны насадки для точечной работы, а не
+    // полноразмерные круги.
+    groups.push({
+      title: 'Насадки',
+      note: 'Под точечную работу с гибким валом',
+      items: bySlugs(['spot-pads', 'adaptors-shafts']),
+    })
+  } else if (!isSanderLike(p)) {
     groups.push({
       title: 'Круги по стадиям',
       note: 'От тяжёлой коррекции к финишу — по таблице применения',
@@ -451,6 +475,18 @@ function padScale(p: Product): CutScale | undefined {
 }
 
 function padCompat(p: Product): CompatGroup[] {
+  // Конусы и шарики ставятся на гибкий вал, а не на полноразмерную
+  // машинку — им и подложка не нужна.
+  if (/гибкий вал|конус/i.test(p.kind)) {
+    return [
+      {
+        title: 'С чем работает',
+        note: 'Хвостовик 3 мм под гибкий вал',
+        items: bySlugs(['mpk-3', 'adaptors-shafts', 'ep804']),
+      },
+    ].filter((g) => g.items.length > 0)
+  }
+
   const stage = padStageIndex(p)
   const st = stage !== null ? POLISH_STAGES[stage] : null
 
@@ -600,7 +636,7 @@ function simplePurpose(p: Product): ProductStory['purpose'] {
  * если у позиции нет ни одной из перечисленных характеристик, сцен не
  * будет вовсе и страница останется честно компактной.
  */
-const SPEC_SCENES: { match: RegExp; title: string; body: string }[] = [
+const SPEC_SCENES: { match: RegExp; valueMatch?: RegExp; title: string; body: string }[] = [
   {
     match: /резьба/i,
     title: 'Резьба должна совпадать с машинкой',
@@ -633,6 +669,9 @@ const SPEC_SCENES: { match: RegExp; title: string; body: string }[] = [
   },
   {
     match: /крепление/i,
+    // Иначе правило цепляло «Крепление: липучка» у подложек и выдавало
+    // на их странице текст про настенный держатель.
+    valueMatch: /стен|панел|кронштейн/i,
     title: 'У инструмента своё место',
     body:
       'Машинка на держателе не лежит на крыле и не падает с тележки: меньше риска и для покрытия, и для самого инструмента.',
@@ -643,7 +682,9 @@ function specScenes(p: Product, max = 3): StoryScene[] {
   const used = new Set<string>()
   const out: StoryScene[] = []
   for (const spec of p.specs) {
-    const rule = SPEC_SCENES.find((r) => r.match.test(spec.label))
+    const rule = SPEC_SCENES.find(
+      (r) => r.match.test(spec.label) && (!r.valueMatch || r.valueMatch.test(spec.value)),
+    )
     if (!rule || used.has(rule.title)) continue
     used.add(rule.title)
     out.push({
