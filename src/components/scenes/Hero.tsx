@@ -211,7 +211,21 @@ export function Hero() {
          * занимает 56%) закрывает это на уровне контейнера, а не отдельных
          * элементов — и уже не зависит от языка, длины слов или брейкпоинта.
          */
-        className="shell absolute inset-x-0 bottom-0 top-[46dvh] z-20 flex flex-col justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:inset-x-auto lg:left-0 lg:top-0 lg:w-[44%] lg:justify-end lg:pb-14"
+        /*
+         * pt-10 до lg: текстовая колонка начинается ровно на границе кадра
+         * (top-[46dvh]), а в левом нижнем углу кадра лежит навигация
+         * карусели — без отступа бейдж дистрибьютора наезжал прямо на
+         * стрелки и счётчик. На lg колонка уходит влево от кадра, и отступ
+         * уже не нужен.
+         */
+        /*
+         * До lg колонка выравнивается по верху, а не по центру. При
+         * justify-center содержимое (бейдж + заголовок + лид + кнопки)
+         * выше отведённых 54dvh и вылезало ВВЕРХ, на кадр — бейдж
+         * дистрибьютора наезжал на навигацию карусели в углу снимка.
+         * justify-start + отступ сверху удерживают его под кадром.
+         */
+        className="shell absolute inset-x-0 bottom-0 top-[46dvh] z-20 flex flex-col justify-start pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-7 lg:inset-x-auto lg:left-0 lg:top-0 lg:w-[44%] lg:justify-end lg:pb-14 lg:pt-0"
       >
         {/*
           Второй заход клиента: цветного текста мало — это всё ещё читалось
@@ -318,7 +332,11 @@ export function Hero() {
         */}
         <motion.div
           {...enter(1.15)}
-          className="mt-8 grid grid-cols-3 gap-3 border-t border-graphite/10 pt-6 lg:mt-10"
+          // На узких экранах строка скрыта: в 54dvh под кадром она не
+          // помещается вместе с заголовком и кнопками, а те же три
+          // раздела на мобильном доступны из меню «Каталог» и из блока
+          // «Оборудование» ниже по странице.
+          className="mt-8 hidden grid-cols-3 gap-3 border-t border-graphite/10 pt-6 sm:grid lg:mt-10"
         >
           {[
             { href: 'catalog', src: 'catalog-media/ex620-thumb.webp', label: 'Машинки' },
