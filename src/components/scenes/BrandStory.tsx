@@ -16,7 +16,13 @@ import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
  *
  * Факты — с официальных материалов ShineMate (shinemate.com, раздел
  * About Us / Technologies) и из собственного прайса (catalog.ts).
- * Про завод и объёмы производства здесь ничего нет — сайт дилерский.
+ *
+ * Блок "О бренде" описывает именно ShineMate как производителя (полный
+ * цикл, R&D, сертификация) — это факт о бренде, а не о нашей компании.
+ * Мы остаёмся дистрибьютором (см. company.role) — страна/город/площадь
+ * завода намеренно не упоминаются, это не то, чем стоит козырять на
+ * дилерском сайте, но сам факт "не noname-сборка, а серьёзный
+ * производитель" — уместен и честен.
  */
 
 const SURFACES = [
@@ -107,6 +113,55 @@ export function BrandStory() {
               </dd>
             </motion.div>
           </motion.dl>
+
+          {/*
+            Клиент отметил: страница ничего не говорит о самом бренде
+            ShineMate — что это за компания, откуда уверенность в качестве.
+            Факты ниже — с официального About Us на shinemate.com (собственное
+            производство полного цикла, лаборатория R&D, сертификация,
+            присутствие в 80+ странах). Сознательно без страны/города и
+            площади завода — сайт дилерский, площадь производства не наша
+            история для рассказа, важен факт полного цикла и контроля
+            качества, а не то, где физически стоит завод.
+          */}
+          <motion.div
+            {...revealProps(reduced, stagger(0, 0.08))}
+            className="mt-14 max-w-[52ch] border-t border-graphite/[0.12] pt-10"
+          >
+            <motion.p variants={rise} className="eyebrow">
+              О бренде
+            </motion.p>
+            <motion.p variants={rise} className="lead mt-5 text-graphite/65">
+              ShineMate — не сборка компонентов от разных поставщиков, а
+              собственное производство полного цикла: от проектирования и
+              литья деталей до сборки машин, кругов и полировальных паст.
+              Каждая новая модель проходит проверку в собственной лаборатории
+              разработки и тестирования, прежде чем попасть в продажу.
+            </motion.p>
+            <motion.dl
+              variants={rise}
+              className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3"
+            >
+              <div>
+                <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  Продажи
+                </dt>
+                <dd className="mt-1.5 text-[1.0625rem] tracking-tight">80+ стран</dd>
+              </div>
+              <div>
+                <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  Сертификация
+                </dt>
+                <dd className="mt-1.5 text-[1.0625rem] tracking-tight">ISO 9001, CE, CCC</dd>
+              </div>
+              <div>
+                <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  Разработка
+                </dt>
+                <dd className="mt-1.5 text-[1.0625rem] tracking-tight">Своя лаборатория R&D</dd>
+              </div>
+            </motion.dl>
+          </motion.div>
         </div>
       </section>
 

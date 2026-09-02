@@ -3,8 +3,12 @@ import { company } from '../data/company'
 export type RetailLead = {
   intent: 'retail'
   name: string
-  phone: string
   email: string
+  city: string
+  phone: string
+  /** Необязательно: не у всех частных клиентов есть компания/сайт. */
+  companyName?: string
+  website?: string
   message: string
   /** Заполняется автоматически, когда заявка пришла из карточки товара. */
   productModel?: string
@@ -74,8 +78,11 @@ export function submitLead(lead: Lead): { transport: 'mailto' } {
     lead.productPrice ? `РРЦ: ${lead.productPrice}` : null,
     lead.productModel ? '' : null,
     `Имя: ${lead.name}`,
+    `Email: ${lead.email}`,
+    `Город: ${lead.city}`,
+    `Компания: ${lead.companyName || '—'}`,
     `Телефон: ${lead.phone}`,
-    `Email: ${lead.email || '—'}`,
+    `Сайт: ${lead.website || '—'}`,
     '',
     'Сообщение:',
     lead.message || '—',

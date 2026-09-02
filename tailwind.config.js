@@ -15,6 +15,11 @@ export default {
         titanium: '#5E6C72',
         graphite: '#1A1C1E',
         ink: '#0B0C0D',
+        // Фирменный оранжевый ShineMate — снят с их официального сайта
+        // (background-color кнопок/акцентов на shinemate.com), не подобран
+        // на глаз. Используется точечно (пара акцентов), а не как замена
+        // основной монохромной палитры.
+        ember: '#FE8B0C',
       },
       fontFamily: {
         sans: ['"Inter Tight"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],

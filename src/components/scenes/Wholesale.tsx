@@ -67,7 +67,7 @@ export function Wholesale({ onOpenConsent }: Props) {
           <div className="grid gap-7 sm:grid-cols-2">
             <Field id="name" label="Имя" required placeholder="Контактное лицо" />
             <Field id="company" label="Компания" required placeholder="Название компании" />
-            <Field id="phone" label="Телефон" required type="tel" placeholder="+7 900 000-00-00" />
+            <Field id="phone" label="Телефон" required type="tel" placeholder="+7 900 123-45-67" />
             <Field id="email" label="Email" type="email" placeholder="you@company.ru" />
           </div>
 
@@ -80,11 +80,19 @@ export function Wholesale({ onOpenConsent }: Props) {
             <label htmlFor="businessType" className="eyebrow block">
               Тип бизнеса
             </label>
+            {/*
+              Порядок — по замечанию клиента на видео: сначала точки продаж
+              (магазин), затем сервисные и производственные направления,
+              "Другое" — всегда последним. Раньше список шёл вперемешку.
+              Добавлен "Автомобильный дилер" — клиент назвал его отдельным
+              типом бизнеса, которого в списке не было.
+            */}
             <select id="businessType" name="businessType" defaultValue="" className={`${field} mt-3`}>
               <option value="">Выберите вариант</option>
+              <option value="Магазин автохимии / инструмента">Магазин автохимии / инструмента</option>
               <option value="Детейлинг-студия">Детейлинг-студия</option>
-              <option value="Малярное производство">Малярное производство</option>
-              <option value="Магазин">Магазин автохимии / инструмента</option>
+              <option value="Малярное производство / кузовной цех">Малярное производство / кузовной цех</option>
+              <option value="Автомобильный дилер">Автомобильный дилер</option>
               <option value="Сервисная компания">Сервисная компания</option>
               <option value="Другое">Другое</option>
             </select>

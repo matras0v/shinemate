@@ -215,12 +215,19 @@ export function Hero() {
       >
         <motion.p
           {...enter(0.15)}
-          className="eyebrow whitespace-nowrap tracking-[0.14em] sm:tracking-[0.24em]"
+          // Клиент отметил на видео: этот бейдж терялся, особенно на
+          // телефоне — крупнее, жирнее, с фирменным акцентом ShineMate,
+          // а не приглушённым titanium, как обычные эйбрау секций. Текст
+          // стал длиннее ("Официальный дистрибьютор" вместо
+          // "Представительство") — whitespace-nowrap на узких экранах
+          // выталкивал его за пределы контейнера и он просто не был виден;
+          // на телефоне даём перенос на 2 строки, от sm возвращаем nowrap.
+          className="max-w-[26ch] font-mono text-[0.8125rem] font-semibold uppercase leading-snug tracking-[0.08em] text-ember sm:max-w-none sm:whitespace-nowrap sm:text-[0.875rem] sm:tracking-[0.16em]"
         >
-          ShineMate · Представительство в России
+          ShineMate · Официальный дистрибьютор в России
         </motion.p>
 
-        <h1 className="h1 mt-5 grid max-w-[13ch] font-medium lg:mt-6">
+        <h1 className="h1 mt-5 grid max-w-[13ch] font-semibold lg:mt-6">
           {/*
             Раньше слайды при смене крестфейдили оба в потоке — старый и
             новый текст просто накладывались друг на друга в разметке
@@ -293,6 +300,32 @@ export function Hero() {
           <MagneticButton href="#contacts" variant="ghost">
             Запросить прайс
           </MagneticButton>
+        </motion.div>
+
+        {/*
+          Клиент отметил: на первом кадре видны только машины, а систему
+          "машина + круг + паста" видно, только если дождаться автопрокрутки
+          карусели до 2-го/4-го слайда. Строка ниже даёт это с одного
+          взгляда, не трогая саму фотографию (официальный пресс-снимок
+          ShineMate — компоновка внутри него не наша, редактировать её
+          рискованно и уже приводило к жалобам на "самодельный" вид фото).
+        */}
+        <motion.div
+          {...enter(1.15)}
+          className="mt-8 flex items-center gap-5 border-t border-graphite/10 pt-6 lg:mt-10"
+        >
+          {[
+            { src: 'catalog-media/ex620-thumb.webp', label: 'Машины' },
+            { src: 'catalog-media/foam-diamond-t80-thumb.webp', label: 'Круги' },
+            { src: 'catalog-media/v40-thumb.webp', label: 'Пасты' },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mist">
+                <img src={item.src} alt="" className="h-6 w-6 object-contain" />
+              </div>
+              <span className="text-[0.75rem] text-graphite/55">{item.label}</span>
+            </div>
+          ))}
         </motion.div>
       </motion.div>
 

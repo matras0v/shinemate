@@ -35,8 +35,11 @@ export function Contact({ onOpenConsent }: Props) {
     submitLead({
       intent: 'retail',
       name: value('name'),
-      phone: value('phone'),
       email: value('email'),
+      city: value('city'),
+      companyName: value('companyName'),
+      phone: value('phone'),
+      website: value('website'),
       message: value('message'),
       productModel: product?.model,
       // Именно то исполнение, что выбрали в drawer — раньше сюда всегда
@@ -113,12 +116,26 @@ export function Contact({ onOpenConsent }: Props) {
             </div>
           )}
 
+          {/*
+            Порядок и состав полей — по замечанию клиента на видео: имя,
+            почта, город (обязательно), затем компания/телефон/сайт как
+            уточняющие. Город обязателен — раньше его не было вовсе, хотя
+            конфигурация машины и логистика зависят от региона клиента.
+          */}
           <div className="grid gap-7 sm:grid-cols-2">
             <Field id="name" label="Имя" required placeholder="Как к вам обращаться" />
-            <Field id="phone" label="Телефон" required type="tel" placeholder="+7 900 000-00-00" />
+            <Field id="email" label="Email" required type="email" placeholder="you@company.ru" />
           </div>
           <div className="mt-7">
-            <Field id="email" label="Email" type="email" placeholder="you@company.ru" />
+            <Field id="city" label="Город" required placeholder="Например, Ростов-на-Дону" />
+          </div>
+
+          <div className="mt-7 grid gap-7 sm:grid-cols-2">
+            <Field id="companyName" label="Компания" placeholder="Если обращаетесь от компании" />
+            <Field id="phone" label="Телефон" required type="tel" placeholder="+7 900 123-45-67" />
+          </div>
+          <div className="mt-7">
+            <Field id="website" label="Сайт" placeholder="Если есть" />
           </div>
 
           <div className="mt-7">
@@ -156,8 +173,10 @@ export function Contact({ onOpenConsent }: Props) {
               >
                 {phone.display}
               </a>
-              <p className="mt-1.5 flex items-center gap-2 text-[0.9375rem] text-graphite/60">
-                <MapPin size={15} className="shrink-0 text-titanium" />
+              {/* Клиент отметил: адрес/город терялись рядом с крупным номером
+                  телефона — крупнее и темнее, а не приглушённый titanium-тон. */}
+              <p className="mt-2 flex items-center gap-2 text-[1.0625rem] font-medium text-graphite/85">
+                <MapPin size={17} className="shrink-0 text-ember" />
                 {phone.address}
               </p>
               {/* Публичный embed Google Maps по адресу — не требует API-ключа
@@ -265,7 +284,21 @@ export function Field({
         type={type}
         required={required}
         placeholder={placeholder}
-        autoComplete={id === 'name' ? 'name' : id === 'phone' ? 'tel' : id === 'email' ? 'email' : 'organization'}
+        autoComplete={
+          id === 'name'
+            ? 'name'
+            : id === 'phone'
+              ? 'tel'
+              : id === 'email'
+                ? 'email'
+                : id === 'city'
+                  ? 'address-level2'
+                  : id === 'website'
+                    ? 'url'
+                    : id === 'companyName' || id === 'company'
+                      ? 'organization'
+                      : 'off'
+        }
         className={`${field} mt-3`}
       />
     </div>

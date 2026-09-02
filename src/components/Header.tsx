@@ -135,7 +135,11 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   go(item.href)
                 }
               }}
-              className="group relative whitespace-nowrap text-[0.9375rem] text-graphite/70 transition-colors duration-500 ease-premium hover:text-graphite"
+              className={`group relative whitespace-nowrap text-[0.9375rem] transition-colors duration-500 ease-premium ${
+                item.href === 'contacts'
+                  ? 'font-semibold text-ember hover:text-ember/70'
+                  : 'text-graphite/70 hover:text-graphite'
+              }`}
             >
               {item.label}
               <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-graphite transition-all duration-500 ease-premium group-hover:w-full" />
@@ -143,13 +147,17 @@ export function Header({ onHome, onOpenSearch }: Props) {
           ))}
 
           <a
-            href="contacts"
+            href="wholesale"
             onClick={(e) => {
               e.preventDefault()
               setOpen(false)
               requestWholesale()
             }}
-            className="whitespace-nowrap text-[0.9375rem] text-graphite/70 transition-colors duration-500 ease-premium hover:text-graphite"
+            // Клиент отметил на видео: "Контакты"/"Розница/Опт" в шапке
+            // терялись среди остальных пунктов — жирнее и с фирменным
+            // акцентом, чтобы было видно, что это отдельные CTA, а не
+            // рядовые ссылки навигации.
+            className="whitespace-nowrap text-[0.9375rem] font-semibold text-ember transition-colors duration-500 ease-premium hover:text-ember/70"
           >
             Розница/Опт
           </a>
@@ -272,20 +280,22 @@ export function Header({ onHome, onOpenSearch }: Props) {
                       go(item.href)
                     }
                   }}
-                  className="border-b border-graphite/[0.06] py-4 text-lg text-graphite"
+                  className={`border-b border-graphite/[0.06] py-4 text-lg ${
+                    item.href === 'contacts' ? 'font-semibold text-ember' : 'text-graphite'
+                  }`}
                 >
                   {item.label}
                 </a>
               ))}
 
               <a
-                href="contacts"
+                href="wholesale"
                 onClick={(e) => {
                   e.preventDefault()
                   setOpen(false)
                   requestWholesale()
                 }}
-                className="border-b border-graphite/[0.06] py-4 text-lg text-graphite last:border-0"
+                className="border-b border-graphite/[0.06] py-4 text-lg font-semibold text-ember last:border-0"
               >
                 Розница/Опт
               </a>

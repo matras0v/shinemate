@@ -16,6 +16,13 @@ import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 import { useLead } from '../../lib/leadContext'
 import { EASE } from '../../lib/motion'
 
+/** См. комментарий в месте использования — только подтверждённые факты. */
+const CORDLESS_HIGHLIGHTS = [
+  'Один аккумулятор — на всю линейку 18 В или всю линейку 10,8 В',
+  'Чип в батарее и в машине согласуют режим заряда между собой',
+  'Работает без кабеля — не ограничивает перемещение по кузову',
+]
+
 type Props = {
   product: Product | null
   onClose: () => void
@@ -203,6 +210,27 @@ export function ProductDialog({ product, onClose, onSwitchProduct }: Props) {
                 Артикул: {selectedVariant?.sku}
               </p>
               <p className="mt-5 text-[0.9375rem] leading-relaxed text-graphite/70">{product.lead}</p>
+
+              {/*
+                Клиент на видео показывал официальный сайт ShineMate — там
+                у аккумуляторных машин перед таблицей характеристик есть
+                короткий список практических преимуществ платформы. Здесь —
+                то же самое, но только факты, которые уже подтверждены в
+                другом месте сайта (TechFeatures.tsx, лид этой же категории
+                в catalog.ts): общий аккумулятор на всю линейку, чип
+                согласования заряда, работа без кабеля. Никаких цифр,
+                которых нет в прайсе.
+              */}
+              {product.category === 'cordless' && (
+                <ul className="mt-6 space-y-2.5 border-t border-graphite/[0.12] pt-5">
+                  {CORDLESS_HIGHLIGHTS.map((h) => (
+                    <li key={h} className="flex gap-3 text-[0.875rem] leading-relaxed text-graphite/70">
+                      <Check size={15} className="mt-0.5 shrink-0 text-ember" />
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               <h3 className="eyebrow mt-9">Характеристики</h3>
               <dl className="mt-4 space-y-3 border-t border-graphite/[0.12] pt-4">
