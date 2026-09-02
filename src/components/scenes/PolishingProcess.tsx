@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 
+import { POLISH_STAGES } from '../../data/story'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
 
@@ -10,59 +11,12 @@ import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
  * раздел Технологии): те же четыре стадии, те же дефекты и те же градации
  * кругов и паст. Ничего не додумано — это карта подбора, по которой мастер
  * реально выбирает связку «паста + круг», а не рекламный текст.
+ *
+ * Сам массив живёт в data/story.ts: по нему же страницы кругов и паст
+ * определяют своё место в цикле, и держать вторую копию здесь значило бы
+ * рано или поздно разъехаться с ними.
  */
-type Stage = {
-  index: string
-  title: string
-  goal: string
-  defects: string[]
-  paste: string
-  pads: { kind: string; grade: string }[]
-}
 
-const STAGES: Stage[] = [
-  {
-    index: '01',
-    title: 'Шлифование',
-    goal: 'Снять грубые дефекты до полировки',
-    defects: ['Глубокие царапины', 'Апельсиновая корка', 'Перелив краски'],
-    paste: 'Без пасты — абразивные диски 2000/3000',
-    pads: [{ kind: 'Шлифовальная машинка', grade: 'ES516 · ES700' }],
-  },
-  {
-    index: '02',
-    title: 'Тяжёлая коррекция',
-    goal: 'Убрать след шлифовки и сильное окисление',
-    defects: ['Сильное окисление', 'Следы шлифовального диска', 'Глубокие голограммы'],
-    paste: 'V80 Heavy-Cut · V82 Fast Polish',
-    pads: [
-      { kind: 'Шерсть', grade: 'T160 высокий ворс · T140 короткий' },
-      { kind: 'Поролон', grade: 'T120 зелёный · T80 жёлтый' },
-    ],
-  },
-  {
-    index: '03',
-    title: 'Полировка',
-    goal: 'Выровнять поверхность и убрать среднюю дефектность',
-    defects: ['Лёгкие царапины', 'Среднее окисление', 'Выраженные разводы'],
-    paste: 'V40 Medium Polish',
-    pads: [
-      { kind: 'Поролон', grade: 'T60 синий · T40 оранжевый' },
-      { kind: 'Микрофибра', grade: 'T100 — рез' },
-    ],
-  },
-  {
-    index: '04',
-    title: 'Финиш',
-    goal: 'Вывести чистый глубокий блеск',
-    defects: ['Царапины от мойки', 'Тончайшие разводы', 'Голограммы', 'Мутность'],
-    paste: 'V20 Final Finish',
-    pads: [
-      { kind: 'Поролон', grade: 'T20 · T10 красный' },
-      { kind: 'Микрофибра', grade: 'T20 — финиш' },
-    ],
-  },
-]
 
 export function PolishingProcess() {
   const reduced = useReducedMotion()
@@ -88,7 +42,7 @@ export function PolishingProcess() {
         </motion.div>
 
         <div className="mt-14 grid gap-px overflow-hidden rounded-2xl bg-graphite/[0.12] md:mt-16 md:grid-cols-2 xl:grid-cols-4">
-          {STAGES.map((stage, i) => (
+          {POLISH_STAGES.map((stage, i) => (
             <motion.article
               key={stage.index}
               {...revealProps(reduced, stagger(Math.min(i, 3) * 0.08, 0.06))}
