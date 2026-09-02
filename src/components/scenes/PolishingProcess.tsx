@@ -79,7 +79,7 @@ export function PolishingProcess() {
           </motion.h2>
           <motion.p
             variants={rise}
-            className="lead mt-6 max-w-[54ch] text-graphite/65"
+            className="lead mt-6 max-w-[54ch] text-ash"
           >
             Обработка идёт стадиями: от снятия грубых дефектов до финишного
             блеска. На каждой стадии — своя пара «паста + круг», и именно от
@@ -105,7 +105,7 @@ export function PolishingProcess() {
               </motion.h3>
               <motion.p
                 variants={rise}
-                className="mt-2.5 text-[0.875rem] leading-relaxed text-graphite/60"
+                className="mt-2.5 text-[0.875rem] leading-relaxed text-slate"
               >
                 {stage.goal}
               </motion.p>
@@ -116,7 +116,7 @@ export function PolishingProcess() {
                 </p>
                 <ul className="mt-3 space-y-1.5">
                   {stage.defects.map((d) => (
-                    <li key={d} className="text-[0.8125rem] leading-relaxed text-graphite/70">
+                    <li key={d} className="text-[0.8125rem] leading-relaxed text-ash">
                       {d}
                     </li>
                   ))}
@@ -141,7 +141,7 @@ export function PolishingProcess() {
                 <dl className="mt-2.5 space-y-2">
                   {stage.pads.map((pad) => (
                     <div key={pad.kind}>
-                      <dt className="text-[0.75rem] text-graphite/45">{pad.kind}</dt>
+                      <dt className="text-[0.75rem] text-titanium">{pad.kind}</dt>
                       <dd className="mt-0.5 text-[0.875rem] leading-relaxed text-graphite">
                         {pad.grade}
                       </dd>
@@ -155,7 +155,7 @@ export function PolishingProcess() {
 
         <motion.p
           {...riseProps(reduced, { y: 20, amount: 0.3 })}
-          className="mt-8 max-w-[62ch] text-[0.8125rem] leading-relaxed text-graphite/50"
+          className="mt-8 max-w-[62ch] text-[0.8125rem] leading-relaxed text-slate"
         >
           Схема подбора — по официальной таблице применения ShineMate. Точную
           связку под ваше покрытие и объём работ подскажем по запросу.

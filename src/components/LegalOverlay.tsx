@@ -65,7 +65,7 @@ export function LegalOverlay({ document, onClose }: Props) {
                     download
                     aria-label="Скачать PDF"
                     title="Скачать PDF"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-graphite/40 transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-titanium transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
                   >
                     <Download size={15} />
                   </a>
@@ -74,7 +74,7 @@ export function LegalOverlay({ document, onClose }: Props) {
                   type="button"
                   onClick={onClose}
                   aria-label="Закрыть"
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-graphite/40 transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-titanium transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
                 >
                   <X size={15} />
                 </button>
@@ -91,7 +91,7 @@ export function LegalOverlay({ document, onClose }: Props) {
                     {section.body.map((paragraph) => (
                       <p
                         key={paragraph}
-                        className="text-[0.8125rem] leading-relaxed text-graphite/65"
+                        className="text-[0.8125rem] leading-relaxed text-ash"
                       >
                         {paragraph}
                       </p>

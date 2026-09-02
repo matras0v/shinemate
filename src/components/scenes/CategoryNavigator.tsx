@@ -78,7 +78,7 @@ export function CategoryNavigator() {
           <motion.a
             variants={rise}
             href="catalog"
-            className="group inline-flex shrink-0 items-center gap-2 text-[0.9375rem] text-graphite/60 transition-colors duration-500 ease-premium hover:text-graphite"
+            className="group inline-flex shrink-0 items-center gap-2 text-[0.9375rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
           >
             Открыть весь каталог
             <ArrowUpRight
@@ -148,10 +148,10 @@ export function CategoryNavigator() {
                 </span>
 
                 <span className="min-w-0 md:flex-1 xl:pr-[20rem]">
-                  <span className="block max-w-[46ch] text-[0.9375rem] leading-relaxed text-graphite/60">
+                  <span className="block max-w-[46ch] text-[0.9375rem] leading-relaxed text-slate">
                     {category.subtitle}
                   </span>
-                  <span className="mt-2 block font-mono text-[0.75rem] tracking-tight text-graphite/35">
+                  <span className="mt-2 block font-mono text-[0.75rem] tracking-tight text-titanium">
                     {countByCategory(category.id)} позиций в прайсе
                   </span>
                 </span>

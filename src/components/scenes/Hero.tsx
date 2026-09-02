@@ -253,24 +253,24 @@ export function Hero() {
                   <StaggerText
                     text={slide.lines[1]}
                     delay={0.4}
-                    className={slide.dim.includes(1) ? 'text-graphite/45' : undefined}
+                    className={slide.dim.includes(1) ? 'text-titanium' : undefined}
                   />
                   <br />
                   <StaggerText
                     text={slide.lines[2]}
                     delay={0.5}
-                    className={slide.dim.includes(2) ? 'text-graphite/45' : undefined}
+                    className={slide.dim.includes(2) ? 'text-titanium' : undefined}
                   />
                 </>
               ) : (
                 <>
                   {slide.lines[0]}
                   <br />
-                  <span className={slide.dim.includes(1) ? 'text-graphite/45' : undefined}>
+                  <span className={slide.dim.includes(1) ? 'text-titanium' : undefined}>
                     {slide.lines[1]}
                   </span>
                   <br />
-                  <span className={slide.dim.includes(2) ? 'text-graphite/45' : undefined}>
+                  <span className={slide.dim.includes(2) ? 'text-titanium' : undefined}>
                     {slide.lines[2]}
                   </span>
                 </>
@@ -279,7 +279,7 @@ export function Hero() {
           </AnimatePresence>
         </h1>
 
-        <div className="lead mt-6 grid max-w-[42ch] text-graphite/65 lg:mt-8">
+        <div className="lead mt-6 grid max-w-[42ch] text-ash lg:mt-8">
           <AnimatePresence initial={false}>
             <motion.p
               key={slide.slug}
@@ -337,11 +337,11 @@ export function Hero() {
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mist transition-colors duration-400 ease-premium group-hover:bg-porcelain">
                 <img src={item.src} alt="" className="h-7 w-7 object-contain" />
               </div>
-              <span className="flex items-center gap-1 text-[0.8125rem] text-graphite/70 transition-colors duration-400 ease-premium group-hover:text-graphite">
+              <span className="flex items-center gap-1 text-[0.8125rem] text-ash transition-colors duration-400 ease-premium group-hover:text-graphite">
                 {item.label}
                 <ArrowUpRight
                   size={12}
-                  className="text-graphite/30 transition-all duration-400 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-graphite/60"
+                  className="text-graphite/30 transition-all duration-400 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-slate"
                 />
               </span>
             </a>
@@ -352,7 +352,7 @@ export function Hero() {
       <motion.a
         href="#about"
         {...enter(1.4)}
-        className="absolute bottom-8 right-[var(--shell)] z-20 hidden h-12 w-12 items-center justify-center rounded-full border border-graphite/15 text-graphite/60 transition-colors duration-500 ease-premium hover:border-graphite/40 hover:text-graphite lg:flex"
+        className="absolute bottom-8 right-[var(--shell)] z-20 hidden h-12 w-12 items-center justify-center rounded-full border border-graphite/15 text-slate transition-colors duration-500 ease-premium hover:border-graphite/40 hover:text-graphite lg:flex"
         aria-label="К следующей секции"
       >
         <ArrowDown size={16} />

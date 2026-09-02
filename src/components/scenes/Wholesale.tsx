@@ -8,7 +8,7 @@ import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
 import { ConsentCheckbox, Field, StatusLine } from './Contact'
 
 const field =
-  'w-full border-b border-graphite/20 bg-transparent pb-3 pt-2 text-[1.0625rem] text-graphite outline-none transition-colors duration-500 ease-premium placeholder:text-graphite/30 focus:border-graphite'
+  'w-full border-b border-graphite/20 bg-transparent pb-3 pt-2 text-[1.0625rem] text-graphite outline-none transition-colors duration-500 ease-premium placeholder:text-smoke focus:border-graphite'
 
 type Props = {
   onOpenConsent: () => void
@@ -52,7 +52,7 @@ export function Wholesale({ onOpenConsent }: Props) {
         <motion.h1 variants={rise} className="h1 mt-5 max-w-[18ch]">
           Оптовые условия и поставки
         </motion.h1>
-        <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-graphite/60">
+        <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-slate">
           Для детейлинг-студий, малярных производств, магазинов и сервисных компаний — оптовый
           прайс, подбор ассортимента и условия сотрудничества.
         </motion.p>
@@ -122,7 +122,7 @@ export function Wholesale({ onOpenConsent }: Props) {
 
           <StatusLine sent={sent} />
 
-          <p className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6 text-[0.8125rem] text-graphite/55">
+          <p className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6 text-[0.8125rem] text-slate">
             <span>Или напрямую:</span>
             <a href={`mailto:${company.email}`} className="transition-colors duration-500 ease-premium hover:text-graphite">
               {company.email}

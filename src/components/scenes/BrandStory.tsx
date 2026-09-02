@@ -76,7 +76,7 @@ export function BrandStory() {
             <motion.h1 variants={rise} className="h2 mt-5">
               Не набор инструментов, а собранная система
             </motion.h1>
-            <motion.p variants={rise} className="lead mt-6 text-graphite/65">
+            <motion.p variants={rise} className="lead mt-6 text-ash">
               ShineMate делает полировальное оборудование и расходники под один
               процесс: машинка, подложка, круг и паста рассчитаны друг под друга.
               Поэтому связку не приходится собирать из разных брендов и подгонять
@@ -131,7 +131,7 @@ export function BrandStory() {
             <motion.p variants={rise} className="eyebrow">
               О бренде
             </motion.p>
-            <motion.p variants={rise} className="lead mt-5 text-graphite/65">
+            <motion.p variants={rise} className="lead mt-5 text-ash">
               ShineMate — не сборка компонентов от разных поставщиков, а
               собственное производство полного цикла: от проектирования и
               литья деталей до сборки машинок, кругов и полировальных паст.
@@ -206,7 +206,7 @@ export function BrandStory() {
                 </motion.h3>
                 <motion.p
                   variants={rise}
-                  className="mt-3 text-[0.875rem] leading-relaxed text-graphite/65"
+                  className="mt-3 text-[0.875rem] leading-relaxed text-ash"
                 >
                   {item.body}
                 </motion.p>
@@ -225,7 +225,7 @@ export function BrandStory() {
             <motion.h2 variants={rise} className="h2 mt-5">
               Не только по кузову
             </motion.h2>
-            <motion.p variants={rise} className="lead mt-6 text-graphite/65">
+            <motion.p variants={rise} className="lead mt-6 text-ash">
               Тем же набором машинок, кругов и паст работают там, где нужен
               контролируемый съём и чистый глянец на большой площади.
             </motion.p>
@@ -242,7 +242,7 @@ export function BrandStory() {
                 className="border-t border-graphite/[0.12] pt-5"
               >
                 <p className="text-lg tracking-tight">{s.title}</p>
-                <p className="mt-2 text-[0.8125rem] leading-relaxed text-graphite/60">
+                <p className="mt-2 text-[0.8125rem] leading-relaxed text-slate">
                   {s.note}
                 </p>
               </motion.li>

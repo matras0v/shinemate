@@ -42,7 +42,7 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
                     onMouseEnter={() => setActiveCategory(id)}
                     onFocus={() => setActiveCategory(id)}
                     className={`flex items-baseline justify-between gap-3 text-[0.875rem] transition-colors duration-300 ease-premium ${
-                      activeCategory === id ? 'text-graphite' : 'text-graphite/70 hover:text-graphite'
+                      activeCategory === id ? 'text-graphite' : 'text-ash hover:text-graphite'
                     }`}
                   >
                     <span className="min-w-0 truncate">{categoryLabel(id)}</span>
@@ -86,10 +86,10 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
                 {product.model}
                 <ArrowUpRight
                   size={12}
-                  className="shrink-0 text-graphite/25 transition-all duration-300 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-graphite/55"
+                  className="shrink-0 text-graphite/25 transition-all duration-300 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-slate"
                 />
               </span>
-              <span className="mt-0.5 block truncate text-[0.6875rem] text-graphite/45">{product.kind}</span>
+              <span className="mt-0.5 block truncate text-[0.6875rem] text-titanium">{product.kind}</span>
             </a>
           ))}
         </div>
@@ -103,7 +103,7 @@ export function CatalogMegaMenuFooter({ onNavigate }: Props) {
     <a
       href="catalog"
       onClick={onNavigate}
-      className="group mt-7 inline-flex items-center gap-2 text-[0.875rem] text-graphite transition-colors duration-400 ease-premium hover:text-graphite/60"
+      className="group mt-7 inline-flex items-center gap-2 text-[0.875rem] text-graphite transition-colors duration-400 ease-premium hover:text-slate"
     >
       Смотреть весь каталог — {totalSkus} позиций
       <span aria-hidden className="transition-transform duration-400 ease-premium group-hover:translate-x-1">

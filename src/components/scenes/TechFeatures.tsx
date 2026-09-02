@@ -71,7 +71,7 @@ export function TechFeatures() {
           <motion.h2 variants={rise} className="h2 mt-5">
             Что реально меняет результат
           </motion.h2>
-          <motion.p variants={rise} className="lead mt-6 text-graphite/65">
+          <motion.p variants={rise} className="lead mt-6 text-ash">
             Три вещи, из-за которых связка ведёт себя предсказуемо: рельеф
             круга, баланс машинки и то, как инструмент работает с питанием.
           </motion.p>
@@ -107,7 +107,7 @@ export function TechFeatures() {
               </motion.h3>
               <motion.p
                 variants={rise}
-                className="mt-3 text-[0.9375rem] leading-relaxed text-graphite/65"
+                className="mt-3 text-[0.9375rem] leading-relaxed text-ash"
               >
                 {f.lead}
               </motion.p>
@@ -121,7 +121,7 @@ export function TechFeatures() {
                 {f.points.map((p) => (
                   <li
                     key={p}
-                    className="text-[0.8125rem] leading-relaxed text-graphite/70"
+                    className="text-[0.8125rem] leading-relaxed text-ash"
                   >
                     {p}
                   </li>

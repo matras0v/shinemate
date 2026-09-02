@@ -162,7 +162,7 @@ export function ReflectionReveal() {
           <motion.h2 variants={rise} className="h2 max-w-[14ch]">
             Разницу видно в отражении
           </motion.h2>
-          <motion.p variants={rise} className="lead max-w-[38ch] text-graphite/60">
+          <motion.p variants={rise} className="lead max-w-[38ch] text-slate">
             {showSlider
               ? 'Слева — лак с голограммами и мутью. Справа — та же панель после машинной полировки: отражение держит форму и глубину.'
               : 'Вокруг — лак с голограммами и мутью. В окне — та же панель после машинной полировки: отражение держит форму и глубину.'}

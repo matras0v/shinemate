@@ -51,7 +51,7 @@ export function ScrollStage() {
             style={reduced ? undefined : { y: captionY, opacity: captionOpacity }}
             className="pointer-events-none absolute inset-x-0 top-0 p-6 md:p-12"
           >
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.24em] text-graphite/45">
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.24em] text-titanium">
               Система
             </p>
             <p className="mt-3 max-w-[22ch] text-[clamp(1.25rem,0.95rem+1.5vw,2.5rem)] leading-[1.08] tracking-tight text-graphite md:max-w-[26ch]">
@@ -63,7 +63,7 @@ export function ScrollStage() {
 
       <motion.p
         {...riseProps(reduced, { y: 24, amount: 0.5 })}
-        className="shell lead mt-10 max-w-[52ch] text-graphite/60"
+        className="shell lead mt-10 max-w-[52ch] text-slate"
       >
         Резьба M14, M8 и 5/16"-24, подложки от 1,2" до 6", круги из шерсти,
         микрофибры и поролона в градациях от T10 до T120 — совместимость

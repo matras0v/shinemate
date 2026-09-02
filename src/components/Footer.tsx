@@ -14,7 +14,7 @@ export function Footer({ onOpenDoc }: Props) {
       <div className="shell grid gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
         <div>
           <BrandLockup variant="full" />
-          <p className="mt-4 text-[0.75rem] leading-relaxed text-graphite/40">{company.role}</p>
+          <p className="mt-4 text-[0.75rem] leading-relaxed text-titanium">{company.role}</p>
         </div>
 
         <div>
@@ -24,7 +24,7 @@ export function Footer({ onOpenDoc }: Props) {
               <li key={c.id}>
                 <a
                   href={`catalog/${c.id}`}
-                  className="text-[0.8125rem] leading-relaxed text-graphite/60 transition-colors duration-500 ease-premium hover:text-graphite"
+                  className="text-[0.8125rem] leading-relaxed text-slate transition-colors duration-500 ease-premium hover:text-graphite"
                 >
                   {c.title}
                 </a>
@@ -40,7 +40,7 @@ export function Footer({ onOpenDoc }: Props) {
               <li key={item.href}>
                 <a
                   href={item.href}
-                  className="text-[0.8125rem] leading-relaxed text-graphite/60 transition-colors duration-500 ease-premium hover:text-graphite"
+                  className="text-[0.8125rem] leading-relaxed text-slate transition-colors duration-500 ease-premium hover:text-graphite"
                 >
                   {item.label}
                 </a>
@@ -51,10 +51,10 @@ export function Footer({ onOpenDoc }: Props) {
 
         <div>
           <p className="eyebrow">Контакты</p>
-          <ul className="mt-4 space-y-2 text-[0.8125rem] leading-relaxed text-graphite/60">
+          <ul className="mt-4 space-y-2 text-[0.8125rem] leading-relaxed text-slate">
             {company.phones.map((phone) => (
               <li key={phone.href} className="pt-1 first:pt-0">
-                <span className="block text-[0.75rem] uppercase tracking-[0.08em] text-graphite/35">
+                <span className="block text-[0.75rem] uppercase tracking-[0.08em] text-titanium">
                   {phone.region}
                 </span>
                 <a
@@ -63,7 +63,7 @@ export function Footer({ onOpenDoc }: Props) {
                 >
                   {phone.display}
                 </a>
-                <span className="block text-[0.75rem] text-graphite/35">{phone.address}</span>
+                <span className="block text-[0.75rem] text-titanium">{phone.address}</span>
               </li>
             ))}
             <li className="pt-1">
@@ -90,49 +90,49 @@ export function Footer({ onOpenDoc }: Props) {
         <button
           type="button"
           onClick={() => onOpenDoc(aboutCompany)}
-          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           О компании
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(paymentDelivery)}
-          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Оплата и доставка
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(returns)}
-          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Возврат
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(publicOffer)}
-          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Договор оферты
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(privacyPolicy)}
-          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Политика конфиденциальности
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(termsOfUse)}
-          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Пользовательское соглашение
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(dataProcessingConsent)}
-          className="text-[0.75rem] text-graphite/45 transition-colors duration-400 ease-premium hover:text-graphite"
+          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Согласие на обработку данных
         </button>

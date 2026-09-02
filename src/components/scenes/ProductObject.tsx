@@ -44,7 +44,7 @@ export function ProductObject() {
           <motion.h2 variants={rise} className="h2 mt-5 max-w-[15ch]">
             Инструмент, который держит результат
           </motion.h2>
-          <motion.p variants={rise} className="lead mt-6 max-w-[46ch] text-graphite/65">
+          <motion.p variants={rise} className="lead mt-6 max-w-[46ch] text-ash">
             ShineMate выпускает полный цикл оборудования для подготовки и полировки
             кузова: роторные и эксцентриковые машинки, шлифование, аккумуляторные
             платформы, подложки, круги и пасты. Линейка собрана так, чтобы машинка,
@@ -54,7 +54,7 @@ export function ProductObject() {
               это дилер, который продаёт оборудование, а не производитель.
               Вместо корпоративной справки — то, что реально помогает выбрать:
               под какие задачи и поверхности рассчитана линейка. */}
-          <motion.p variants={rise} className="mt-4 max-w-[46ch] text-[0.9375rem] leading-relaxed text-graphite/60">
+          <motion.p variants={rise} className="mt-4 max-w-[46ch] text-[0.9375rem] leading-relaxed text-slate">
             Инструмент рассчитан не только на кузов: тем же набором машинок, кругов
             и паст работают по яхтам, мебели и промышленным поверхностям — от
             тяжёлой коррекции лака до финишного блеска.
@@ -89,7 +89,7 @@ export function ProductObject() {
             <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
               Флагман линейки · {hero.model}
             </p>
-            <p className="mt-3 max-w-[44ch] text-[0.9375rem] leading-relaxed text-graphite/60">
+            <p className="mt-3 max-w-[44ch] text-[0.9375rem] leading-relaxed text-slate">
               {hero.lead}
             </p>
           </motion.div>

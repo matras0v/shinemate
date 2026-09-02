@@ -80,7 +80,7 @@ export function ProductCard({ product, index }: Props) {
             видна — titanium технически проходит контраст, но на мелком
             моноширинном тексте субъективно читается тускло. graphite/80
             + чуть более жирное начертание решает это радикальнее. */}
-        <p className="font-mono text-[0.625rem] font-medium uppercase leading-relaxed tracking-[0.14em] text-graphite/80">
+        <p className="font-mono text-[0.625rem] font-medium uppercase leading-relaxed tracking-[0.14em] text-ash">
           {product.kind}
         </p>
 
@@ -92,7 +92,7 @@ export function ProductCard({ product, index }: Props) {
             V-Range или 5 градаций круга), а не одна.
           */}
           {multi && (
-            <span className="absolute right-0 top-0 rounded-full border border-graphite/15 bg-porcelain px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-graphite/70">
+            <span className="absolute right-0 top-0 rounded-full border border-graphite/15 bg-porcelain px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-ash">
               {variantsLabel(product.variants.length)}
             </span>
           )}
@@ -113,10 +113,10 @@ export function ProductCard({ product, index }: Props) {
         {/* Артикул виден сразу на карточке, а не только внутри drawer — для
             товара с одним исполнением это его SKU, для многовариантного —
             SKU того, что выбрано по умолчанию (бейдж выше поясняет, что есть ещё). */}
-        <p className="mt-1 font-mono text-[0.75rem] tracking-tight text-graphite/45">
+        <p className="mt-1 font-mono text-[0.75rem] tracking-tight text-titanium">
           Арт. {product.variants[0]?.sku}
         </p>
-        <p className="mt-2.5 line-clamp-2 text-[0.875rem] leading-relaxed text-graphite/60">
+        <p className="mt-2.5 line-clamp-2 text-[0.875rem] leading-relaxed text-slate">
           {product.lead}
         </p>
 
@@ -124,8 +124,8 @@ export function ProductCard({ product, index }: Props) {
           <dl className="mt-4 space-y-1">
             {topSpecs.map((spec) => (
               <div key={spec.label} className="flex items-baseline gap-2 text-[0.75rem]">
-                <dt className="text-graphite/40">{spec.label}</dt>
-                <dd className="font-mono text-graphite/70">{spec.value}</dd>
+                <dt className="text-titanium">{spec.label}</dt>
+                <dd className="font-mono text-ash">{spec.value}</dd>
               </div>
             ))}
           </dl>
@@ -143,7 +143,7 @@ export function ProductCard({ product, index }: Props) {
           {/* Всегда видимая стрелка — сигнал «нажми, откроется подробнее», не завязанный на hover. */}
           <span
             aria-hidden
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-graphite/15 text-graphite/50 transition-colors duration-500 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-graphite/15 text-slate transition-colors duration-500 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
           >
             <ArrowUpRight size={15} />
           </span>

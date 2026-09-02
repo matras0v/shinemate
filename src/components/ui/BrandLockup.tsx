@@ -24,7 +24,7 @@ export function BrandLockup({ variant = 'compact', className = '' }: Props) {
           loading="lazy"
           className="h-16 w-auto"
         />
-        <p className="mt-3 text-[0.8125rem] leading-relaxed text-graphite/50">
+        <p className="mt-3 text-[0.8125rem] leading-relaxed text-slate">
           Профессиональное полировальное оборудование
         </p>
       </div>

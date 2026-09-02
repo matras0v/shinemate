@@ -113,7 +113,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
               }}
               aria-expanded={catalogOpen}
               aria-haspopup="true"
-              className="group flex items-center gap-1.5 whitespace-nowrap text-[0.9375rem] text-graphite/70 transition-colors duration-500 ease-premium hover:text-graphite"
+              className="group flex items-center gap-1.5 whitespace-nowrap text-[0.9375rem] text-ash transition-colors duration-500 ease-premium hover:text-graphite"
             >
               Каталог
               <ChevronDown
@@ -165,7 +165,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
               className={`group relative whitespace-nowrap text-[0.9375rem] transition-colors duration-500 ease-premium ${
                 item.href === 'contacts'
                   ? 'font-semibold text-ember hover:text-ember/70'
-                  : 'text-graphite/70 hover:text-graphite'
+                  : 'text-ash hover:text-graphite'
               }`}
             >
               {item.label}
@@ -195,7 +195,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
             type="button"
             onClick={onOpenSearch}
             aria-label="Поиск по каталогу"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-graphite/60 transition-colors duration-400 ease-premium hover:bg-graphite/[0.06] hover:text-graphite"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate transition-colors duration-400 ease-premium hover:bg-graphite/[0.06] hover:text-graphite"
           >
             <Search size={17} />
           </button>
@@ -241,7 +241,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                 Каталог
                 <ChevronDown
                   size={18}
-                  className={`text-graphite/40 transition-transform duration-400 ease-premium ${
+                  className={`text-titanium transition-transform duration-400 ease-premium ${
                     mobileCatalogOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -279,7 +279,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                                 e.preventDefault()
                                 go(`/catalog/${id}`)
                               }}
-                              className="flex items-center justify-between py-2.5 text-[0.9375rem] text-graphite/70"
+                              className="flex items-center justify-between py-2.5 text-[0.9375rem] text-ash"
                             >
                               {cat.title}
                               <span className="font-mono text-[0.6875rem] text-titanium">

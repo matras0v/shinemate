@@ -10,7 +10,7 @@ import { submitLead } from '../../lib/lead'
 import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
 
 const field =
-  'w-full border-b border-graphite/20 bg-transparent pb-3 pt-2 text-[1.0625rem] text-graphite outline-none transition-colors duration-500 ease-premium placeholder:text-graphite/30 focus:border-graphite'
+  'w-full border-b border-graphite/20 bg-transparent pb-3 pt-2 text-[1.0625rem] text-graphite outline-none transition-colors duration-500 ease-premium placeholder:text-smoke focus:border-graphite'
 
 type Props = {
   onOpenConsent: () => void
@@ -73,7 +73,7 @@ export function Contact({ onOpenConsent }: Props) {
         <motion.h2 variants={rise} className="h1 mt-5 max-w-[18ch]">
           Подберём ShineMate под вашу задачу
         </motion.h2>
-        <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-graphite/60">
+        <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-slate">
           Расскажите, с какими покрытиями и объёмами работаете — предложим конфигурацию машинки,
           подложек и кругов и пришлём актуальный прайс.
         </motion.p>
@@ -100,7 +100,7 @@ export function Contact({ onOpenConsent }: Props) {
                 </p>
                 <p className="mt-0.5 truncate text-[0.9375rem] tracking-tight">{product.model}</p>
                 {product.variants.length > 1 && variant && (
-                  <p className="mt-0.5 truncate text-[0.8125rem] text-graphite/50">
+                  <p className="mt-0.5 truncate text-[0.8125rem] text-slate">
                     {variant.label}
                   </p>
                 )}
@@ -109,7 +109,7 @@ export function Contact({ onOpenConsent }: Props) {
                 type="button"
                 onClick={clearProduct}
                 aria-label="Убрать товар из заявки"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-graphite/40 transition-colors duration-500 ease-premium hover:bg-graphite/10 hover:text-graphite"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-titanium transition-colors duration-500 ease-premium hover:bg-graphite/10 hover:text-graphite"
               >
                 <X size={14} />
               </button>
@@ -169,13 +169,13 @@ export function Contact({ onOpenConsent }: Props) {
               <p className="eyebrow">{phone.region}</p>
               <a
                 href={phone.href}
-                className="mt-2.5 block text-[clamp(1.5rem,3vw,2.25rem)] tracking-tight transition-colors duration-500 ease-premium hover:text-graphite/55"
+                className="mt-2.5 block text-[clamp(1.5rem,3vw,2.25rem)] tracking-tight transition-colors duration-500 ease-premium hover:text-slate"
               >
                 {phone.display}
               </a>
               {/* Клиент отметил: адрес/город терялись рядом с крупным номером
                   телефона — крупнее и темнее, а не приглушённый titanium-тон. */}
-              <p className="mt-2 flex items-center gap-2 text-[1.0625rem] font-medium text-graphite/85">
+              <p className="mt-2 flex items-center gap-2 text-[1.0625rem] font-medium text-ash">
                 <MapPin size={17} className="shrink-0 text-ember" />
                 {phone.address}
               </p>
@@ -197,12 +197,12 @@ export function Contact({ onOpenConsent }: Props) {
           <motion.div variants={rise} className="space-y-4 border-t border-graphite/[0.12] pt-8">
             <a
               href={`mailto:${company.email}`}
-              className="flex items-center gap-3 text-[1.0625rem] transition-colors duration-500 ease-premium hover:text-graphite/55"
+              className="flex items-center gap-3 text-[1.0625rem] transition-colors duration-500 ease-premium hover:text-slate"
             >
               <Mail size={17} className="shrink-0 text-titanium" />
               {company.email}
             </a>
-            <p className="flex items-center gap-3 text-[1.0625rem] text-graphite/70">
+            <p className="flex items-center gap-3 text-[1.0625rem] text-ash">
               <Clock size={17} className="shrink-0 text-titanium" />
               {company.schedule}
             </p>
@@ -220,7 +220,7 @@ export function Contact({ onOpenConsent }: Props) {
  */
 export function ConsentCheckbox({ id, onOpenConsent }: { id: string; onOpenConsent: () => void }) {
   return (
-    <label htmlFor={id} className="mt-7 flex items-start gap-2.5 text-[0.8125rem] text-graphite/60">
+    <label htmlFor={id} className="mt-7 flex items-start gap-2.5 text-[0.8125rem] text-slate">
       <input
         id={id}
         name="consent"
@@ -251,7 +251,7 @@ export function ConsentCheckbox({ id, onOpenConsent }: { id: string; onOpenConse
 
 export function StatusLine({ sent }: { sent: boolean }) {
   return (
-    <p aria-live="polite" className="mt-5 max-w-[46ch] text-[0.8125rem] leading-relaxed text-graphite/45">
+    <p aria-live="polite" className="mt-5 max-w-[46ch] text-[0.8125rem] leading-relaxed text-titanium">
       {sent
         ? `Письмо открыто в вашем почтовом клиенте. Если он не запустился — напишите на ${company.leadEmail}.`
         : `Заявка откроется письмом в вашем почтовом клиенте на адрес ${company.leadEmail}.`}
@@ -276,7 +276,7 @@ export function Field({
     <div className="min-w-0">
       <label htmlFor={id} className="eyebrow block">
         {label}
-        {required && <span className="text-graphite/25"> *</span>}
+        {required && <span className="text-titanium"> *</span>}
       </label>
       <input
         id={id}

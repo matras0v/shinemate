@@ -92,7 +92,7 @@ export function ProductPage({ product }: Props) {
       <div className="shell pt-8 md:pt-12">
         {/* Хлебные крошки — тот путь, которым реально пришли: каталог →
             категория → модель. Работают как обычные ссылки проекта. */}
-        <nav aria-label="Хлебные крошки" className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-graphite/50">
+        <nav aria-label="Хлебные крошки" className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-slate">
           <a href="catalog" className="transition-colors duration-400 ease-premium hover:text-graphite">
             Каталог
           </a>
@@ -104,12 +104,12 @@ export function ProductPage({ product }: Props) {
             {categoryTitle(product.category)}
           </a>
           <ChevronRight size={13} className="shrink-0 text-graphite/25" />
-          <span className="text-graphite/80">{product.model}</span>
+          <span className="text-ash">{product.model}</span>
         </nav>
 
         <a
           href={`catalog/${product.category}`}
-          className="group mt-5 inline-flex items-center gap-2 text-[0.875rem] text-graphite/55 transition-colors duration-500 ease-premium hover:text-graphite"
+          className="group mt-5 inline-flex items-center gap-2 text-[0.875rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
         >
           <ArrowLeft size={15} className="transition-transform duration-500 ease-premium group-hover:-translate-x-0.5" />
           Назад в каталог
@@ -134,27 +134,27 @@ export function ProductPage({ product }: Props) {
             />
             <span
               aria-hidden
-              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/90 text-graphite/60 backdrop-blur-sm transition-colors duration-300 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
+              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/90 text-slate backdrop-blur-sm transition-colors duration-300 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
             >
               <ZoomIn size={16} />
             </span>
           </button>
           {selectedVariant?.note && (
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-graphite/45">{selectedVariant.note}</p>
+            <p className="mt-3 text-[0.8125rem] leading-relaxed text-titanium">{selectedVariant.note}</p>
           )}
         </motion.div>
 
         <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
-          <motion.p variants={rise} className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-graphite/70">
+          <motion.p variants={rise} className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-ash">
             {categoryTitle(product.category)} · {product.kind}
           </motion.p>
           <motion.h1 variants={rise} className="h1-sm mt-4">
             {product.model}
           </motion.h1>
-          <motion.p variants={rise} className="mt-2 font-mono text-[0.875rem] tracking-tight text-graphite/60">
+          <motion.p variants={rise} className="mt-2 font-mono text-[0.875rem] tracking-tight text-slate">
             Артикул: {selectedVariant?.sku}
           </motion.p>
-          <motion.p variants={rise} className="mt-5 max-w-[52ch] text-[1rem] leading-relaxed text-graphite/70">
+          <motion.p variants={rise} className="mt-5 max-w-[52ch] text-[1rem] leading-relaxed text-ash">
             {product.lead}
           </motion.p>
 
@@ -208,7 +208,7 @@ export function ProductPage({ product }: Props) {
               <h2 className="eyebrow">Преимущества платформы</h2>
               <ul className="mt-4 space-y-2.5 border-t border-graphite/[0.12] pt-5">
                 {highlights.map((h) => (
-                  <li key={h} className="flex gap-3 text-[0.9375rem] leading-relaxed text-graphite/70">
+                  <li key={h} className="flex gap-3 text-[0.9375rem] leading-relaxed text-ash">
                     <Check size={16} className="mt-0.5 shrink-0 text-ember" />
                     {h}
                   </li>
@@ -223,7 +223,7 @@ export function ProductPage({ product }: Props) {
             <dl className="mt-4 divide-y divide-graphite/[0.1] border-t border-graphite/[0.12]">
               {product.specs.map((spec) => (
                 <div key={spec.label} className="flex items-baseline justify-between gap-6 py-3.5">
-                  <dt className="text-[0.9375rem] text-graphite/50">{spec.label}</dt>
+                  <dt className="text-[0.9375rem] text-slate">{spec.label}</dt>
                   <dd className="text-right font-mono text-[0.9375rem] tracking-tight">{spec.value}</dd>
                 </div>
               ))}
@@ -236,7 +236,7 @@ export function ProductPage({ product }: Props) {
               <h2 className="eyebrow">Комплектация</h2>
               <ul className="mt-4 space-y-2.5 border-t border-graphite/[0.12] pt-5">
                 {product.includes.map((item) => (
-                  <li key={item} className="flex gap-3 text-[0.9375rem] leading-relaxed text-graphite/70">
+                  <li key={item} className="flex gap-3 text-[0.9375rem] leading-relaxed text-ash">
                     <span aria-hidden className="mt-2.5 h-px w-3 shrink-0 bg-graphite/30" />
                     {item}
                   </li>
@@ -254,7 +254,7 @@ export function ProductPage({ product }: Props) {
             {showAxisChips ? (
               <div className="mt-4 space-y-5">
                 <div>
-                  <p className="text-[0.75rem] uppercase tracking-[0.1em] text-graphite/40">
+                  <p className="text-[0.75rem] uppercase tracking-[0.1em] text-titanium">
                     {product.axisLabel ?? 'Градация'}
                   </p>
                   <div className="mt-2.5 flex flex-wrap gap-2">
@@ -277,7 +277,7 @@ export function ProductPage({ product }: Props) {
                 </div>
                 {axis2Options.length > 0 && (
                   <div>
-                    <p className="text-[0.75rem] uppercase tracking-[0.1em] text-graphite/40">Размер</p>
+                    <p className="text-[0.75rem] uppercase tracking-[0.1em] text-titanium">Размер</p>
                     <div className="mt-2.5 flex flex-wrap gap-2">
                       {axis2Options.map((axis2) => (
                         <button
@@ -301,7 +301,7 @@ export function ProductPage({ product }: Props) {
             ) : (
               product.variants.length > 1 && (
                 <>
-                  <p className="mt-1 text-[0.8125rem] text-graphite/45">Выберите нужное — оно попадёт в заявку.</p>
+                  <p className="mt-1 text-[0.8125rem] text-titanium">Выберите нужное — оно попадёт в заявку.</p>
                   <ul className="mt-4 space-y-2">
                     {product.variants.map((variant) => (
                       <li key={variant.sku}>
@@ -327,7 +327,7 @@ export function ProductPage({ product }: Props) {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block font-mono text-[0.8125rem] tracking-tight">{variant.sku}</span>
-                            <span className="mt-0.5 block text-[0.8125rem] text-graphite/50">{variant.label}</span>
+                            <span className="mt-0.5 block text-[0.8125rem] text-slate">{variant.label}</span>
                           </span>
                           <span className="shrink-0 text-[1.0625rem] tracking-tight">{formatPrice(variant.rrp)}</span>
                         </button>
@@ -365,20 +365,20 @@ export function ProductPage({ product }: Props) {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[0.9375rem] tracking-tight">{candidate.model}</span>
-                        <span className="mt-0.5 block truncate text-[0.8125rem] text-graphite/50">
+                        <span className="mt-0.5 block truncate text-[0.8125rem] text-slate">
                           {relatedNote(candidate, product)}
                         </span>
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
                         {price != null && (
-                          <span className="text-[0.875rem] tracking-tight text-graphite/80">
+                          <span className="text-[0.875rem] tracking-tight text-ash">
                             {candidate.variants.length > 1 ? 'от ' : ''}
                             {formatPrice(price)}
                           </span>
                         )}
                         <ArrowRight
                           size={15}
-                          className="shrink-0 text-graphite/30 transition-transform duration-400 ease-premium group-hover:translate-x-0.5 group-hover:text-graphite/60"
+                          className="shrink-0 text-graphite/30 transition-transform duration-400 ease-premium group-hover:translate-x-0.5 group-hover:text-slate"
                         />
                       </span>
                     </a>

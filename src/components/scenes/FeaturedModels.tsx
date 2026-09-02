@@ -24,7 +24,7 @@ export function FeaturedModels() {
           <motion.div variants={rise} className="shrink-0 md:text-right">
             <a
               href="catalog"
-              className="group inline-flex items-center gap-2 text-[0.9375rem] text-graphite/60 transition-colors duration-500 ease-premium hover:text-graphite"
+              className="group inline-flex items-center gap-2 text-[0.9375rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
             >
               Все {totalSkus} позиций каталога
               <ArrowUpRight

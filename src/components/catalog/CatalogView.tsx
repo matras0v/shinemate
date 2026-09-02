@@ -55,7 +55,7 @@ export function CatalogView({ category }: Props) {
       <div className="shell pt-8 md:pt-12">
         <a
           href="."
-          className="group inline-flex items-center gap-2 text-[0.875rem] text-graphite/55 transition-colors duration-500 ease-premium hover:text-graphite"
+          className="group inline-flex items-center gap-2 text-[0.875rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
         >
           <ArrowLeft
             size={15}
@@ -77,7 +77,7 @@ export function CatalogView({ category }: Props) {
               {active ? active.title : 'Всё оборудование и расходные материалы'}
             </h1>
             {active && (
-              <p className="mt-4 max-w-[52ch] text-[1rem] leading-relaxed text-graphite/60">
+              <p className="mt-4 max-w-[52ch] text-[1rem] leading-relaxed text-slate">
                 {active.subtitle}
               </p>
             )}
@@ -103,13 +103,13 @@ export function CatalogView({ category }: Props) {
               className="inline-flex flex-1 items-center justify-between gap-2 rounded-full border border-graphite/15 bg-porcelain px-5 py-3 text-[0.875rem] text-graphite"
             >
               <span className="truncate">{active ? active.title : 'Все категории'}</span>
-              <SlidersHorizontal size={15} className="shrink-0 text-graphite/40" />
+              <SlidersHorizontal size={15} className="shrink-0 text-titanium" />
             </button>
             <SortControl sort={sort} onChange={setSort} open={sortOpen} setOpen={setSortOpen} compact />
           </div>
 
           <div className="mt-6 hidden items-center justify-between lg:flex">
-            <p className="text-[0.875rem] text-graphite/50">
+            <p className="text-[0.875rem] text-slate">
               Найдено <span className="text-graphite">{list.length}</span>{' '}
               {pluralize(list.length)}
             </p>
@@ -126,7 +126,7 @@ export function CatalogView({ category }: Props) {
             <h2 className="h3 mx-auto max-w-[22ch]">
               Не нашли позицию — она может быть в полном прайсе
             </h2>
-            <p className="mx-auto mt-4 max-w-[46ch] text-[0.9375rem] leading-relaxed text-graphite/60">
+            <p className="mx-auto mt-4 max-w-[46ch] text-[0.9375rem] leading-relaxed text-slate">
               На сайте собраны основные группы. Пришлём актуальный прайс целиком и подберём
               конфигурацию под ваши задачи и объёмы.
             </p>
@@ -210,7 +210,7 @@ function CategoryLink({
       } ${
         active
           ? 'bg-graphite text-porcelain'
-          : 'text-graphite/70 hover:bg-graphite/[0.06] hover:text-graphite'
+          : 'text-ash hover:bg-graphite/[0.06] hover:text-graphite'
       }`}
     >
       <span className="min-w-0 truncate">{label}</span>
@@ -240,7 +240,7 @@ function SortControl({
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className={`inline-flex items-center gap-2 rounded-full border border-graphite/15 bg-porcelain text-[0.8125rem] text-graphite/70 transition-colors duration-400 ease-premium hover:text-graphite ${
+        className={`inline-flex items-center gap-2 rounded-full border border-graphite/15 bg-porcelain text-[0.8125rem] text-ash transition-colors duration-400 ease-premium hover:text-graphite ${
           compact ? 'p-3' : 'px-4 py-2.5'
         }`}
       >
@@ -273,7 +273,7 @@ function SortControl({
                       setOpen(false)
                     }}
                     className={`block w-full px-4 py-2.5 text-left text-[0.8125rem] transition-colors duration-300 ease-premium hover:bg-mist ${
-                      key === sort ? 'text-graphite' : 'text-graphite/60'
+                      key === sort ? 'text-graphite' : 'text-slate'
                     }`}
                   >
                     {SORT_LABELS[key]}
@@ -328,7 +328,7 @@ function MobileCategorySheet({
                 type="button"
                 onClick={onClose}
                 aria-label="Закрыть"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-graphite/50 transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-slate transition-colors duration-400 ease-premium hover:bg-graphite/10 hover:text-graphite"
               >
                 <X size={16} />
               </button>
@@ -369,7 +369,7 @@ function MobileCategorySheet({
                               onClose()
                             }}
                             className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-[0.9375rem] transition-colors duration-300 ease-premium ${
-                              isActive ? 'bg-graphite text-porcelain' : 'text-graphite/80'
+                              isActive ? 'bg-graphite text-porcelain' : 'text-ash'
                             }`}
                           >
                             <span className="min-w-0 truncate text-left">{cat.title}</span>
