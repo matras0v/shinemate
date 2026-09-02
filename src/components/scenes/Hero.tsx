@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowDown, ArrowUpRight, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react'
 
 import { useClearCoat } from '../../hooks/useClearCoat'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
@@ -213,19 +213,21 @@ export function Hero() {
          */
         className="shell absolute inset-x-0 bottom-0 top-[46dvh] z-20 flex flex-col justify-center pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:inset-x-auto lg:left-0 lg:top-0 lg:w-[44%] lg:justify-end lg:pb-14"
       >
-        <motion.p
-          {...enter(0.15)}
-          // Клиент отметил на видео: этот бейдж терялся, особенно на
-          // телефоне — крупнее, жирнее, с фирменным акцентом ShineMate,
-          // а не приглушённым titanium, как обычные эйбрау секций. Текст
-          // стал длиннее ("Официальный дистрибьютор" вместо
-          // "Представительство") — whitespace-nowrap на узких экранах
-          // выталкивал его за пределы контейнера и он просто не был виден;
-          // на телефоне даём перенос на 2 строки, от sm возвращаем nowrap.
-          className="max-w-[26ch] font-mono text-[0.8125rem] font-semibold uppercase leading-snug tracking-[0.08em] text-ember sm:max-w-none sm:whitespace-nowrap sm:text-[0.875rem] sm:tracking-[0.16em]"
-        >
-          ShineMate · Официальный дистрибьютор в России
-        </motion.p>
+        {/*
+          Второй заход клиента: цветного текста мало — это всё ещё читалось
+          как случайная подпись, а не как значимый статус бренда. Теперь
+          это настоящий бейдж — заливка, обводка, иконка — визуально того
+          же веса, что trust-бейджи на официальном shinemate.com (см. видео
+          №2: там подобные статусы поданы плашкой, а не строкой текста).
+        */}
+        <motion.div {...enter(0.15)} className="inline-flex">
+          <div className="inline-flex max-w-[26ch] items-center gap-2 rounded-full border border-ember/25 bg-ember/[0.08] px-4 py-2 sm:max-w-none">
+            <ShieldCheck size={15} className="shrink-0 text-ember" />
+            <span className="font-mono text-[0.75rem] font-semibold uppercase leading-snug tracking-[0.06em] text-ember sm:whitespace-nowrap sm:text-[0.8125rem] sm:tracking-[0.1em]">
+              ShineMate · Официальный дистрибьютор в России
+            </span>
+          </div>
+        </motion.div>
 
         <h1 className="h1 mt-5 grid max-w-[13ch] font-semibold lg:mt-6">
           {/*
@@ -309,22 +311,40 @@ export function Hero() {
           взгляда, не трогая саму фотографию (официальный пресс-снимок
           ShineMate — компоновка внутри него не наша, редактировать её
           рискованно и уже приводило к жалобам на "самодельный" вид фото).
+          Второй заход: клиент отметил, что строка ВЫГЛЯДЕЛА кликабельной,
+          но ничего не делала — теперь это настоящие ссылки в нужные
+          разделы каталога, с той же hover-стрелкой, что и остальные
+          переходы по сайту (см. BrandStory "Смотреть весь каталог").
         */}
         <motion.div
           {...enter(1.15)}
-          className="mt-8 flex items-center gap-5 border-t border-graphite/10 pt-6 lg:mt-10"
+          className="mt-8 grid grid-cols-3 gap-3 border-t border-graphite/10 pt-6 lg:mt-10"
         >
           {[
-            { src: 'catalog-media/ex620-thumb.webp', label: 'Машины' },
-            { src: 'catalog-media/foam-diamond-t80-thumb.webp', label: 'Круги' },
-            { src: 'catalog-media/v40-thumb.webp', label: 'Пасты' },
+            { href: 'catalog', src: 'catalog-media/ex620-thumb.webp', label: 'Машинки' },
+            { href: 'catalog/pads', src: 'catalog-media/foam-diamond-t80-thumb.webp', label: 'Круги' },
+            { href: 'catalog/chemistry', src: 'catalog-media/v40-thumb.webp', label: 'Пасты' },
           ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mist">
-                <img src={item.src} alt="" className="h-6 w-6 object-contain" />
+            <a
+              key={item.label}
+              href={item.href}
+              // Горизонтальная раскладка (иконка + подпись в строку) не
+              // влезала в узкую колонку на мобильном — "Машинки"/"Пасты"
+              // с иконкой и стрелкой упирались в край и переносились
+              // криво. Вертикальная раскладка не зависит от ширины слова.
+              className="group flex flex-col items-center gap-2 rounded-xl px-1 py-2 text-center transition-colors duration-400 ease-premium hover:bg-mist"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mist transition-colors duration-400 ease-premium group-hover:bg-porcelain">
+                <img src={item.src} alt="" className="h-7 w-7 object-contain" />
               </div>
-              <span className="text-[0.75rem] text-graphite/55">{item.label}</span>
-            </div>
+              <span className="flex items-center gap-1 text-[0.8125rem] text-graphite/70 transition-colors duration-400 ease-premium group-hover:text-graphite">
+                {item.label}
+                <ArrowUpRight
+                  size={12}
+                  className="text-graphite/30 transition-all duration-400 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-graphite/60"
+                />
+              </span>
+            </a>
           ))}
         </motion.div>
       </motion.div>
