@@ -705,12 +705,19 @@ export function storyKind(p: Product): StoryKind {
 export function buildStory(p: Product): ProductStory {
   switch (storyKind(p)) {
     case 'machine': {
-      const scenes = machineScenes(p)
+      // У аккумуляторов и зарядных нет оборотов/хода/мощности — для них
+      // сцены собираются из их собственных характеристик.
+      const scenes = machineScenes(p).length ? machineScenes(p) : specScenes(p)
+      // История должна открываться кадром товара, а не сразу цифрой:
+      // если ни у одной сцены нет своей иллюстрации, отдаём первой
+      // сцене фото позиции (у товара оно ровно одно, дублировать его в
+      // нескольких сценах смысла нет).
+      if (scenes.length && !scenes.some((s) => s.image)) {
+        scenes[0] = { ...scenes[0], image: p.image }
+      }
       return {
         purpose: machinePurpose(p),
-        // У аккумуляторов и зарядных нет оборотов/хода/мощности — для них
-        // сцены собираются из их собственных характеристик.
-        scenes: scenes.length ? scenes : specScenes(p),
+        scenes,
         scale: machineScale(p),
         compat: machineCompat(p),
       }

@@ -62,26 +62,112 @@ export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }
  * позиций, и ритм страницы не должен зависеть от того, сколько именно
  * характеристик оказалось у конкретной модели.
  */
+/**
+ * Композиция выбирается по индексу сцены, а не по данным.
+ *
+ * Важно: у большинства машинок все сцены приходят с цифрой и без
+ * собственного фото (фото у позиции ровно одно). Если рендерить их
+ * одинаково, страница превращается в четыре идентичные карточки подряд —
+ * ровно то, чего просили избежать. Поэтому вариантов четыре, и они
+ * чередуются: кадр с товаром → широкая цифра → тёмная полоса-акцент →
+ * спокойный текстовый блок.
+ */
+type SceneVariant = 'media' | 'metric' | 'band' | 'plain'
+
+function variantFor(scene: StoryScene, index: number): SceneVariant {
+  // Сцена с собственной иллюстрацией всегда показывается кадром.
+  if (scene.image) return 'media'
+  if (!scene.metric) return 'plain'
+  const cycle: SceneVariant[] = ['metric', 'band', 'metric', 'plain']
+  return cycle[index % cycle.length]
+}
+
 function Scene({ scene, index, product }: { scene: StoryScene; index: number; product: Product }) {
   const reduced = useReducedMotion()
-  const flipped = index % 2 === 1
-  const onMist = index % 2 === 0
+  const variant = variantFor(scene, index)
+  const flipped = index % 4 === 3
+  const bg = index % 2 === 0 ? 'bg-porcelain' : 'bg-mist'
 
-  // Сцена с крупной цифрой и без фото — широкий акцентный блок.
-  if (scene.metric && !scene.image) {
+  // Тёмная полоса с крупной цифрой — редкий сильный акцент в середине истории.
+  if (variant === 'band') {
     return (
-      <section className={`scene relative py-16 md:py-24 ${onMist ? 'bg-porcelain' : 'bg-mist'}`}>
+      <section className="scene relative bg-graphite py-16 text-porcelain md:py-24">
         <div className="shell">
           <motion.div
             {...revealProps(reduced, stagger(0, 0.08))}
-            className="grid items-center gap-8 rounded-[1.75rem] border border-graphite/[0.08] bg-gradient-to-br from-frost/40 via-porcelain to-porcelain p-8 md:grid-cols-[minmax(0,14rem)_1fr] md:gap-14 md:p-12"
+            className="grid items-end gap-8 md:grid-cols-[1fr_auto] md:gap-16"
+          >
+            <motion.div variants={rise} className="max-w-[46ch]">
+              <h3 className="text-[clamp(1.375rem,1.05rem+1.1vw,2rem)] leading-tight tracking-tight text-porcelain">
+                {scene.title}
+              </h3>
+              <p className="mt-5 text-[1rem] leading-relaxed text-porcelain/70">{scene.body}</p>
+            </motion.div>
+            {scene.metric && (
+              <motion.div variants={rise} className="shrink-0 md:text-right">
+                <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ember">
+                  {scene.metric.caption}
+                </p>
+                <p className="mt-3 text-[clamp(2rem,1.4rem+2vw,3.25rem)] font-medium leading-none tracking-tight text-porcelain">
+                  {scene.metric.value}
+                </p>
+              </motion.div>
+            )}
+          </motion.div>
+        </div>
+      </section>
+    )
+  }
+
+  // Спокойный текстовый блок — воздух между акцентами.
+  if (variant === 'plain') {
+    return (
+      <section className={`scene relative py-16 md:py-24 ${bg}`}>
+        <div className="shell">
+          <motion.div
+            {...revealProps(reduced, stagger(0, 0.08))}
+            className="grid gap-8 border-t border-graphite/[0.12] pt-10 md:grid-cols-[1fr_1.4fr] md:gap-16"
+          >
+            <motion.h3
+              variants={rise}
+              className="text-[clamp(1.25rem,1rem+0.9vw,1.75rem)] leading-tight tracking-tight"
+            >
+              {scene.title}
+            </motion.h3>
+            <motion.div variants={rise}>
+              <p className="max-w-[54ch] text-[1rem] leading-relaxed text-ash">{scene.body}</p>
+              {scene.metric && (
+                <p className="mt-6 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
+                  <span className="text-[1.0625rem] tracking-tight text-graphite">
+                    {scene.metric.value}
+                  </span>
+                  <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                    {scene.metric.caption}
+                  </span>
+                </p>
+              )}
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+    )
+  }
+
+  // Широкая карточка с цифрой.
+  if (variant === 'metric') {
+    return (
+      <section className={`scene relative py-16 md:py-24 ${bg}`}>
+        <div className="shell">
+          <motion.div
+            {...revealProps(reduced, stagger(0, 0.08))}
+            className="grid items-center gap-8 rounded-[1.75rem] border border-graphite/[0.08] bg-gradient-to-br from-frost/40 via-porcelain to-porcelain p-8 md:grid-cols-[minmax(0,20rem)_1fr] md:gap-14 md:p-12"
           >
             <motion.div variants={rise}>
               <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">
-                {scene.metric.caption}
+                {scene.metric?.caption}
               </p>
-              <p className="mt-3 text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] font-medium leading-[1.05] tracking-tight text-graphite">
-                {scene.metric.value}
+              <p className="mt-3 text-[clamp(1.5rem,1.1rem+1.4vw,2.25rem)] font-medium leading-[1.1] tracking-tight text-graphite">
+                {scene.metric?.value}
               </p>
             </motion.div>
             <motion.div variants={rise}>
@@ -96,9 +182,9 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
     )
   }
 
-  // Сцена с фото — текст и кадр чередуются сторонами.
+  // Кадр с товаром: текст и изображение меняются сторонами.
   return (
-    <section className={`scene relative py-16 md:py-24 ${onMist ? 'bg-porcelain' : 'bg-mist'}`}>
+    <section className={`scene relative py-16 md:py-24 ${bg}`}>
       <div className="shell">
         <motion.div
           {...revealProps(reduced, stagger(0, 0.08))}
