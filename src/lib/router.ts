@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { categories, type CategoryId } from '../data/catalog'
+import { categories, products, type CategoryId } from '../data/catalog'
 
 export type Route =
   | { name: 'home' }
   | { name: 'catalog'; category: CategoryId | 'all' }
+  | { name: 'product'; slug: string }
   | { name: 'about' }
   | { name: 'technologies' }
   | { name: 'contacts' }
   | { name: 'wholesale' }
 
 const CATEGORY_IDS = categories.map((c) => c.id)
+const PRODUCT_SLUGS = new Set(products.map((p) => p.slug))
 
 /**
  * Подпуть, под которым реально живёт сайт: "/" в dev, "/shinemate/" на
@@ -44,6 +46,17 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'wholesale') return { name: 'wholesale' }
   if (parts[0] !== 'catalog') return { name: 'home' }
   const slug = parts[1]
+  // /catalog/<category>/<slug> — карточка товара. Категория в пути нужна
+  // только для человекочитаемого URL и хлебных крошек до захода на
+  // страницу; реальные данные товара ищутся по slug, а не по паре
+  // категория+slug, поэтому опечатка в сегменте категории всё равно
+  // приведёт на верный товар, а не на 404.
+  if (parts[2] && PRODUCT_SLUGS.has(parts[2])) {
+    return { name: 'product', slug: parts[2] }
+  }
+  if (parts.length === 2 && PRODUCT_SLUGS.has(slug) && !CATEGORY_IDS.find((id) => id === slug)) {
+    return { name: 'product', slug }
+  }
   const category = CATEGORY_IDS.find((id) => id === slug)
   return { name: 'catalog', category: category ?? 'all' }
 }
@@ -54,7 +67,16 @@ export function routePath(route: Route) {
   if (route.name === 'technologies') return '/technologies'
   if (route.name === 'contacts') return '/contacts'
   if (route.name === 'wholesale') return '/wholesale'
+  if (route.name === 'product') {
+    const product = products.find((p) => p.slug === route.slug)
+    return product ? `/catalog/${product.category}/${product.slug}` : '/catalog'
+  }
   return route.category === 'all' ? '/catalog' : `/catalog/${route.category}`
+}
+
+/** Ссылка (без ведущего слэша, см. комментарий у useLinkInterceptor) на карточку товара. */
+export function productHref(product: { category: string; slug: string }) {
+  return `catalog/${product.category}/${product.slug}`
 }
 
 const EVENT = 'app:navigate'

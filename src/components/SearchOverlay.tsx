@@ -5,12 +5,11 @@ import { Search, X } from 'lucide-react'
 import { formatPriceOrInquire, minPrice, searchProducts, type Product } from '../data/catalog'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { EASE } from '../lib/motion'
-import { navigateTo } from '../lib/router'
+import { navigateTo, productHref } from '../lib/router'
 
 type Props = {
   open: boolean
   onClose: () => void
-  onOpenProduct: (product: Product) => void
 }
 
 /**
@@ -20,7 +19,7 @@ type Props = {
  * substring-индекс из data/catalog.ts даёт мгновенный результат прямо в
  * браузере. Открывается по клику на иконку в шапке или по Cmd/Ctrl+K.
  */
-export function SearchOverlay({ open, onClose, onOpenProduct }: Props) {
+export function SearchOverlay({ open, onClose }: Props) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const results = searchProducts(query)
@@ -47,8 +46,7 @@ export function SearchOverlay({ open, onClose, onOpenProduct }: Props) {
   useBodyScrollLock(open)
 
   const openResult = (product: Product) => {
-    navigateTo(`/catalog/${product.category}`)
-    onOpenProduct(product)
+    navigateTo(`/${productHref(product)}`)
     onClose()
   }
 

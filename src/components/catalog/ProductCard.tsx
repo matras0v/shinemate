@@ -5,14 +5,14 @@ import { motion } from 'framer-motion'
 import { formatPriceOrInquire, minPrice, variantsLabel, type Product } from '../../data/catalog'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { riseProps } from '../../lib/motion'
+import { productHref } from '../../lib/router'
 
 type Props = {
   product: Product
   index: number
-  onOpen: (product: Product) => void
 }
 
-export function ProductCard({ product, index, onOpen }: Props) {
+export function ProductCard({ product, index }: Props) {
   const reduced = useReducedMotion()
   const cardRef = useRef<HTMLElement>(null)
 
@@ -64,9 +64,15 @@ export function ProductCard({ product, index, onOpen }: Props) {
         />
       )}
 
-      <button
-        type="button"
-        onClick={() => onOpen(product)}
+      {/*
+        Раньше это была <button>, открывавшая drawer поверх сетки — клиент
+        отметил, что клик по товару должен вести на настоящую страницу с
+        собственным URL (работающий "Назад", прямая ссылка, refresh без
+        404), а не в модалку без адреса. Теперь это обычная ссылка —
+        подхватывается общим SPA-перехватчиком кликов (см. router.ts).
+      */}
+      <a
+        href={productHref(product)}
         aria-label={`Открыть карточку ${product.model}`}
         className="relative z-10 flex flex-1 flex-col p-5 text-left outline-none focus-visible:ring-1 focus-visible:ring-graphite/40 sm:p-6"
       >
@@ -142,7 +148,7 @@ export function ProductCard({ product, index, onOpen }: Props) {
             <ArrowUpRight size={15} />
           </span>
         </div>
-      </button>
+      </a>
     </motion.article>
   )
 }

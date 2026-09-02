@@ -11,7 +11,6 @@ import {
   sortProducts,
   totalSkus,
   type CategoryId,
-  type Product,
   type SortOrder,
 } from '../../data/catalog'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
@@ -22,7 +21,6 @@ import { ProductCard } from './ProductCard'
 
 type Props = {
   category: CategoryId | 'all'
-  onOpenProduct: (product: Product) => void
 }
 
 const SORT_LABELS: Record<SortOrder, string> = {
@@ -32,7 +30,7 @@ const SORT_LABELS: Record<SortOrder, string> = {
   alpha: 'По названию',
 }
 
-export function CatalogView({ category, onOpenProduct }: Props) {
+export function CatalogView({ category }: Props) {
   const reduced = useReducedMotion()
   const [sort, setSort] = useState<SortOrder>('recommended')
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false)
@@ -120,7 +118,7 @@ export function CatalogView({ category, onOpenProduct }: Props) {
 
           <div className="mt-6 grid gap-px overflow-hidden rounded-[1.25rem] bg-graphite/[0.1] sm:grid-cols-2 xl:grid-cols-3 lg:mt-4">
             {list.map((product, i) => (
-              <ProductCard key={product.slug} product={product} index={i} onOpen={onOpenProduct} />
+              <ProductCard key={product.slug} product={product} index={i} />
             ))}
           </div>
 

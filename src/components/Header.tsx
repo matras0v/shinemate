@@ -58,6 +58,23 @@ export function Header({ onHome, onOpenSearch }: Props) {
   const scheduleCloseCatalogMenu = () => {
     closeTimer.current = setTimeout(() => setCatalogOpen(false), 150)
   }
+  // Клавиатура: Tab внутрь меню держит его открытым (mouseleave тут не
+  // срабатывает вовсе), Tab наружу или Escape закрывают. relatedTarget —
+  // куда фокус переходит ПОСЛЕ blur — если это всё ещё внутри обёртки,
+  // меню не закрываем.
+  const onCatalogBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setCatalogOpen(false)
+    }
+  }
+  useEffect(() => {
+    if (!catalogOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCatalogOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [catalogOpen])
 
   return (
     <header
@@ -85,6 +102,8 @@ export function Header({ onHome, onOpenSearch }: Props) {
             className="relative"
             onMouseEnter={openCatalogMenu}
             onMouseLeave={scheduleCloseCatalogMenu}
+            onFocus={openCatalogMenu}
+            onBlur={onCatalogBlur}
           >
             <a
               href="catalog"
@@ -92,6 +111,8 @@ export function Header({ onHome, onOpenSearch }: Props) {
                 e.preventDefault()
                 go('/catalog')
               }}
+              aria-expanded={catalogOpen}
+              aria-haspopup="true"
               className="group flex items-center gap-1.5 whitespace-nowrap text-[0.9375rem] text-graphite/70 transition-colors duration-500 ease-premium hover:text-graphite"
             >
               Каталог
@@ -108,7 +129,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
                   transition={{ duration: 0.25, ease: EASE }}
-                  className="absolute left-1/2 top-full z-40 mt-3 w-[34rem] -translate-x-1/2 rounded-2xl border border-graphite/[0.08] bg-porcelain p-8 shadow-[0_30px_70px_-30px_rgba(26,28,30,0.35)]"
+                  className="absolute left-1/2 top-full z-40 mt-3 w-[46rem] -translate-x-1/2 rounded-2xl border border-graphite/[0.08] bg-porcelain p-8 shadow-[0_30px_70px_-30px_rgba(26,28,30,0.35)]"
                 >
                   <CatalogMegaMenuContent onNavigate={() => setCatalogOpen(false)} />
                   <CatalogMegaMenuFooter onNavigate={() => setCatalogOpen(false)} />

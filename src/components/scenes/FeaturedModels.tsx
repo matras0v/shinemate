@@ -1,14 +1,12 @@
 import { motion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 
-import { featured, priceNote, totalSkus, type Product } from '../../data/catalog'
+import { featured, priceNote, totalSkus } from '../../data/catalog'
 import { revealProps, rise, stagger } from '../../lib/motion'
 import { ProductCard } from '../catalog/ProductCard'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
-type Props = { onOpen: (product: Product) => void }
-
-export function FeaturedModels({ onOpen }: Props) {
+export function FeaturedModels() {
   const reduced = useReducedMotion()
   return (
     <section id="models" className="scene relative bg-porcelain py-24 sm:py-28 md:py-36">
@@ -44,7 +42,7 @@ export function FeaturedModels({ onOpen }: Props) {
       <div className="shell mt-10 sm:mt-12">
         <div className="grid gap-px overflow-hidden rounded-[1.25rem] bg-graphite/[0.1] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {featured.map((product, i) => (
-            <ProductCard key={product.slug} product={product} index={i} onOpen={onOpen} />
+            <ProductCard key={product.slug} product={product} index={i} />
           ))}
         </div>
       </div>

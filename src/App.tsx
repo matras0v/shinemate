@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { CatalogView } from './components/catalog/CatalogView'
-import { ProductDialog } from './components/catalog/ProductDialog'
+import { ProductPage } from './components/catalog/ProductPage'
 import { CookieNotice } from './components/CookieNotice'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
@@ -20,7 +20,7 @@ import { ReflectionReveal } from './components/scenes/ReflectionReveal'
 import { ScrollStage } from './components/scenes/ScrollStage'
 import { Wholesale } from './components/scenes/Wholesale'
 import { ScrollProgress } from './components/ui/ScrollProgress'
-import type { Product } from './data/catalog'
+import { products } from './data/catalog'
 import { dataProcessingConsent, privacyPolicy, type LegalDocument } from './data/legal'
 import { LeadProvider } from './lib/leadContext'
 import { useLinkInterceptor, useRoute } from './lib/router'
@@ -28,25 +28,29 @@ import { useLinkInterceptor, useRoute } from './lib/router'
 export default function App() {
   const [route] = useRoute()
   useLinkInterceptor()
-  const [openProduct, setOpenProduct] = useState<Product | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null)
+  const productForRoute = route.name === 'product' ? products.find((p) => p.slug === route.slug) : undefined
 
   // Заголовок вкладки следует за разделом.
   useEffect(() => {
     document.title =
       route.name === 'catalog'
         ? 'Каталог ShineMate'
-        : route.name === 'about'
-          ? 'О ShineMate'
-          : route.name === 'technologies'
-            ? 'Технологии ShineMate'
-            : route.name === 'contacts'
-              ? 'Контакты ShineMate'
-              : route.name === 'wholesale'
-                ? 'Оптовикам — ShineMate'
-                : 'ShineMate — профессиональное полировальное оборудование'
-  }, [route])
+        : route.name === 'product'
+          ? productForRoute
+            ? `${productForRoute.model} — ShineMate`
+            : 'ShineMate'
+          : route.name === 'about'
+            ? 'О ShineMate'
+            : route.name === 'technologies'
+              ? 'Технологии ShineMate'
+              : route.name === 'contacts'
+                ? 'Контакты ShineMate'
+                : route.name === 'wholesale'
+                  ? 'Оптовикам — ShineMate'
+                  : 'ShineMate — профессиональное полировальное оборудование'
+  }, [route, productForRoute])
 
   // Cmd/Ctrl+K открывает поиск из любого места сайта.
   useEffect(() => {
@@ -67,7 +71,21 @@ export default function App() {
 
       {route.name === 'catalog' ? (
         <main>
-          <CatalogView category={route.category} onOpenProduct={setOpenProduct} />
+          <CatalogView category={route.category} />
+        </main>
+      ) : route.name === 'product' ? (
+        <main>
+          {/*
+            Прямой заход по URL на несуществующий/переименованный slug —
+            честный возврат в каталог вместо пустой страницы. products
+            генерируются из прайса при сборке, так что это не должно
+            случаться в норме, но ссылка могла устареть.
+          */}
+          {productForRoute ? (
+            <ProductPage product={productForRoute} />
+          ) : (
+            <CatalogView category="all" />
+          )}
         </main>
       ) : route.name === 'about' ? (
         // Ни один блок с главной здесь не повторяется: клиент отметил, что
@@ -100,23 +118,14 @@ export default function App() {
           <ReflectionReveal />
           <CategoryNavigator />
           <ScrollStage />
-          <FeaturedModels onOpen={setOpenProduct} />
+          <FeaturedModels />
           <Engineering />
           <Contact onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
         </main>
       )}
 
       <Footer onOpenDoc={setLegalDoc} />
-      <ProductDialog
-        product={openProduct}
-        onClose={() => setOpenProduct(null)}
-        onSwitchProduct={setOpenProduct}
-      />
-      <SearchOverlay
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        onOpenProduct={setOpenProduct}
-      />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <LegalOverlay document={legalDoc} onClose={() => setLegalDoc(null)} />
       <CookieNotice onOpenPrivacy={() => setLegalDoc(privacyPolicy)} />
     </LeadProvider>
