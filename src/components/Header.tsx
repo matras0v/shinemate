@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Menu, Search, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Menu, Search, X } from 'lucide-react'
 
-import { categoryGroups, categories, countByCategory } from '../data/catalog'
+import { categoryGroups, categories, countByCategory, totalSkus } from '../data/catalog'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { nav } from '../data/company'
 import { useLead } from '../lib/leadContext'
@@ -255,41 +255,71 @@ export function Header({ onHome, onOpenSearch }: Props) {
                     transition={{ duration: 0.3, ease: EASE }}
                     className="overflow-hidden border-b border-graphite/[0.06]"
                   >
-                    <ul className="py-3">
-                      <li>
-                        <a
-                          href="catalog"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            go('/catalog')
-                          }}
-                          className="flex items-center justify-between py-2.5 text-[0.9375rem] text-graphite"
-                        >
-                          Всё оборудование
-                        </a>
-                      </li>
-                      {categoryGroups.flatMap((group) => group.ids).map((id) => {
-                        const cat = categories.find((c) => c.id === id)
-                        if (!cat) return null
-                        return (
-                          <li key={id}>
-                            <a
-                              href={`catalog/${id}`}
-                              onClick={(e) => {
-                                e.preventDefault()
-                                go(`/catalog/${id}`)
-                              }}
-                              className="flex items-center justify-between py-2.5 text-[0.9375rem] text-ash"
-                            >
-                              {cat.title}
-                              <span className="font-mono text-[0.6875rem] text-titanium">
-                                {countByCategory(id)}
-                              </span>
-                            </a>
-                          </li>
-                        )
-                      })}
-                    </ul>
+                    {/*
+                      Мобильный каталог — не сжатое desktop-меню: hover тут
+                      нет вообще. Разделы сгруппированы так же, как в
+                      каталоге, у каждого — крупная область нажатия (не
+                      меньше 56px), реальное фото раздела и счётчик позиций,
+                      чтобы выбор делался одним касанием без промахов.
+                    */}
+                    <div className="space-y-5 py-4">
+                      <a
+                        href="catalog"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          go('/catalog')
+                        }}
+                        className="flex items-center justify-between rounded-xl bg-graphite px-4 py-3.5 text-[0.9375rem] text-porcelain"
+                      >
+                        Всё оборудование
+                        <span className="font-mono text-[0.75rem] text-porcelain/60">{totalSkus}</span>
+                      </a>
+
+                      {categoryGroups.map((group) => (
+                        <div key={group.title}>
+                          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">
+                            {group.title}
+                          </p>
+                          <ul className="mt-2 space-y-1.5">
+                            {group.ids.map((id) => {
+                              const cat = categories.find((c) => c.id === id)
+                              if (!cat) return null
+                              return (
+                                <li key={id}>
+                                  <a
+                                    href={`catalog/${id}`}
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      go(`/catalog/${id}`)
+                                    }}
+                                    className="flex min-h-[3.5rem] items-center gap-3 rounded-xl border border-graphite/[0.08] bg-mist/60 px-3 py-2.5 active:bg-mist"
+                                  >
+                                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-porcelain p-1.5">
+                                      <img
+                                        src={cat.image}
+                                        alt=""
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="max-h-full w-auto max-w-full object-contain"
+                                      />
+                                    </span>
+                                    <span className="min-w-0 flex-1">
+                                      <span className="block truncate text-[0.9375rem] text-graphite">
+                                        {cat.title}
+                                      </span>
+                                      <span className="mt-0.5 block truncate text-[0.75rem] text-slate">
+                                        {countByCategory(id)} позиций
+                                      </span>
+                                    </span>
+                                    <ChevronRight size={16} className="shrink-0 text-titanium" />
+                                  </a>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

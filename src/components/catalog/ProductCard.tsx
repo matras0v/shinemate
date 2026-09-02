@@ -84,7 +84,13 @@ export function ProductCard({ product, index }: Props) {
           {product.kind}
         </p>
 
-        <div className="relative mt-5 flex h-32 items-center justify-center overflow-hidden sm:h-36 [perspective:700px]">
+        {/*
+          Фото на карточке стало крупнее: официальные снимки заменены на
+          квадратные версии в 400–900px (было 300–400px с обрезкой по
+          горизонтали), поэтому кадру можно отдать больше высоты — товар
+          читается сразу, а не угадывается.
+        */}
+        <div className="relative mt-5 flex h-40 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-frost/25 via-transparent to-transparent sm:h-44 [perspective:700px]">
           {/*
             Бейдж числа вариантов виден всегда, не только на hover — на
             touch-экране hover не срабатывает вовсе, и было неясно, что за
@@ -105,7 +111,7 @@ export function ProductCard({ product, index }: Props) {
             alt={`ShineMate ${product.model}`}
             loading="lazy"
             decoding="async"
-            className="max-h-full w-auto max-w-full object-contain transition-transform duration-500 ease-premium group-hover:[transform:perspective(700px)_rotateX(var(--tilt-y,0deg))_rotateY(var(--tilt-x,0deg))_scale(1.05)]"
+            className="h-full w-full object-contain transition-transform duration-500 ease-premium group-hover:[transform:perspective(700px)_rotateX(var(--tilt-y,0deg))_rotateY(var(--tilt-x,0deg))_scale(1.05)]"
           />
         </div>
 
