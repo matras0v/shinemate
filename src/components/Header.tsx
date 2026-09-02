@@ -129,7 +129,13 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
                   transition={{ duration: 0.25, ease: EASE }}
-                  className="absolute left-1/2 top-full z-40 mt-3 w-[46rem] -translate-x-1/2 rounded-2xl border border-graphite/[0.08] bg-porcelain p-8 shadow-[0_30px_70px_-30px_rgba(26,28,30,0.35)]"
+                  // Раньше меню центрировалось под триггером (left-1/2 +
+                  // -translate-x-1/2) — на 1280px это выталкивало правый
+                  // край меню (928px) за пределы вьюпорта, потому что
+                  // "Каталог" стоит у левого края шапки, а не по центру
+                  // страницы. Привязка к левому краю триггера с меню,
+                  // растущим вправо, всегда остаётся в границах экрана.
+                  className="absolute left-0 top-full z-40 mt-3 w-[58rem] max-w-[92vw] rounded-2xl border border-graphite/[0.08] bg-porcelain p-8 shadow-[0_30px_70px_-30px_rgba(26,28,30,0.35)]"
                 >
                   <CatalogMegaMenuContent onNavigate={() => setCatalogOpen(false)} />
                   <CatalogMegaMenuFooter onNavigate={() => setCatalogOpen(false)} />

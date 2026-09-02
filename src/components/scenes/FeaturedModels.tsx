@@ -19,7 +19,7 @@ export function FeaturedModels() {
         </motion.p>
         <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
           <motion.h2 variants={rise} className="h2 max-w-[16ch]">
-            Машины, с которых начинают
+            Машинки, с которых начинают
           </motion.h2>
           <motion.div variants={rise} className="shrink-0 md:text-right">
             <a

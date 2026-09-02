@@ -41,7 +41,7 @@ export function ScrollStage() {
             src="media/stage-1920.webp"
             srcSet="media/stage-800.webp 800w, media/stage-1280.webp 1280w, media/stage-1920.webp 1920w"
             sizes="(min-width: 1440px) 1280px, 100vw"
-            alt="Полировальная машина ShineMate и оснастка в студийной композиции"
+            alt="Полировальная машинка ShineMate и оснастка в студийной композиции"
             loading="lazy"
             decoding="async"
             className="aspect-[16/10] w-full object-cover md:aspect-[16/9]"
@@ -55,7 +55,7 @@ export function ScrollStage() {
               Система
             </p>
             <p className="mt-3 max-w-[22ch] text-[clamp(1.25rem,0.95rem+1.5vw,2.5rem)] leading-[1.08] tracking-tight text-graphite md:max-w-[26ch]">
-              Машина, подложка и круг работают как один инструмент
+              Машинка, подложка и круг работают как один инструмент
             </p>
           </motion.div>
         </motion.div>

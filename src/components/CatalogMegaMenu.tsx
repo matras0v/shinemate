@@ -26,8 +26,8 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
   const previewProducts = productsByCategory(activeCategory).slice(0, 3)
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_18rem] gap-10">
-      <div className="grid grid-cols-2 gap-x-10 gap-y-8">
+    <div className="grid grid-cols-[20rem_1fr] gap-10">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-8">
         {categoryGroups.map((group) => (
           <div key={group.title}>
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">
@@ -57,40 +57,42 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
         ))}
       </div>
 
-      {/* Визуальная часть: реальные товары раздела, наведённого слева. */}
+      {/*
+        Визуальная часть: реальные товары раздела, наведённого слева. Второй
+        заход клиента: маленькая иконка-круг с фото 48px "не давала визуальной
+        информации" — теперь три большие карточки в ряд, фото занимает
+        основную площадь карточки, а не крошечный кружок сбоку от текста.
+      */}
       <div className="border-l border-graphite/[0.08] pl-8">
         <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">
           {categoryLabel(activeCategory)}
         </p>
-        <ul className="mt-3 space-y-1">
+        <div className="mt-3 grid grid-cols-3 gap-4">
           {previewProducts.map((product) => (
-            <li key={product.slug}>
-              <a
-                href={productHref(product)}
-                onClick={onNavigate}
-                className="group flex items-center gap-3 rounded-xl p-2 transition-colors duration-300 ease-premium hover:bg-mist"
-              >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-mist p-1.5 group-hover:bg-porcelain">
-                  <img
-                    src={product.image.replace('.webp', '-thumb.webp')}
-                    alt=""
-                    className="max-h-full w-auto max-w-full object-contain"
-                  />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[0.8125rem] tracking-tight text-graphite">
-                    {product.model}
-                  </span>
-                  <span className="block truncate text-[0.6875rem] text-graphite/45">{product.kind}</span>
-                </span>
+            <a
+              key={product.slug}
+              href={productHref(product)}
+              onClick={onNavigate}
+              className="group flex flex-col rounded-xl p-2 transition-colors duration-300 ease-premium hover:bg-mist"
+            >
+              <span className="flex h-24 items-center justify-center rounded-lg bg-mist p-3 group-hover:bg-porcelain">
+                <img
+                  src={product.image}
+                  alt=""
+                  className="max-h-full w-auto max-w-full object-contain"
+                />
+              </span>
+              <span className="mt-3 flex items-center gap-1 truncate text-[0.8125rem] tracking-tight text-graphite">
+                {product.model}
                 <ArrowUpRight
-                  size={13}
+                  size={12}
                   className="shrink-0 text-graphite/25 transition-all duration-300 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-graphite/55"
                 />
-              </a>
-            </li>
+              </span>
+              <span className="mt-0.5 block truncate text-[0.6875rem] text-graphite/45">{product.kind}</span>
+            </a>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   )
