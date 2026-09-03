@@ -236,9 +236,33 @@ export function ProductPage({ product }: Props) {
               {product.lead}
             </motion.p>
 
+            {/*
+              Три главных параметра прямо на первом экране: клиент
+              отдельно просил, чтобы человек видел ключевые преимущества
+              сразу, а не после скролла до тёмной полосы. Значения те же
+              самые, из прайса — просто вынесены выше.
+            */}
+            {story.highlights.length > 0 && (
+              <motion.dl
+                variants={rise}
+                className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-graphite/[0.12] pt-7 sm:grid-cols-3"
+              >
+                {story.highlights.slice(0, 3).map((item) => (
+                  <div key={item.label}>
+                    <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                      {item.label}
+                    </dt>
+                    <dd className="mt-2 text-[1.0625rem] leading-snug tracking-tight text-graphite">
+                      {item.value}
+                    </dd>
+                  </div>
+                ))}
+              </motion.dl>
+            )}
+
             <motion.div
               variants={rise}
-              className="mt-9 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-graphite/[0.12] pt-8"
+              className="mt-8 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-graphite/[0.12] pt-7"
             >
               <p className="text-[clamp(2rem,1.6rem+1.2vw,2.75rem)] leading-none tracking-tight">
                 {selectedVariant ? formatPrice(selectedVariant.rrp) : '—'}
