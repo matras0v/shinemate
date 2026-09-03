@@ -39,7 +39,7 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
   const previewProducts = productsByCategory(activeCategory).slice(0, 3)
 
   return (
-    <div className="grid grid-cols-[17rem_1fr] gap-10 xl:grid-cols-[20rem_1fr] xl:gap-14">
+    <div className="grid grid-cols-[15.5rem_1fr] gap-8 xl:grid-cols-[17.5rem_1fr] xl:gap-12">
       {/* Левая колонка: структура разделов. */}
       <div className="space-y-7">
         {categoryGroups.map((group) => (
@@ -78,7 +78,7 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
       </div>
 
       {/* Правая область: крупные карточки товаров наведённого раздела. */}
-      <div className="min-w-0 border-l border-graphite/[0.08] pl-10 xl:pl-14">
+      <div className="min-w-0 border-l border-graphite/[0.08] pl-8 xl:pl-12">
         <div className="flex items-end justify-between gap-8">
           <div className="min-w-0">
             <p className="text-[1.375rem] tracking-tight text-graphite">
@@ -113,11 +113,14 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
                 // Третья карточка появляется только от xl: на 1024–1279px
                 // три крупных кадра в этой колонке уже не помещаются, и
                 // сжимать их до миниатюр — ровно то, на что жаловался клиент.
-                className={`group flex flex-col rounded-2xl border border-graphite/[0.08] p-4 transition-colors duration-300 ease-premium hover:border-graphite/25 hover:bg-mist/60 ${
+                className={`group flex flex-col rounded-2xl border border-graphite/[0.08] p-3 transition-colors duration-300 ease-premium hover:border-graphite/25 hover:bg-mist/60 ${
                   i === 2 ? 'hidden xl:flex' : ''
                 }`}
               >
-                <span className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_50%,#E3EAEC_100%)] p-5 transition-colors duration-300 ease-premium">
+                {/* Квадратный кадр с минимальным внутренним отступом: при 4:3 и
+                    p-5 официальное фото ужималось до ~120px и снова читалось
+                    как иконка — ровно то, на что клиент жаловался. */}
+                <span className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_50%,#E3EAEC_100%)] p-3 transition-colors duration-300 ease-premium">
                   <img
                     src={thumb}
                     srcSet={`${thumb} 300w, ${product.image} 700w`}
@@ -125,7 +128,7 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
                     alt={`ShineMate ${product.model}`}
                     loading="lazy"
                     decoding="async"
-                    className="max-h-full w-auto max-w-full object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.05]"
+                    className="h-full w-full object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.05]"
                   />
                 </span>
                 <span className="mt-4 flex items-center gap-1.5 text-[1.0625rem] tracking-tight text-graphite">
