@@ -150,12 +150,12 @@ export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }
  * «посадка» — реальные кадры машинки, подложки и круга в одну линию.
  * Одна и та же фотография больше не иллюстрирует четыре разные мысли.
  */
-function Diagram({ diagram }: { diagram: SceneDiagram }) {
+function Diagram({ diagram, dark }: { diagram: SceneDiagram; dark?: boolean }) {
   switch (diagram.kind) {
     case 'rotary':
-      return <RotaryPrinciple rpm={diagram.rpm} />
+      return <RotaryPrinciple rpm={diagram.rpm} dark={dark} />
     case 'orbit':
-      return <OrbitPrinciple orbit={diagram.orbit} />
+      return <OrbitPrinciple orbit={diagram.orbit} dark={dark} />
     case 'speed':
       return <SpeedDial min={diagram.min} max={diagram.max} unit={diagram.unit} />
     case 'power':
@@ -183,6 +183,13 @@ function Diagram({ diagram }: { diagram: SceneDiagram }) {
 
 /** Схемам, которые сами по себе — крупный объект, рамка не нужна. */
 const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes']
+
+/*
+ * Схема принципа привода — это «технологический» акцент страницы, и он
+ * идёт на тёмной полосе: длинная светлая история получает ритм, а не
+ * восемь одинаковых светлых секций подряд.
+ */
+const DARK_DIAGRAMS: SceneDiagram['kind'][] = ['rotary', 'orbit']
 
 type SceneVariant = 'diagram' | 'split' | 'metric' | 'band' | 'plain' | 'detail'
 
@@ -263,13 +270,19 @@ function Scene({
   // Схема принципа: визуал занимает большую часть секции, текст — меньшую.
   if (variant === 'diagram' && scene.diagram) {
     const bare = BARE_DIAGRAMS.includes(scene.diagram.kind)
+    const dark = DARK_DIAGRAMS.includes(scene.diagram.kind)
+    // Схемы чередуются сторонами строго через одну: две подряд с одной
+    // стороны читались как одна длинная левая колонка.
+    const right = index % 2 === 1
     return (
-      <section className={`scene relative py-16 md:py-24 ${bg}`}>
+      <section
+        className={`scene relative py-16 md:py-24 ${dark ? 'bg-graphite text-porcelain' : bg}`}
+      >
         <div className="shell-wide">
           <motion.div
             {...revealProps(reduced, stagger(0, 0.08))}
             className={`grid items-center gap-10 lg:gap-16 ${
-              bare ? '' : flipped ? 'lg:grid-cols-[minmax(0,1fr)_1.5fr]' : 'lg:grid-cols-[1.5fr_minmax(0,1fr)]'
+              bare ? '' : right ? 'lg:grid-cols-[minmax(0,1fr)_1.6fr]' : 'lg:grid-cols-[1.6fr_minmax(0,1fr)]'
             }`}
           >
             {bare ? (
@@ -291,27 +304,43 @@ function Scene({
               <>
                 <motion.div
                   variants={rise}
-                  className={`overflow-hidden rounded-[2rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E1E9EB_100%)] p-6 sm:p-10 ${
-                    flipped ? 'lg:order-2' : ''
-                  }`}
+                  className={`overflow-hidden rounded-[2rem] p-6 sm:p-10 ${
+                    dark
+                      ? 'bg-ink/40 ring-1 ring-porcelain/10'
+                      : 'border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E1E9EB_100%)]'
+                  } ${right ? 'lg:order-2' : ''}`}
                 >
-                  <div className="min-h-[15rem] sm:min-h-[19rem] lg:min-h-[23rem]">
-                    <Diagram diagram={scene.diagram} />
+                  <div className="min-h-[15rem] sm:min-h-[18rem] lg:min-h-[22rem]">
+                    <Diagram diagram={scene.diagram} dark={dark} />
                   </div>
                 </motion.div>
-                <motion.div variants={rise} className={flipped ? 'lg:order-1' : undefined}>
+                <motion.div variants={rise} className={right ? 'lg:order-1' : undefined}>
                   <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
                     {scene.metric?.caption ?? 'Принцип работы'}
                   </p>
-                  <h3 className="mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight">
+                  <h3
+                    className={`mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight ${
+                      dark ? 'text-porcelain' : ''
+                    }`}
+                  >
                     {scene.title}
                   </h3>
                   {scene.metric && (
-                    <p className="mt-5 text-[clamp(1.5rem,1.2rem+1.4vw,2.25rem)] font-medium leading-none tracking-tight text-graphite">
+                    <p
+                      className={`mt-5 text-[clamp(1.5rem,1.2rem+1.4vw,2.25rem)] font-medium leading-none tracking-tight ${
+                        dark ? 'text-porcelain' : 'text-graphite'
+                      }`}
+                    >
                       {scene.metric.value}
                     </p>
                   )}
-                  <p className="mt-6 max-w-[46ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
+                  <p
+                    className={`mt-6 max-w-[46ch] text-[1.0625rem] leading-relaxed ${
+                      dark ? 'text-porcelain/72' : 'text-ash'
+                    }`}
+                  >
+                    {scene.body}
+                  </p>
                 </motion.div>
               </>
             )}

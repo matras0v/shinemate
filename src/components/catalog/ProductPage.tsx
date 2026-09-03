@@ -15,7 +15,7 @@ import {
 import { buildStory } from '../../data/story'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useLead } from '../../lib/leadContext'
-import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
+import { riseProps } from '../../lib/motion'
 import { productHref } from '../../lib/router'
 import {
   ComparisonSection,
@@ -306,25 +306,23 @@ export function ProductPage({ product }: Props) {
             )}
           </motion.div>
 
-          <motion.div {...revealProps(reduced, stagger(0, 0.08))} className="lg:pt-6">
-            <motion.p
-              variants={rise}
+          <motion.div {...riseProps(reduced, { y: 26, amount: 0.15 })} className="lg:pt-2">
+            <p
               className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-titanium"
             >
               {categoryTitle(product.category)}
-            </motion.p>
-            <motion.h1 variants={rise} className="h1-sm mt-4">
+            </p>
+            <h1 className="h1-sm mt-4">
               {product.model}
-            </motion.h1>
-            <motion.p variants={rise} className="mt-3 text-[1.0625rem] text-slate">
+            </h1>
+            <p className="mt-3 text-[1.0625rem] text-slate">
               {product.kind}
-            </motion.p>
-            <motion.p
-              variants={rise}
+            </p>
+            <p
               className="mt-6 max-w-[52ch] text-[1.0625rem] leading-relaxed text-ash"
             >
               {product.lead}
-            </motion.p>
+            </p>
 
             {/*
               Три главных параметра прямо на первом экране: клиент
@@ -333,8 +331,7 @@ export function ProductPage({ product }: Props) {
               самые, из прайса — просто вынесены выше.
             */}
             {story.highlights.length > 0 && (
-              <motion.dl
-                variants={rise}
+              <dl
                 className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-graphite/[0.12] pt-7 sm:grid-cols-3"
               >
                 {story.highlights.slice(0, 3).map((item) => (
@@ -347,11 +344,10 @@ export function ProductPage({ product }: Props) {
                     </dd>
                   </div>
                 ))}
-              </motion.dl>
+              </dl>
             )}
 
-            <motion.div
-              variants={rise}
+            <div
               className="mt-8 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-graphite/[0.12] pt-7"
             >
               <p className="text-[clamp(2rem,1.6rem+1.2vw,2.75rem)] leading-none tracking-tight">
@@ -363,9 +359,9 @@ export function ProductPage({ product }: Props) {
               <p className="w-full font-mono text-[0.8125rem] tracking-tight text-slate">
                 Артикул: {selectedVariant?.sku}
               </p>
-            </motion.div>
+            </div>
 
-            <motion.div variants={rise} className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => requestProduct(product, selectedVariant)}
@@ -380,7 +376,7 @@ export function ProductPage({ product }: Props) {
               >
                 Подобрать систему
               </button>
-            </motion.div>
+            </div>
           </motion.div>
         </div>
       </div>

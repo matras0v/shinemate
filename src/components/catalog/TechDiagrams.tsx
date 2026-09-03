@@ -20,6 +20,20 @@ import { useReducedMotion } from '../../hooks/useReducedMotion'
 
 const EMBER = '#FE8B0C'
 
+/**
+ * Схемы принципа работы живут на тёмной полосе — это «технологический»
+ * акцент длинной страницы. Палитра берётся отсюда, чтобы светлый и
+ * тёмный варианты не расходились по тону.
+ */
+const T = (dark?: boolean) => ({
+  ink: dark ? '#F7F6F2' : '#1A1C1E',
+  faint: dark ? 0.42 : 0.6,
+  disc: dark ? '#3A4145' : '#C6D2D5',
+  discTop: dark ? '#4C555A' : '#E7EDEE',
+  stroke: dark ? 0.5 : 0.35,
+  grid: dark ? 'text-porcelain/[0.09]' : 'text-graphite/[0.16]',
+})
+
 /** Тонкая техническая сетка под схемой — как на чертёжной подложке. */
 function Grid({ id, step = 28 }: { id: string; step?: number }) {
   return (
@@ -38,36 +52,37 @@ function Grid({ id, step = 28 }: { id: string; step?: number }) {
  * работает постоянно. Показываем именно это — без корпуса, редуктора и
  * прочего, чего мы не знаем.
  */
-export function RotaryPrinciple({ rpm }: { rpm?: string }) {
+export function RotaryPrinciple({ rpm, dark }: { rpm?: string; dark?: boolean }) {
   const reduced = useReducedMotion()
+  const t = T(dark)
   return (
     <svg
       viewBox="0 0 520 420"
       role="img"
       aria-label="Схема работы роторного привода: круг вращается вокруг одной оси"
-      className="h-full w-full text-graphite/[0.16]"
+      className={`h-full w-full ${t.grid}`}
     >
       <Grid id="rot-grid" />
       <rect width="520" height="420" fill="url(#rot-grid)" />
 
       {/* Ось вращения */}
-      <line x1="260" y1="28" x2="260" y2="268" stroke="#1A1C1E" strokeWidth="2" strokeDasharray="7 7" opacity="0.5" />
-      <circle cx="260" cy="28" r="4.5" fill="#1A1C1E" opacity="0.65" />
-      <text x="276" y="34" fontSize="13" fill="#1A1C1E" fillOpacity="0.6" fontFamily="ui-monospace, monospace">
+      <line x1="260" y1="28" x2="260" y2="268" stroke={t.ink} strokeWidth="2" strokeDasharray="7 7" opacity="0.5" />
+      <circle cx="260" cy="28" r="4.5" fill={t.ink} opacity="0.65" />
+      <text x="276" y="34" fontSize="13" fill={t.ink} fillOpacity={t.faint} fontFamily="ui-monospace, monospace">
         ОСЬ
       </text>
 
       {/* Шпиндель */}
-      <rect x="246" y="150" width="28" height="76" rx="7" fill="#1A1C1E" opacity="0.88" />
-      <rect x="238" y="218" width="44" height="14" rx="5" fill="#1A1C1E" opacity="0.7" />
+      <rect x="246" y="150" width="28" height="76" rx="7" fill={t.ink} opacity="0.88" />
+      <rect x="238" y="218" width="44" height="14" rx="5" fill={t.ink} opacity="0.7" />
 
       {/* Подложка и круг: плотные объёмы, а не бледные контуры */}
-      <ellipse cx="260" cy="268" rx="150" ry="44" fill="#1A1C1E" opacity="0.14" />
-      <ellipse cx="260" cy="252" rx="150" ry="44" fill="#C6D2D5" />
-      <ellipse cx="260" cy="252" rx="150" ry="44" fill="none" stroke="#1A1C1E" strokeOpacity="0.4" strokeWidth="2" />
-      <ellipse cx="260" cy="244" rx="150" ry="44" fill="#E7EDEE" />
-      <ellipse cx="260" cy="244" rx="150" ry="44" fill="none" stroke="#1A1C1E" strokeOpacity="0.32" strokeWidth="1.6" />
-      <ellipse cx="260" cy="244" rx="92" ry="27" fill="none" stroke="#1A1C1E" strokeOpacity="0.18" strokeWidth="1.4" />
+      <ellipse cx="260" cy="268" rx="150" ry="44" fill={t.ink} opacity="0.14" />
+      <ellipse cx="260" cy="252" rx="150" ry="44" fill={t.disc} />
+      <ellipse cx="260" cy="252" rx="150" ry="44" fill="none" stroke={t.ink} strokeOpacity={t.stroke} strokeWidth="2" />
+      <ellipse cx="260" cy="244" rx="150" ry="44" fill={t.discTop} />
+      <ellipse cx="260" cy="244" rx="150" ry="44" fill="none" stroke={t.ink} strokeOpacity={t.stroke} strokeWidth="1.6" />
+      <ellipse cx="260" cy="244" rx="92" ry="27" fill="none" stroke={t.ink} strokeOpacity={dark ? 0.25 : 0.18} strokeWidth="1.4" />
 
       {/* Направление вращения */}
       <ellipse
@@ -87,20 +102,20 @@ export function RotaryPrinciple({ rpm }: { rpm?: string }) {
       {/* Пятно контакта */}
       <ellipse cx="132" cy="262" rx="46" ry="15" fill={EMBER} opacity="0.22" />
       <ellipse cx="132" cy="262" rx="46" ry="15" fill="none" stroke={EMBER} strokeWidth="2" strokeDasharray="5 5" />
-      <line x1="132" y1="277" x2="132" y2="342" stroke="#1A1C1E" strokeOpacity="0.4" strokeWidth="1.2" />
-      <text x="132" y="364" textAnchor="middle" fontSize="13" fill="#1A1C1E" fillOpacity="0.65" fontFamily="ui-monospace, monospace">
+      <line x1="132" y1="277" x2="132" y2="342" stroke={t.ink} strokeOpacity={t.stroke} strokeWidth="1.2" />
+      <text x="132" y="364" textAnchor="middle" fontSize="13" fill={t.ink} fillOpacity={t.faint} fontFamily="ui-monospace, monospace">
         ПЯТНО КОНТАКТА
       </text>
-      <text x="132" y="384" textAnchor="middle" fontSize="12" fill="#1A1C1E" fillOpacity="0.45" fontFamily="ui-monospace, monospace">
+      <text x="132" y="384" textAnchor="middle" fontSize="12" fill={t.ink} fillOpacity={dark ? 0.32 : 0.45} fontFamily="ui-monospace, monospace">
         РАБОТАЕТ ПОСТОЯННО
       </text>
 
       {rpm && (
         <>
-          <text x="504" y="368" textAnchor="end" fontSize="13" fill="#1A1C1E" fillOpacity="0.5" fontFamily="ui-monospace, monospace">
+          <text x="504" y="368" textAnchor="end" fontSize="13" fill={t.ink} fillOpacity={dark ? 0.36 : 0.5} fontFamily="ui-monospace, monospace">
             ДИАПАЗОН
           </text>
-          <text x="504" y="392" textAnchor="end" fontSize="17" fill="#1A1C1E" fillOpacity="0.9" fontFamily="ui-monospace, monospace">
+          <text x="504" y="392" textAnchor="end" fontSize="17" fill={t.ink} fillOpacity={dark ? 0.95 : 0.9} fontFamily="ui-monospace, monospace">
             {rpm}
           </text>
         </>
@@ -116,45 +131,62 @@ export function RotaryPrinciple({ rpm }: { rpm?: string }) {
  * диаметра. Диаметр орбиты в подписи — реальный ход эксцентрика из
  * прайса, а не декоративное число.
  */
-export function OrbitPrinciple({ orbit }: { orbit?: string }) {
+export function OrbitPrinciple({ orbit, dark }: { orbit?: string; dark?: boolean }) {
   const reduced = useReducedMotion()
+  const t = T(dark)
+  const cx = 260
+  const cy = 196
+  const orb = 48 // радиус орбиты на схеме
+  const pad = 92 // радиус круга на схеме
   return (
     <svg
-      viewBox="0 0 520 400"
+      viewBox="0 0 520 420"
       role="img"
       aria-label="Схема работы эксцентрика: круг вращается и одновременно ходит по орбите"
-      className="h-full w-full text-graphite/[0.13]"
+      className={`h-full w-full ${t.grid}`}
     >
       <Grid id="orb-grid" />
-      <rect width="520" height="400" fill="url(#orb-grid)" />
+      <rect width="520" height="420" fill="url(#orb-grid)" />
 
-      {/* Орбитальная траектория */}
-      <circle cx="260" cy="205" r="74" fill="none" stroke="#1A1C1E" strokeOpacity="0.28" strokeWidth="1.4" strokeDasharray="5 6" />
-      <circle cx="260" cy="205" r="3.5" fill="#1A1C1E" opacity="0.5" />
+      {/* Крайние положения круга — орбита читается даже на статичном кадре */}
+      <circle cx={cx - orb} cy={cy} r={pad} fill="none" stroke={t.ink} strokeOpacity={dark ? 0.16 : 0.13} strokeWidth="1.4" strokeDasharray="4 5" />
+      <circle cx={cx + orb} cy={cy} r={pad} fill="none" stroke={t.ink} strokeOpacity={dark ? 0.16 : 0.13} strokeWidth="1.4" strokeDasharray="4 5" />
 
-      {/* Круг, смещённый от центра орбиты */}
-      <g className={reduced ? undefined : 'origin-[260px_205px] animate-[spin_5.5s_linear_infinite]'}>
-        <g transform="translate(0,-74)">
-          <circle cx="260" cy="205" r="96" fill="#D9E2E4" />
-          <circle cx="260" cy="205" r="96" fill="none" stroke="#1A1C1E" strokeOpacity="0.22" strokeWidth="1.5" />
-          <circle cx="260" cy="205" r="62" fill="#EFF3F4" stroke="#1A1C1E" strokeOpacity="0.14" strokeWidth="1.2" />
-          <circle cx="260" cy="205" r="9" fill="#1A1C1E" opacity="0.7" />
-          {/* Метка собственного вращения круга */}
-          <line x1="260" y1="205" x2="260" y2="121" stroke={EMBER} strokeWidth="3" strokeLinecap="round" />
+      {/* Траектория центра круга */}
+      <circle cx={cx} cy={cy} r={orb} fill="none" stroke={EMBER} strokeOpacity="0.55" strokeWidth="1.6" strokeDasharray="5 6" />
+      <circle cx={cx} cy={cy} r="3.5" fill={t.ink} opacity="0.55" />
+
+      {/* Сам круг: одновременно едет по орбите и вращается вокруг себя */}
+      {/* transformOrigin инлайном: Tailwind не генерирует классы из
+          вычисляемых строк, а центр орбиты здесь параметрический. */}
+      <g
+        className={reduced ? undefined : 'animate-[spin_6s_linear_infinite]'}
+        style={{ transformOrigin: `${cx}px ${cy}px` }}
+      >
+        <g transform={`translate(${-orb},0)`}>
+          <circle cx={cx} cy={cy} r={pad} fill={t.disc} />
+          <circle cx={cx} cy={cy} r={pad} fill="none" stroke={t.ink} strokeOpacity={t.stroke} strokeWidth="1.8" />
+          <circle cx={cx} cy={cy} r={pad * 0.62} fill={t.discTop} />
+          <circle cx={cx} cy={cy} r={pad * 0.62} fill="none" stroke={t.ink} strokeOpacity={dark ? 0.28 : 0.16} strokeWidth="1.3" />
+          <circle cx={cx} cy={cy} r="8" fill={EMBER} />
+          <line x1={cx} y1={cy} x2={cx} y2={cy - pad + 8} stroke={EMBER} strokeWidth="3.5" strokeLinecap="round" />
         </g>
       </g>
 
       {/* Размерная линия орбиты */}
-      <g stroke="#1A1C1E" strokeOpacity="0.45" strokeWidth="1">
-        <line x1="186" y1="330" x2="334" y2="330" />
-        <line x1="186" y1="322" x2="186" y2="338" />
-        <line x1="334" y1="322" x2="334" y2="338" />
+      <g stroke={t.ink} strokeOpacity={dark ? 0.4 : 0.45} strokeWidth="1.2">
+        <line x1={cx - orb} y1="330" x2={cx + orb} y2="330" />
+        <line x1={cx - orb} y1="322" x2={cx - orb} y2="338" />
+        <line x1={cx + orb} y1="322" x2={cx + orb} y2="338" />
       </g>
-      <text x="260" y="356" textAnchor="middle" fontSize="13" fill="#1A1C1E" fillOpacity="0.62" fontFamily="ui-monospace, monospace">
+      <text x={cx} y="356" textAnchor="middle" fontSize="13" fill={t.ink} fillOpacity={t.faint} fontFamily="ui-monospace, monospace">
         {orbit ? `ХОД ЭКСЦЕНТРИКА ${orbit}` : 'ХОД ЭКСЦЕНТРИКА'}
       </text>
+      <text x={cx} y="380" textAnchor="middle" fontSize="12" fill={t.ink} fillOpacity={dark ? 0.34 : 0.44} fontFamily="ui-monospace, monospace">
+        ОДНА ТОЧКА ЛАКА НЕ ГРЕЕТСЯ ПОСТОЯННО
+      </text>
 
-      <text x="16" y="40" fontSize="13" fill="#1A1C1E" fillOpacity="0.62" fontFamily="ui-monospace, monospace">
+      <text x="24" y="46" fontSize="13" fill={t.ink} fillOpacity={t.faint} fontFamily="ui-monospace, monospace">
         ВРАЩЕНИЕ + ОРБИТА
       </text>
     </svg>
