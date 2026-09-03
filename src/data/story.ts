@@ -319,8 +319,13 @@ const strokeMm = (p: Product) => firstNumber(specValue(p, 'Ход эксцент
 
 /** Стек посадки из РЕАЛЬНЫХ кадров каталога: машинка → подложка → круг. */
 function mountItems(p: Product): { src: string; label: string; note: string }[] | null {
-  const plateSlug = isOrbitalLike(p) ? 'plates-da' : isSanderLike(p) ? 'plates-sander' : 'plates-rotary'
-  const plate = bySlug(plateSlug)
+  /*
+   * Стек собирается по РЕАЛЬНОЙ посадке машинки, а не по её разделу.
+   * Раньше «аккумуляторная» означала «роторная подложка», и на странице
+   * EB202A с посадкой 2" Roll Lock стоял кадр M14-подложки и круга 6",
+   * которые на неё не встают. Нет определимой посадки — нет и сцены.
+   */
+  const plate = plateForMachine(p)
   const pad = bySlug(isSanderLike(p) ? 'foam-flat-t80' : 'foam-diamond-t40')
   if (!plate) return null
   const thread = specValue(p, 'Резьба')
@@ -459,6 +464,34 @@ function machineScenes(p: Product): StoryScene[] {
     }
   }
 
+  /*
+   * Комплект поставки — это ровно то, по чему выбирают аккумуляторный
+   * набор: у EB210 Kit три головки, шесть подложек, два аккумулятора и
+   * кейс, и всё это есть в прайсе. Только для аккумуляторных: сетевой
+   * машинке аккумулятор с зарядным в комплект приписывать нельзя.
+   */
+  if (p.category === 'cordless' && p.includes && p.includes.length >= 3) {
+    const battery = platform && /10,8|10\.8/.test(platform) ? bySlug('battery-108v') : bySlug('battery-18v')
+    const charger = bySlug('chargers')
+    scenes.push({
+      title: 'Это комплект, а не одна машинка',
+      body: `В коробке: ${p.includes.join('; ').toLowerCase()}. Отдельно докупать питание и оснастку под первый запуск не нужно — набор собран так, чтобы начать работу сразу.`,
+      metric: { value: String(p.includes.length), caption: 'Позиций в комплекте' },
+      ...(battery && charger
+        ? {
+            diagram: {
+              kind: 'mount' as const,
+              items: [
+                { src: p.image, label: p.model, note: p.kind },
+                { src: battery.image, label: 'Аккумулятор', note: battery.model },
+                { src: charger.image, label: 'Зарядное', note: charger.model },
+              ],
+            },
+          }
+        : {}),
+    })
+  }
+
   // 06. Аккумуляторная платформа.
   if (platform) {
     scenes.push({
@@ -519,15 +552,10 @@ function machineScale(p: Product): CutScale | undefined {
 
 /** Совместимость машинки — реальные товары каталога, подобранные по типу привода. */
 function machineCompat(p: Product): CompatGroup[] {
-  const plateSlug = isOrbitalLike(p)
-    ? 'plates-da'
-    : isSanderLike(p)
-      ? 'plates-sander'
-      : 'plates-rotary'
-
   const groups: CompatGroup[] = []
 
-  const plate = bySlug(plateSlug)
+  // Подложка — только та, что реально встаёт по посадке из прайса.
+  const plate = plateForMachine(p)
   // У гибкого вала опорной подложки нет вовсе: насадка садится прямо на
   // хвостовик 3 мм, поэтому блок «Подложка» ему не показывается.
   if (plate && !isShaftLike(p)) {
@@ -546,7 +574,9 @@ function machineCompat(p: Product): CompatGroup[] {
       note: 'Под точечную работу с гибким валом',
       items: bySlugs(['spot-pads', 'adaptors-shafts']),
     })
-  } else if (!isSanderLike(p)) {
+  } else if (!isSanderLike(p) && plate) {
+    // Круги и пасты показываются только машинке, у которой есть подложка
+    // каталога: без неё полноразмерный круг на неё просто не встанет.
     groups.push({
       title: 'Круги по стадиям',
       note: 'От тяжёлой коррекции к финишу — по таблице применения',
@@ -565,10 +595,22 @@ function machineCompat(p: Product): CompatGroup[] {
   }
 
   if (p.category === 'cordless') {
+    /*
+     * «Той же платформы» — значит именно той же: машинке 10,8 В больше не
+     * предлагается аккумулятор 18 В. Платформа берётся из её же строки
+     * прайса, а не из раздела.
+     */
+    const platform = specValue(p, 'Платформа') ?? ''
+    const battery = /10,8|10\.8/.test(platform)
+      ? 'battery-108v'
+      : /18/.test(platform)
+        ? 'battery-18v'
+        : null
+    const items = bySlugs([...(battery ? [battery] : ['battery-18v', 'battery-108v']), 'chargers'])
     groups.push({
       title: 'Питание',
-      note: 'Аккумулятор и зарядное той же платформы',
-      items: bySlugs(['battery-18v', 'battery-108v', 'chargers']),
+      note: battery ? `Аккумулятор и зарядное платформы ${platform}` : 'Аккумулятор и зарядное той же платформы',
+      items,
     })
   }
 
@@ -1618,15 +1660,49 @@ function comparison(p: Product): ComparisonTable | undefined {
  * является сам товар, помечается active. Если какого-то звена в каталоге
  * нет, цепочка просто короче — заглушек не появляется.
  */
+/**
+ * Какая подложка каталога реально встаёт на эту машинку.
+ *
+ * Раньше подложку выбирал РАЗДЕЛ («аккумуляторная» → роторная подложка),
+ * и компактные машинки 10,8 В получали оснастку, которая на них физически
+ * не встаёт: у EB202A посадка 2" Roll Lock, у EB210 Kit головки 1,25"–2,5",
+ * а подложки каталога — M14/M8 диаметром до 148 мм. Теперь решает
+ * собственная посадка машинки из прайса; если её определить нельзя, ни
+ * подложки, ни кругов, ни пасты машинке не приписывается.
+ */
+function plateForMachine(m: Product): Product | undefined {
+  if (isShaftLike(m)) return undefined
+  if (isSanderLike(m)) {
+    /*
+     * Шлифовальные подложки каталога — 123 и 148 мм (5" и 6"). Размер
+     * сверяется по целому токену: «1,25"» содержит подстроку «5"», и по
+     * ней аккумуляторная EB200A с головкой 1,25" ошибочно получала
+     * подложку 6".
+     */
+    const size = m.specs.find((x) => /^Подложк/i.test(x.label))?.value ?? ''
+    return /(^|[^\d,.])[56]"|\b(123|148)\b/.test(size) ? bySlug('plates-sander') : undefined
+  }
+  const mount = `${specValue(m, 'Резьба') ?? ''} ${m.specs.find((x) => /^Подложк/i.test(x.label))?.value ?? ''}`
+  if (/M14/i.test(mount)) return bySlug('plates-rotary')
+  if (/M8|5\/16/i.test(mount)) return bySlug('plates-da')
+  return undefined
+}
+
 function systemChain(p: Product): SystemChain | undefined {
   const kind = storyKind(p)
   // Аксессуары и питание в связке «машинка → круг → паста» не участвуют:
   // у аккумулятора нет ни посадки, ни круга, и строить для него цепочку
   // полировки — прямая ложь о товаре.
   if (kind === 'accessory' || kind === 'power') return undefined
-  // Шлифовальная машинка заканчивается подложкой и абразивным диском:
-  // полировальный круг и паста на неё не ставятся.
-  const sanding = kind === 'machine' && isSanderLike(p)
+  /*
+   * Шлифование заканчивается подложкой и абразивным диском: полировальный
+   * круг и паста на него не ставятся. Раньше признак считался только по
+   * машинке, и страница ШЛИФОВАЛЬНОЙ подложки всё равно достраивала
+   * связку до «Black Diamond T40 + V40» — оснастка серии ES получала
+   * полировальный круг, которого на ней не бывает.
+   */
+  const sanding =
+    (kind === 'machine' && isSanderLike(p)) || (kind === 'plate' && /шлифоваль/i.test(p.model))
 
   // Гибкий вал и точечные насадки живут в своей связке: полноразмерный
   // круг и подложка на них не ставятся, у них хвостовик 3 мм.
@@ -1652,15 +1728,22 @@ function systemChain(p: Product): SystemChain | undefined {
   // прайсу, у пасты — эксцентриковая машинка как самый ходовой инструмент.
   const rig = kind === 'pad' ? padRig(p) : null
 
+  /*
+   * У оснастки машинку задаёт её собственная посадка, а не порядок в
+   * файле. «Адаптеры и удлинители вала» — резьба M14 под РОТОРНУЮ
+   * машинку, но попадали в общий else и вставали в связку с EX620, у
+   * которой M8: связка показывала физически несобираемый стек.
+   */
+  const plateThread = kind === 'plate' ? p.specs.map((x) => x.value).join(' ') : ''
   const machine =
     kind === 'machine'
       ? p
       : rig?.machine
         ? rig.machine
-        : kind === 'plate' && /роторн/i.test(p.model)
-          ? bySlug('ep820')
-          : kind === 'plate' && /шлифоваль/i.test(p.model)
-            ? bySlug('es516')
+        : kind === 'plate' && /шлифоваль/i.test(p.model)
+          ? bySlug('es516')
+          : kind === 'plate' && (/роторн/i.test(p.model) || /M14/.test(plateThread))
+            ? bySlug('ep820')
             : bySlug('ex620')
 
   const plate =
@@ -1668,15 +1751,12 @@ function systemChain(p: Product): SystemChain | undefined {
       ? p
       : rig?.plate
         ? rig.plate
-        : bySlug(
-            kind === 'machine'
-              ? isOrbitalLike(p)
-                ? 'plates-da'
-                : isSanderLike(p)
-                  ? 'plates-sander'
-                  : 'plates-rotary'
-              : 'plates-da',
-          )
+        : kind === 'machine'
+          ? plateForMachine(p)
+          : bySlug('plates-da')
+
+  // Машинка без определимой посадки не получает придуманную связку.
+  if (kind === 'machine' && !plate) return undefined
 
   const pad =
     kind === 'pad'
