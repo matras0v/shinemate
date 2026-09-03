@@ -66,7 +66,7 @@ export function CategoryNavigator() {
     <section id="equipment" className="scene relative bg-mist py-24 sm:py-28 md:py-36">
       <motion.div
         {...revealProps(reduced, stagger(0, 0.08))}
-        className="shell"
+        className="shell-wide"
       >
         <motion.p variants={rise} className="eyebrow">
           Оборудование
@@ -89,7 +89,7 @@ export function CategoryNavigator() {
         </div>
       </motion.div>
 
-      <div className="shell relative mt-10 sm:mt-12">
+      <div className="shell-wide relative mt-10 sm:mt-12">
         <motion.ul
           ref={list}
           {...revealProps(reduced, stagger(0.08, 0.05))}
