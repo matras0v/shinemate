@@ -475,7 +475,11 @@ function machineScenes(p: Product): StoryScene[] {
     const charger = bySlug('chargers')
     scenes.push({
       title: 'Это комплект, а не одна машинка',
-      body: `В коробке: ${p.includes.join('; ').toLowerCase()}. Отдельно докупать питание и оснастку под первый запуск не нужно — набор собран так, чтобы начать работу сразу.`,
+      // Строчной делается только первая буква пункта: сплошной toLowerCase
+      // превращал модели головок DA12 · RO-L · RO-H в «da12, ro-l, ro-h».
+      body: `В коробке: ${p.includes
+        .map((x) => x.charAt(0).toLowerCase() + x.slice(1))
+        .join('; ')}. Отдельно докупать питание и оснастку под первый запуск не нужно — набор собран так, чтобы начать работу сразу.`,
       metric: { value: String(p.includes.length), caption: 'Позиций в комплекте' },
       ...(battery && charger
         ? {
@@ -1308,7 +1312,13 @@ function plateScenes(p: Product): StoryScene[] {
   const diameters = specValue(p, 'Диаметры')
   const mount = specValue(p, 'Крепление')
 
-  const machine = /роторн/i.test(p.model)
+  /*
+   * Машинка в стеке выбирается по резьбе САМОЙ оснастки: у «Адаптеров и
+   * удлинителей вала» резьба M14, но по названию они не «роторные», и
+   * стек показывал их вместе с EX620, у которой M8 — физически такой
+   * стек не собрать.
+   */
+  const machine = /роторн/i.test(p.model) || /M14/i.test(thread ?? '')
     ? bySlug('ep820')
     : /шлифоваль/i.test(p.model)
       ? bySlug('es516')
@@ -1371,9 +1381,16 @@ function plateScenes(p: Product): StoryScene[] {
 }
 
 function plateCompat(p: Product): CompatGroup[] {
-  const machines = /роторн/i.test(p.model)
+  /*
+   * Машинки подбираются по резьбе позиции, а не только по её названию:
+   * «Адаптеры и удлинители вала» — это M14, то есть роторная линейка,
+   * но по слову «роторные» они не проходили и оставались вообще без
+   * блока совместимости.
+   */
+  const thread = specValue(p, 'Резьба') ?? ''
+  const machines = /роторн/i.test(p.model) || /M14/i.test(thread)
     ? bySlugs(['ep820', 'ep801-g2', 'ep830'])
-    : /эксцентриков/i.test(p.model)
+    : /эксцентриков/i.test(p.model) || /M8|5\/16/i.test(thread)
       ? bySlugs(['ex620', 'ex605', 'ero600-g2'])
       : /шлифоваль/i.test(p.model)
         ? bySlugs(['es516', 'es700'])
@@ -1394,9 +1411,15 @@ function plateCompat(p: Product): CompatGroup[] {
    * функция, по которой круг выбирает себе подложку.
    */
   if (!/шлифоваль/i.test(p.model)) {
+    /*
+     * Круги берутся по посадке. У адаптеров своей группы кругов в прайсе
+     * нет — они выносят вперёд уже собранную роторную оснастку, поэтому
+     * им показываются круги роторной подложки.
+     */
+    const host = /M14/i.test(thread) && !/подложк/i.test(p.model) ? 'plates-rotary' : p.slug
     const pads = products
       .filter((x) => x.category === 'pads' && !/гибкий вал|конус/i.test(x.kind))
-      .filter((x) => padRig(x).plate?.slug === p.slug)
+      .filter((x) => padRig(x).plate?.slug === host)
     // По одному представителю на семейство: подложка показывает РАЗНЫЕ
     // типы кругов (поролон, шерсть, микрофибру), а не три соседние
     // градации одной и той же серии.
