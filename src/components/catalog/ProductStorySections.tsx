@@ -336,7 +336,7 @@ function Scene({
                   )}
                   <p
                     className={`mt-6 max-w-[46ch] text-[1.0625rem] leading-relaxed ${
-                      dark ? 'text-porcelain/72' : 'text-ash'
+                      dark ? 'text-porcelain/70' : 'text-ash'
                     }`}
                   >
                     {scene.body}
@@ -1003,60 +1003,101 @@ export function PhotoScene({
 }) {
   const reduced = useReducedMotion()
   const dark = tone === 'dark'
+  /*
+   * Широкая полоса подходит только горизонтальным кадрам. У части
+   * официальных снимков пропорция близка к квадрату (линейка V-Range —
+   * 780×650, смена круга — 776×781): в полосе 16:7 у них срезало
+   * крышки флаконов и голову мастера. Такие кадры идут в две колонки и
+   * показываются целиком.
+   */
+  const wide = photo.width / photo.height >= 1.5
+
+  const img = (
+    <img
+      src={photo.src}
+      srcSet={`${photo.srcSmall} 800w, ${photo.src} 1400w`}
+      sizes={wide ? '(min-width: 1024px) 92vw, 100vw' : '(min-width: 1024px) 55vw, 100vw'}
+      width={photo.width}
+      height={photo.height}
+      alt={photo.title}
+      loading="lazy"
+      decoding="async"
+      className={
+        wide
+          ? 'h-[20rem] w-full object-cover sm:h-[26rem] lg:h-[32rem] xl:h-[36rem]'
+          : 'h-auto w-full object-contain'
+      }
+    />
+  )
+
+  const heading = (
+    <>
+      <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">{photo.eyebrow}</p>
+      <h3
+        className={`mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.5rem)] leading-[1.1] tracking-tight ${
+          dark ? 'text-porcelain' : 'text-graphite'
+        }`}
+      >
+        {photo.title}
+      </h3>
+    </>
+  )
+  const body = (
+    <p
+      className={`max-w-[52ch] text-[1.0625rem] leading-relaxed ${
+        dark ? 'text-porcelain/70' : 'text-ash'
+      }`}
+    >
+      {photo.body}
+    </p>
+  )
+
   return (
     <section
-      className={`scene relative overflow-hidden py-16 md:py-24 ${dark ? 'bg-graphite' : 'bg-hazeSurface'}`}
+      /* text-porcelain на самой секции — страховка: если модификатор
+         прозрачности у абзаца когда-нибудь не сгенерируется, текст
+         останется светлым, а не сольётся с графитовым фоном. */
+      className={`scene relative overflow-hidden py-16 md:py-24 ${
+        dark ? 'bg-graphite text-porcelain' : 'bg-hazeSurface'
+      }`}
     >
       <div className="shell-wide">
-        <motion.figure {...revealProps(reduced, stagger(0, 0.08))}>
-          {/*
-            Кадр идёт во всю ширину контентной сетки и не закрывается
-            текстом: на официальных снимках инструмент стоит в разных
-            местах кадра, и любая накладка поверх рано или поздно легла бы
-            прямо на машинку. Подпись — отдельной строкой под снимком,
-            как в editorial-вёрстке.
-          */}
-          <motion.div variants={rise} className="overflow-hidden rounded-[2rem]">
-            <img
-              src={photo.src}
-              srcSet={`${photo.srcSmall} 800w, ${photo.src} 1400w`}
-              sizes="(min-width: 1024px) 92vw, 100vw"
-              width={photo.width}
-              height={photo.height}
-              alt={photo.title}
-              loading="lazy"
-              decoding="async"
-              className="h-[20rem] w-full object-cover sm:h-[26rem] lg:h-[32rem] xl:h-[38rem]"
-            />
-          </motion.div>
-
-          <motion.figcaption
-            variants={rise}
-            className={`mt-9 grid gap-6 border-t pt-8 md:grid-cols-[1fr_1fr] md:gap-16 ${
-              dark ? 'border-porcelain/20' : 'border-graphite/[0.14]'
-            } ${variant === 'left' ? 'md:[direction:rtl] md:[&>*]:[direction:ltr]' : ''}`}
-          >
-            <div>
-              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
-                {photo.eyebrow}
-              </p>
-              <h3
-                className={`mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.5rem)] leading-[1.1] tracking-tight ${
-                  dark ? 'text-porcelain' : 'text-graphite'
-                }`}
-              >
-                {photo.title}
-              </h3>
-            </div>
-            <p
-              className={`max-w-[52ch] self-center text-[1.0625rem] leading-relaxed ${
-                dark ? 'text-porcelain/70' : 'text-ash'
-              }`}
+        {wide ? (
+          <motion.figure {...revealProps(reduced, stagger(0, 0.08))}>
+            <motion.div variants={rise} className="overflow-hidden rounded-[2rem]">
+              {img}
+            </motion.div>
+            <motion.figcaption
+              variants={rise}
+              className={`mt-9 grid gap-6 border-t pt-8 md:grid-cols-[1fr_1fr] md:gap-16 ${
+                dark ? 'border-porcelain/20' : 'border-graphite/[0.14]'
+              } ${variant === 'left' ? 'md:[direction:rtl] md:[&>*]:[direction:ltr]' : ''}`}
             >
-              {photo.body}
-            </p>
-          </motion.figcaption>
-        </motion.figure>
+              <div>{heading}</div>
+              <div className="self-center">{body}</div>
+            </motion.figcaption>
+          </motion.figure>
+        ) : (
+          <motion.figure
+            {...revealProps(reduced, stagger(0, 0.08))}
+            className={`grid items-center gap-10 lg:gap-16 ${
+              variant === 'left'
+                ? 'lg:grid-cols-[minmax(0,1fr)_1.35fr]'
+                : 'lg:grid-cols-[1.35fr_minmax(0,1fr)]'
+            }`}
+          >
+            <motion.div
+              variants={rise}
+              className={`overflow-hidden rounded-[2rem] ${variant === 'left' ? 'lg:order-2' : ''}`}
+            >
+              {img}
+            </motion.div>
+            <motion.figcaption variants={rise} className={variant === 'left' ? 'lg:order-1' : undefined}>
+              {heading}
+              <div className="mt-5">{body}</div>
+            </motion.figcaption>
+          </motion.figure>
+        )}
       </div>
     </section>
   )

@@ -407,46 +407,51 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
   const reduced = useReducedMotion()
   return (
     <svg
-      viewBox="0 0 520 300"
+      viewBox="0 0 520 250"
       role="img"
       aria-label={`Аккумуляторная платформа ${platform}`}
-      className="h-full w-full text-graphite/[0.13]"
+      className="h-full w-full text-graphite/[0.16]"
     >
-      <Grid id="bat-grid" />
-      <rect width="520" height="300" fill="url(#bat-grid)" />
+      <Grid id="bat-grid" step={26} />
+      <rect width="520" height="250" fill="url(#bat-grid)" />
 
       {/* Блок аккумулятора */}
-      <rect x="40" y="96" width="140" height="108" rx="14" fill="#1A1C1E" opacity="0.9" />
-      <rect x="62" y="76" width="42" height="24" rx="6" fill="#1A1C1E" opacity="0.9" />
-      <rect x="116" y="76" width="42" height="24" rx="6" fill="#1A1C1E" opacity="0.9" />
-      <text x="110" y="158" textAnchor="middle" fontSize="26" fontWeight="600" fill="#FFFFFF" letterSpacing="-0.5">
+      <rect x="18" y="62" width="176" height="128" rx="16" fill="#1A1C1E" />
+      <rect x="46" y="40" width="52" height="26" rx="7" fill="#1A1C1E" />
+      <rect x="114" y="40" width="52" height="26" rx="7" fill="#1A1C1E" />
+      <rect x="18" y="150" width="176" height="40" rx="0" fill={EMBER} opacity="0.9" />
+      <path d="M 18 176 h 176 v 14 a 16 16 0 0 1 -16 16 h -144 a 16 16 0 0 1 -16 -16 z" fill="#1A1C1E" opacity="0" />
+      <text x="106" y="122" textAnchor="middle" fontSize="44" fontWeight="600" fill="#FFFFFF" letterSpacing="-1">
         {platform}
       </text>
       {capacity && (
-        <text x="110" y="182" textAnchor="middle" fontSize="13" fill={EMBER} fontFamily="ui-monospace, monospace">
+        <text x="106" y="177" textAnchor="middle" fontSize="17" fontWeight="600" fill="#1A1C1E" fontFamily="ui-monospace, monospace">
           {capacity}
         </text>
       )}
 
       {/* Поток энергии */}
-      <path id="bat-path" d="M 196 150 L 360 150" stroke="#1A1C1E" strokeOpacity="0.25" strokeWidth="2" strokeDasharray="7 7" />
+      <line x1="210" y1="126" x2="330" y2="126" stroke="#1A1C1E" strokeOpacity="0.22" strokeWidth="2.5" strokeDasharray="8 8" />
       {!reduced &&
         [0, 1, 2].map((i) => (
-          <circle key={i} r="5" fill={EMBER}>
-            <animateMotion dur="2.6s" begin={`${i * 0.85}s`} repeatCount="indefinite" path="M 196 150 L 360 150" />
+          <circle key={i} r="6" fill={EMBER}>
+            <animateMotion dur="2.4s" begin={`${i * 0.8}s`} repeatCount="indefinite" path="M 210 126 L 330 126" />
           </circle>
         ))}
-      <path d="M 356 142 L 372 150 L 356 158 Z" fill={EMBER} />
+      <path d="M 326 116 L 348 126 L 326 136 Z" fill={EMBER} />
 
       {/* Рабочая головка */}
-      <circle cx="440" cy="150" r="56" fill="#D9E2E4" />
-      <circle cx="440" cy="150" r="56" fill="none" stroke="#1A1C1E" strokeOpacity="0.22" strokeWidth="1.5" />
-      <circle cx="440" cy="150" r="30" fill="#EFF3F4" stroke="#1A1C1E" strokeOpacity="0.14" />
-      <text x="440" y="240" textAnchor="middle" fontSize="13" fill="#1A1C1E" fillOpacity="0.62" fontFamily="ui-monospace, monospace">
-        РАБОЧАЯ ГОЛОВКА
-      </text>
-      <text x="110" y="240" textAnchor="middle" fontSize="13" fill="#1A1C1E" fillOpacity="0.62" fontFamily="ui-monospace, monospace">
+      <ellipse cx="428" cy="140" rx="78" ry="24" fill="#1A1C1E" opacity="0.1" />
+      <circle cx="428" cy="126" r="76" fill="#D9E2E4" />
+      <circle cx="428" cy="126" r="76" fill="none" stroke="#1A1C1E" strokeOpacity="0.3" strokeWidth="2" />
+      <circle cx="428" cy="126" r="42" fill="#EFF3F4" stroke="#1A1C1E" strokeOpacity="0.16" strokeWidth="1.4" />
+      <circle cx="428" cy="126" r="9" fill="#1A1C1E" opacity="0.65" />
+
+      <text x="106" y="228" textAnchor="middle" fontSize="13" fill="#1A1C1E" fillOpacity="0.58" fontFamily="ui-monospace, monospace">
         БЕЗ КАБЕЛЯ
+      </text>
+      <text x="428" y="228" textAnchor="middle" fontSize="13" fill="#1A1C1E" fillOpacity="0.58" fontFamily="ui-monospace, monospace">
+        РАБОЧАЯ ГОЛОВКА
       </text>
     </svg>
   )
