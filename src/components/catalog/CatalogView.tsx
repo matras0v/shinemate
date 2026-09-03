@@ -240,6 +240,9 @@ function SortControl({
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
+        // В компактном виде у кнопки остаётся одна иконка: без явного
+        // имени скринридер читал бы просто «кнопка».
+        aria-label={`Сортировка: ${SORT_LABELS[sort]}`}
         className={`inline-flex items-center gap-2 rounded-full border border-graphite/15 bg-porcelain text-[0.8125rem] text-ash transition-colors duration-400 ease-premium hover:text-graphite ${
           compact ? 'p-3' : 'px-4 py-2.5'
         }`}

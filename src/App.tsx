@@ -105,7 +105,7 @@ export default function App() {
         </main>
       ) : route.name === 'contacts' ? (
         <main className="pt-[5.25rem]">
-          <Contact onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
+          <Contact standalone onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
         </main>
       ) : route.name === 'wholesale' ? (
         <main className="pt-[5.25rem]">

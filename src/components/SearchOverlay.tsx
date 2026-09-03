@@ -74,7 +74,12 @@ export function SearchOverlay({ open, onClose }: Props) {
             transition={{ duration: 0.3, ease: EASE }}
             className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-porcelain shadow-[0_40px_90px_-30px_rgba(26,28,30,0.45)]"
           >
-            <div className="flex items-center gap-3 border-b border-graphite/[0.1] px-5 py-4">
+            {/*
+              У поля снят системный outline, поэтому фокус показывает сама
+              строка: её нижняя граница темнеет. Без этого при переходе
+              табом обратно в поле было не видно, где стоит курсор.
+            */}
+            <div className="flex items-center gap-3 border-b border-graphite/[0.1] px-5 py-4 transition-colors duration-300 ease-premium focus-within:border-graphite/60">
               <Search size={18} className="shrink-0 text-titanium" />
               <input
                 ref={inputRef}

@@ -14,6 +14,8 @@ const field =
 
 type Props = {
   onOpenConsent: () => void
+  /** На отдельной странице «Контакты» заголовок блока — h1 страницы. */
+  standalone?: boolean
 }
 
 /**
@@ -23,7 +25,13 @@ type Props = {
  * должен зависеть от переключателя розница/опт, это должны быть две
  * самостоятельные кнопки в шапке.
  */
-export function Contact({ onOpenConsent }: Props) {
+export function Contact({ onOpenConsent, standalone }: Props) {
+  /*
+   * На главной этот блок — секция под hero, и заголовок там h2. На
+   * отдельной странице «Контакты» он единственный крупный заголовок,
+   * то есть должен быть h1: иначе у страницы нет h1 вообще.
+   */
+  const Heading = standalone ? motion.h1 : motion.h2
   const [sent, setSent] = useState(false)
   const reduced = useReducedMotion()
   const { product, variant, clearProduct } = useLead()
@@ -70,9 +78,9 @@ export function Contact({ onOpenConsent }: Props) {
         <motion.p variants={rise} className="eyebrow">
           Контакты
         </motion.p>
-        <motion.h2 variants={rise} className="h1 mt-5 max-w-[18ch]">
+        <Heading variants={rise} className="h1 mt-5 max-w-[18ch]">
           Подберём ShineMate под вашу задачу
-        </motion.h2>
+        </Heading>
         <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-slate">
           Расскажите, с какими покрытиями и объёмами работаете — предложим конфигурацию машинки,
           подложек и кругов и пришлём актуальный прайс.
