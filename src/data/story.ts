@@ -1234,6 +1234,36 @@ function plateCompat(p: Product): CompatGroup[] {
   return groups.filter((g) => g.items.length > 0)
 }
 
+/**
+ * Сцены аксессуара. У оснастки рабочего места нет оборотов и резьбы,
+ * зато есть реальные исполнения из прайса — их и показываем рядом, с
+ * ценой у каждого: это ровно то, по чему её выбирают.
+ */
+function accessoryScenes(p: Product): StoryScene[] {
+  const scenes = specScenes(p, 2)
+  if (p.variants.length >= 2) {
+    scenes.push({
+      title: 'Исполнения в прайсе',
+      body:
+        'Позиция поставляется несколькими исполнениями — они отличаются размером, комплектом или креплением. Переключатель в блоке «Что выбрать» ниже показывает артикул и РРЦ каждого.',
+      diagram: {
+        kind: 'series',
+        from: p.variants[0]?.label ?? '',
+        to: p.variants[p.variants.length - 1]?.label ?? '',
+        items: p.variants.slice(0, 5).map((v, i) => ({
+          slug: v.sku,
+          href: `catalog/${p.category}/${p.slug}`,
+          label: v.sku,
+          note: v.label,
+          image: v.image ?? p.image,
+          active: i === 0,
+        })),
+      },
+    })
+  }
+  return scenes
+}
+
 function accessoryCompat(p: Product): CompatGroup[] {
   const related = productsByCategory(p.category).filter((x) => x.slug !== p.slug)
   return related.length
@@ -1639,7 +1669,7 @@ function buildCore(p: Product): StoryCore {
     default:
       return {
         purpose: simplePurpose(p),
-        scenes: specScenes(p, 2),
+        scenes: accessoryScenes(p),
         comparison: comparison(p),
         compat: accessoryCompat(p),
       }
@@ -1804,7 +1834,7 @@ function storyPhotos(p: Product): StoryPhoto[] {
   const kind = storyKind(p)
   const out: (StoryPhoto | null)[] = []
 
-  if (kind === 'machine') {
+  if (kind === 'machine' || kind === 'power') {
     out.push(machinePhoto(p))
   } else if (kind === 'compound') {
     out.push(
