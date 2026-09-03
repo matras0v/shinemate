@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check, ChevronRight, X, ZoomIn } from 'lucide-react'
 
@@ -101,8 +101,16 @@ export function ProductPage({ product }: Props) {
     if (match) setSelectedSku(match.sku)
   }
 
-  const related = getRelatedProducts(product)
-  const story = buildStory(product)
+  const related = useMemo(() => getRelatedProducts(product), [product])
+  /*
+   * buildStory собирает новые массивы и объекты на каждый вызов. Без
+   * useMemo он пересобирался на КАЖДЫЙ рендер, и story.gallery каждый раз
+   * был новой ссылкой — из-за этого эффект синхронизации галереи с
+   * исполнением срабатывал бесконечно и мгновенно возвращал выбранный
+   * кадр обратно. Ровно этот баг клиент поймал на «Подложках для
+   * роторных машинок»: вторая миниатюра нажималась, но кадр откатывался.
+   */
+  const story = useMemo(() => buildStory(product), [product])
 
   /*
    * Галерея показывает только РЕАЛЬНЫЕ кадры позиции: фото товара плюс
@@ -113,14 +121,67 @@ export function ProductPage({ product }: Props) {
    */
   const [shot, setShot] = useState(0)
   useEffect(() => setShot(0), [product.slug])
-  // Выбор исполнения переводит галерею на кадр этого исполнения, если он есть.
+
+  /*
+   * Синхронизация «исполнение → кадр» работает ТОЛЬКО в одну сторону и
+   * только когда исполнение реально сменилось. Раньше эффект зависел от
+   * story.gallery (новая ссылка на каждом рендере) и поэтому перебивал
+   * ручной выбор миниатюры. Ref хранит последнее обработанное фото
+   * исполнения, поэтому повторные рендеры эффект не запускают.
+   */
+  const lastVariantImage = useRef<string | undefined>(undefined)
   useEffect(() => {
-    if (!selectedVariant?.image) return
-    const i = story.gallery.indexOf(selectedVariant.image)
+    const img = selectedVariant?.image
+    if (!img || img === lastVariantImage.current) return
+    lastVariantImage.current = img
+    const i = story.gallery.indexOf(img)
     if (i >= 0) setShot(i)
   }, [selectedVariant?.image, story.gallery])
+  useEffect(() => {
+    lastVariantImage.current = undefined
+  }, [product.slug])
 
-  const heroImage = story.gallery[shot] ?? selectedVariant?.image ?? product.image
+  const watermarkToken = product.model.split(/[\s—/(]/)[0]
+  const watermark = watermarkToken.length <= 8 ? watermarkToken : null
+
+  const shotIndex = Math.min(shot, Math.max(story.gallery.length - 1, 0))
+  const heroImage = story.gallery[shotIndex] ?? selectedVariant?.image ?? product.image
+
+  /*
+   * Клавиатура внутри галереи: стрелки листают кадры, когда фокус на
+   * миниатюрах. Клик по миниатюре — обычная кнопка, никакого
+   * переключения по наведению.
+   */
+  const stepShot = useCallback(
+    (delta: number) => {
+      const n = story.gallery.length
+      if (n < 2) return
+      setShot((i) => (i + delta + n) % n)
+    },
+    [story.gallery.length],
+  )
+  const onGalleryKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      stepShot(1)
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      stepShot(-1)
+    }
+  }
+  // Свайп по главному кадру на touch — тот же жест, что и в hero главной.
+  const touchX = useRef<number | null>(null)
+  const onHeroTouchStart = (e: React.TouchEvent) => {
+    touchX.current = e.touches[0].clientX
+  }
+  const onHeroTouchEnd = (e: React.TouchEvent) => {
+    const start = touchX.current
+    touchX.current = null
+    if (start === null) return
+    const dx = e.changedTouches[0].clientX - start
+    if (Math.abs(dx) < 45) return
+    stepShot(dx < 0 ? 1 : -1)
+  }
 
   return (
     <div className="min-h-[100dvh] bg-porcelain">
@@ -146,33 +207,58 @@ export function ProductPage({ product }: Props) {
           </nav>
         </div>
 
-        <div className="shell-wide mt-8 grid items-start gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-16 xl:gap-20">
-          {/* Товар доминирует: крупный кадр на студийной подложке, а не
-              маленькое фото, потерянное в белой пустоте. */}
+        <div className="shell-wide mt-8 grid items-center gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-14 xl:gap-20">
+          {/* Товар доминирует: крупный кадр на студийной сцене с
+              водяным знаком модели, а не маленькое фото в белой пустоте. */}
           <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
             <button
               type="button"
               onClick={() => setZoomOpen(true)}
+              onTouchStart={onHeroTouchStart}
+              onTouchEnd={onHeroTouchEnd}
               aria-label="Увеличить фото"
-              className="group relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[2rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_45%,#E1E9EB_100%)]"
+              className="group relative flex aspect-[5/4] w-full items-center justify-center overflow-hidden rounded-[2rem] bg-[radial-gradient(115%_95%_at_50%_2%,#FFFFFF_0%,#EFF3F4_46%,#DFE8EA_100%)] sm:aspect-[4/3]"
             >
+              {/* Модель водяным знаком: кадр перестаёт быть «картинкой в
+                  рамке» и читается как продуктовая сцена. */}
+              {/* Водяной знак — только для коротких артикульных названий
+                  (EP830, EX620, V80, T40). Длинное русское название
+                  обрезалось краем кадра и читалось как дефект вёрстки. */}
+              {watermark && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 top-[6%] select-none text-center font-semibold uppercase leading-none tracking-[-0.04em] text-graphite/[0.055]"
+                  style={{ fontSize: 'clamp(3.5rem, 11vw, 9rem)' }}
+                >
+                  {watermark}
+                </span>
+              )}
               <span
                 aria-hidden
-                className="absolute bottom-[13%] left-1/2 h-[8%] w-[54%] -translate-x-1/2 rounded-[50%] bg-graphite/[0.14] blur-2xl"
+                className="absolute bottom-[12%] left-1/2 h-[7%] w-[52%] -translate-x-1/2 rounded-[50%] bg-graphite/[0.16] blur-2xl"
               />
               {/*
-                Часть официальных фото у вендора мелкая (у EP830 исходник
-                396×124). Процентная высота/ширина внутри кадра растягивает
-                такой снимок по сцене, сохраняя пропорции: мелкий исходник
-                занимает кадр целиком, крупный — не обрезается.
+                Кадры исполнений сложены стопкой и переключаются
+                кроссфейдом: смена миниатюры не «моргает» перезагрузкой
+                картинки и не даёт скачка высоты.
               */}
-              <img
-                src={heroImage}
-                width={selectedVariant?.imageWidth ?? product.imageWidth}
-                height={selectedVariant?.imageHeight ?? product.imageHeight}
-                alt={`ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}
-                className="relative h-[84%] w-[88%] object-contain transition-transform duration-700 ease-premium group-hover:scale-[1.03]"
-              />
+              {story.gallery.map((src, i) => (
+                <img
+                  key={src}
+                  src={src}
+                  alt={
+                    i === shotIndex
+                      ? `ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`
+                      : ''
+                  }
+                  aria-hidden={i !== shotIndex}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  className={`absolute h-[86%] w-[90%] object-contain transition-all duration-[220ms] ease-premium group-hover:scale-[1.03] ${
+                    i === shotIndex ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              ))}
               <span
                 aria-hidden
                 className="absolute bottom-5 right-5 flex h-11 w-11 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/90 text-slate backdrop-blur-sm transition-colors duration-300 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
@@ -182,17 +268,21 @@ export function ProductPage({ product }: Props) {
             </button>
 
             {story.gallery.length > 1 && (
-              <ul className="mt-4 flex flex-wrap gap-3">
+              <ul
+                className="mt-4 flex flex-wrap gap-3"
+                onKeyDown={onGalleryKey}
+                aria-label="Кадры позиции"
+              >
                 {story.gallery.map((src, i) => (
                   <li key={src}>
                     <button
                       type="button"
                       onClick={() => setShot(i)}
-                      aria-label={`Кадр ${i + 1}`}
-                      aria-pressed={i === shot}
-                      className={`flex h-20 w-20 items-center justify-center rounded-xl border bg-mist p-2 transition-colors duration-300 ease-premium ${
-                        i === shot
-                          ? 'border-graphite'
+                      aria-label={`Кадр ${i + 1} из ${story.gallery.length}`}
+                      aria-pressed={i === shotIndex}
+                      className={`flex h-[5.5rem] w-[5.5rem] items-center justify-center rounded-xl border bg-mist p-2.5 transition-colors duration-300 ease-premium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-graphite/50 ${
+                        i === shotIndex
+                          ? 'border-graphite bg-porcelain'
                           : 'border-graphite/[0.12] hover:border-graphite/35'
                       }`}
                     >

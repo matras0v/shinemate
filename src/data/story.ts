@@ -79,6 +79,25 @@ export const POLISH_STAGES: PolishStage[] = [
 
 /* ──────────────────────────── Модель истории ──────────────────────────── */
 
+/**
+ * Техническая схема сцены.
+ *
+ * Схемы показывают ПРИНЦИП (движение рабочей поверхности, диапазон,
+ * посадку, поток энергии), а не внутреннее устройство: официальных
+ * разрезов и CAD у ShineMate в открытом доступе нет, и придумывать
+ * редуктор с обмоткой мы не имеем права. Все числа — из прайса.
+ */
+export type SceneDiagram =
+  | { kind: 'rotary'; rpm?: string }
+  | { kind: 'orbit'; orbit?: string }
+  | { kind: 'speed'; min: number; max: number; unit: string }
+  | { kind: 'power'; rated: number; peak?: number; unit: string; family?: { model: string; watts: number }[]; model?: string }
+  | { kind: 'mount'; items: { src: string; label: string; note: string }[] }
+  | { kind: 'battery'; platform: string; capacity?: string }
+  | { kind: 'cut'; grades: number[]; active: number }
+  | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
+  | { kind: 'sizes'; items: { label: string; note: string; mm: number }[] }
+
 /** Крупная сцена: заголовок, объяснение и — если есть — реальная цифра из прайса. */
 export type StoryScene = {
   title: string
@@ -87,6 +106,8 @@ export type StoryScene = {
   metric?: { value: string; caption: string }
   /** Иллюстрация — только реальное фото из каталога, если оно уместно. */
   image?: string
+  /** Схема принципа работы — семантически связана с заголовком сцены. */
+  diagram?: SceneDiagram
 }
 
 /** Позиция товара на шкале «рез → финиш» (для кругов и паст). */
@@ -250,6 +271,72 @@ function machinePurpose(p: Product): ProductStory['purpose'] {
  * нет характеристики — нет сцены. Поэтому у EP830 появляется блок про
  * бесщёточный двигатель (это есть в kind), а у EP801 G2 — нет.
  */
+/** «700–2500 об/мин» → {min:700, max:2500, unit:'об/мин'}. */
+function parseRange(value?: string): { min: number; max: number; unit: string } | null {
+  if (!value) return null
+  const m = value.replace(/\s/g, ' ').match(/(\d[\d\s]*)\s*[–—-]\s*(\d[\d\s]*)\s*(.*)$/)
+  if (!m) return null
+  const min = Number(m[1].replace(/\s/g, ''))
+  const max = Number(m[2].replace(/\s/g, ''))
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return null
+  return { min, max, unit: (m[3] || '').trim() || 'об/мин' }
+}
+
+/**
+ * «1050 Вт (макс. 1500 Вт)» → номинал 1050, пик 1500.
+ * «1500 Вт (220–240 В)» → номинал 1500, пика нет: в скобках напряжение
+ * сети, а не мощность, и подставлять его в шкалу мощности нельзя.
+ */
+function parsePower(value?: string): { rated: number; peak?: number; unit: string } | null {
+  if (!value) return null
+  const rated = value.match(/^(\d[\d\s]*)\s*Вт/)
+  if (!rated) return null
+  const peak = value.match(/макс\.?\s*(\d[\d\s]*)\s*Вт/i)
+  const r = Number(rated[1].replace(/\s/g, ''))
+  const pk = peak ? Number(peak[1].replace(/\s/g, '')) : undefined
+  return { rated: r, peak: pk && pk > r ? pk : undefined, unit: 'Вт' }
+}
+
+/** Ход эксцентрика в мм — первое число строки («21 мм или 15 мм» → 21). */
+const strokeMm = (p: Product) => firstNumber(specValue(p, 'Ход эксцентрика'))
+
+/** Стек посадки из РЕАЛЬНЫХ кадров каталога: машинка → подложка → круг. */
+function mountItems(p: Product): { src: string; label: string; note: string }[] | null {
+  const plateSlug = isOrbitalLike(p) ? 'plates-da' : isSanderLike(p) ? 'plates-sander' : 'plates-rotary'
+  const plate = bySlug(plateSlug)
+  const pad = bySlug(isSanderLike(p) ? 'foam-flat-t80' : 'foam-diamond-t40')
+  if (!plate) return null
+  const thread = specValue(p, 'Резьба')
+  const own = specValue(p, 'Подложка') ?? specValue(p, 'Подложки')
+  const items = [
+    {
+      src: p.image,
+      label: p.model,
+      note: thread ? `Резьба шпинделя ${thread}` : p.kind,
+    },
+    {
+      src: plate.image,
+      label: 'Подложка',
+      note: own ? `Штатный размер ${own}` : (specValue(plate, 'Диаметры') ?? plate.kind),
+    },
+  ]
+  if (pad && !isSanderLike(p)) {
+    items.push({
+      src: pad.image,
+      label: 'Круг',
+      note: 'Садится на липучку подложки',
+    })
+  }
+  return items
+}
+
+/**
+ * Сцены для машинки. Каждая привязана к РЕАЛЬНОЙ характеристике из
+ * прайса и получает СВОЙ визуал: привод — схема движения, мощность —
+ * шкала номинал/пик, обороты — регулятор, посадка — стек из настоящих
+ * кадров каталога. Одна и та же фотография больше не иллюстрирует
+ * четыре разные мысли подряд.
+ */
 function machineScenes(p: Product): StoryScene[] {
   const scenes: StoryScene[] = []
   const speed = specValue(p, 'Обороты')
@@ -258,7 +345,103 @@ function machineScenes(p: Product): StoryScene[] {
   const plate = specValue(p, 'Подложка') ?? specValue(p, 'Подложки')
   const platform = specValue(p, 'Платформа')
   const cable = specValue(p, 'Кабель')
+  const capacity = specValue(p, 'Аккумулятор') ?? specValue(p, 'Ёмкость')
 
+  // 01. Принцип привода — то, что отличает роторную от эксцентриковой.
+  if (isOrbitalLike(p) || (isSanderLike(p) && orbit)) {
+    scenes.push({
+      title: 'Вращение и орбита одновременно',
+      body:
+        'Круг вращается вокруг своей оси и одновременно ходит по окружности. Из-за этого одна и та же точка лака не работает под кругом постоянно и не успевает перегреться — машинка прощает ошибку по нажиму и углу.',
+      metric: orbit ? { value: orbit, caption: 'Ход эксцентрика' } : undefined,
+      diagram: { kind: 'orbit', orbit },
+    })
+  } else if (isRotaryLike(p)) {
+    scenes.push({
+      title: 'Прямой привод: пятно контакта работает постоянно',
+      body:
+        'Ось вращения совпадает с осью круга, поэтому съём идёт непрерывно и ровно там, куда машинку ведут. Это инструмент коррекции: следы шлифовки, глубокие царапины и сильное окисление снимаются заметно быстрее, чем эксцентриком.',
+      metric: speed ? { value: speed, caption: 'Рабочий диапазон' } : undefined,
+      diagram: { kind: 'rotary', rpm: speed },
+    })
+  }
+
+  // 02. Мощность — номинал против пика.
+  const pw = parsePower(power)
+  if (pw) {
+    scenes.push({
+      title: pw.peak ? 'Запас, а не паспортная цифра' : 'Мощность под постоянную нагрузку',
+      body: pw.peak
+        ? 'Важна не сама мощность, а то, что обороты не проваливаются, когда мастер добавляет нажим на тяжёлом участке. Разница между номиналом и пиком — это и есть тот запас.'
+        : 'Мощность рассчитана на работу сменами, а не на короткие рывки: обороты держатся под нажимом, а не проседают на первой же тяжёлой панели.',
+      metric: { value: power!, caption: 'Мощность' },
+      diagram: {
+        kind: 'power',
+        ...pw,
+        model: p.model,
+        // Соседи по разделу с реальной мощностью из прайса — цифра
+        // получает масштаб, а не висит в воздухе.
+        family: productsByCategory(p.category)
+          .map((item) => ({ model: item.model, watts: parsePower(specValue(item, 'Мощность'))?.rated ?? 0 }))
+          .filter((x) => x.watts > 0)
+          .sort((a, b) => a.watts - b.watts),
+      },
+    })
+  }
+
+  // 03. Диапазон оборотов — интерактивный регулятор.
+  const rng = parseRange(speed)
+  if (rng) {
+    scenes.push({
+      title: 'Диапазон под задачу, а не одна скорость',
+      body:
+        'Нижние обороты — разгон пасты и работа по кромкам, где важно не сжечь лак. Верхние — съём и вывод глянца на плоскостях. Регулятор позволяет держать одну и ту же скорость всю смену, а не подбирать её заново на каждой панели.',
+      diagram: { kind: 'speed', ...rng },
+    })
+  }
+
+  // 04. Ход эксцентрика в масштабе линейки.
+  const mm = strokeMm(p)
+  if (mm !== null) {
+    const family = productsByCategory(p.category)
+      .map((item) => ({ model: item.model, mm: strokeMm(item) }))
+      .filter((x): x is { model: string; mm: number } => x.mm !== null)
+    const uniq = family.filter((x, i, a) => a.findIndex((y) => y.mm === x.mm) === i).sort((a, b) => a.mm - b.mm)
+    if (uniq.length >= 2) {
+      scenes.push({
+        title: 'Чем больше ход, тем быстрее закрывается панель',
+        body:
+          'Малый ход точнее ведёт себя на рельефе и мелких деталях, большой — быстрее закрывает капот и крышу. Кружки ниже — реальные ходы эксцентрика моделей этого раздела в одном масштабе.',
+        diagram: { kind: 'stroke', items: uniq, activeModel: p.model },
+      })
+    }
+  }
+
+  // 05. Посадка: машинка → подложка → круг реальными кадрами.
+  if (plate || specValue(p, 'Резьба')) {
+    const items = mountItems(p)
+    if (items) {
+      scenes.push({
+        title: 'Посадка: что именно стоит между машинкой и лаком',
+        body:
+          'Диаметр и резьба заданы конструкцией. Подложка не по размеру рвёт баланс на оборотах и добавляет вибрацию в кисть, поэтому подложки в каталоге разведены по типам машинок, а не даются «универсальным» набором.',
+        metric: plate ? { value: plate, caption: 'Штатная подложка' } : undefined,
+        diagram: { kind: 'mount', items },
+      })
+    }
+  }
+
+  // 06. Аккумуляторная платформа.
+  if (platform) {
+    scenes.push({
+      title: 'Одна платформа на всю линейку',
+      body:
+        'Аккумулятор и зарядное общие для всех машинок этого напряжения: докупается инструмент, а не новый комплект питания. На выезде держат два блока — один в работе, второй на зарядном.',
+      diagram: { kind: 'battery', platform, capacity },
+    })
+  }
+
+  // 07. Бесщёточный двигатель — только там, где это прямо указано у вендора.
   if (/бесщёточн|brushless/i.test(p.kind + p.lead)) {
     scenes.push({
       title: 'Бесщёточный двигатель',
@@ -268,51 +451,7 @@ function machineScenes(p: Product): StoryScene[] {
     })
   }
 
-  if (speed) {
-    scenes.push({
-      title: 'Диапазон под задачу, а не одна скорость',
-      body:
-        'Нижние обороты — разгон пасты и работа по кромкам, где важно не сжечь лак. Верхние — съём и вывод глянца на плоскостях. Регулятор позволяет держать одну и ту же скорость всю смену, а не подбирать её заново на каждой панели.',
-      metric: { value: speed, caption: 'Рабочий диапазон' },
-    })
-  }
-
-  if (orbit) {
-    scenes.push({
-      title: 'Ход эксцентрика решает, как быстро идёт съём',
-      body:
-        'Чем больше ход, тем больше площадь за проход и тем агрессивнее коррекция. Малый ход точнее ведёт себя на рельефе и мелких деталях, большой — быстрее закрывает капот и крышу.',
-      metric: { value: orbit, caption: 'Ход эксцентрика' },
-    })
-  }
-
-  if (power) {
-    scenes.push({
-      title: 'Запас мощности, а не паспортная цифра',
-      body:
-        'Важна не сама мощность, а то, что обороты не проваливаются, когда мастер добавляет нажим на тяжёлом участке. Запас по пиковому значению как раз для таких моментов.',
-      metric: { value: power, caption: 'Мощность' },
-    })
-  }
-
-  if (platform) {
-    scenes.push({
-      title: 'Одна аккумуляторная платформа на линейку',
-      body:
-        'Аккумулятор и зарядное общие для всех машинок этой платформы: докупается инструмент, а не новый комплект питания. Чип в батарее и в машинке согласуют режим заряда между собой.',
-      metric: { value: platform, caption: 'Платформа' },
-    })
-  }
-
-  if (plate) {
-    scenes.push({
-      title: 'Подложка — часть машинки, а не мелочь',
-      body:
-        'Диаметр и резьба заданы конструкцией: подложка не по размеру рвёт баланс на оборотах и добавляет вибрацию в кисть. В каталоге подложки разведены по типам машинок именно поэтому.',
-      metric: { value: plate, caption: 'Штатная подложка' },
-    })
-  }
-
+  // 08. Кабель — спокойный текстовый блок между визуальными сценами.
   if (cable) {
     scenes.push({
       title: 'Длина кабеля под реальный бокс',
@@ -487,13 +626,26 @@ function padScenes(p: Product): StoryScene[] {
   }
 
   if (grade !== null) {
+    // Шкала строится по РЕАЛЬНОМУ составу каталога: все градации, которые
+    // действительно есть в прайсе, без придуманных «cut 8 из 10».
+    const grades = Array.from(
+      new Set(
+        productsByCategory('pads')
+          .map(padGrade)
+          .filter((g): g is number => g !== null),
+      ),
+    ).sort((a, b) => a - b)
     scenes.push({
       title: 'Что означает градация',
       body:
         'Цифра в названии — жёсткость и агрессивность круга: чем она выше, тем больше съём и грубее след, чем ниже — тем мягче работа и чище глянец. Посадочный размер при этом не меняется, поэтому в рамках одной машинки круги переставляются без подбора подложки.',
       metric: { value: `T${grade}`, caption: 'Градация' },
+      diagram: grades.length >= 3 ? { kind: 'cut', grades, active: grade } : undefined,
     })
   }
+
+  const mount = padMountScene(p)
+  if (mount) scenes.push(mount)
 
   if (stage !== null) {
     const st = POLISH_STAGES[stage]
@@ -505,6 +657,27 @@ function padScenes(p: Product): StoryScene[] {
   }
 
   return scenes
+}
+
+/** Стек «машинка → подложка → круг» со стороны круга. */
+function padMountScene(p: Product): StoryScene | null {
+  if (/гибкий вал|конус/i.test(p.kind)) return null
+  const machine = bySlug('ex620')
+  const plate = bySlug('plates-da')
+  if (!machine || !plate) return null
+  return {
+    title: 'Как круг попадает на машинку',
+    body:
+      'Круг не ставится на машинку напрямую: между ними подложка. Её диаметр подбирают под круг, а резьбу — под машинку, поэтому один и тот же круг работает и на роторной, и на эксцентриковой при правильной подложке.',
+    diagram: {
+      kind: 'mount',
+      items: [
+        { src: machine.image, label: machine.model, note: specValue(machine, 'Резьба') ? `Резьба ${specValue(machine, 'Резьба')}` : machine.kind },
+        { src: plate.image, label: 'Подложка', note: specValue(plate, 'Диаметры') ?? plate.kind },
+        { src: p.image, label: p.model, note: specValue(p, 'Диаметры') ?? p.kind },
+      ],
+    },
+  }
 }
 
 function padScale(p: Product): CutScale | undefined {
@@ -631,6 +804,9 @@ function compoundScenes(p: Product): StoryScene[] {
     image: p.image,
   })
 
+  const cm = compoundMountScene(p)
+  if (cm) scenes.push(cm)
+
   if (stage !== undefined) {
     const st = POLISH_STAGES[stage]
     scenes.push({
@@ -647,6 +823,32 @@ function compoundScenes(p: Product): StoryScene[] {
   }
 
   return scenes
+}
+
+/** Связка «паста → круг → машинка» реальными кадрами каталога. */
+function compoundMountScene(p: Product): StoryScene | null {
+  const stage = COMPOUND_STAGE[p.slug]
+  const padSlug: Record<number, string> = {
+    1: 'foam-diamond-t80',
+    2: 'foam-diamond-t40',
+    3: 'foam-diamond-t10',
+  }
+  const pad = bySlug(stage !== undefined ? (padSlug[stage] ?? 'foam-diamond-t40') : 'foam-diamond-t40')
+  const machine = bySlug('ex620')
+  if (!pad || !machine) return null
+  return {
+    title: 'Связка, в которой состав работает',
+    body:
+      'Паста наносится точками на рабочую поверхность круга и разгоняется на низких оборотах. Результат даёт именно связка: паста задаёт абразив, круг — жёсткость и площадь контакта, машинка — скорость и характер движения.',
+    diagram: {
+      kind: 'mount',
+      items: [
+        { src: p.image, label: p.model, note: specValue(p, 'Объём') ?? p.kind },
+        { src: pad.image, label: pad.model, note: 'Круг своей стадии' },
+        { src: machine.image, label: machine.model, note: machine.kind },
+      ],
+    },
+  }
 }
 
 function compoundScale(p: Product): CutScale | undefined {
@@ -768,6 +970,70 @@ function specScenes(p: Product, max = 3): StoryScene[] {
     if (out.length >= max) break
   }
   return out
+}
+
+/**
+ * Сцены подложки. У подложки нет оборотов и мощности, зато есть то, что
+ * реально определяет её выбор: резьба, диаметры и место между машинкой
+ * и кругом. Всё это показывается схемами, а не абзацами подряд.
+ */
+function plateScenes(p: Product): StoryScene[] {
+  const scenes: StoryScene[] = []
+  const thread = specValue(p, 'Резьба')
+  const diameters = specValue(p, 'Диаметры')
+  const mount = specValue(p, 'Крепление')
+
+  const machine = /роторн/i.test(p.model)
+    ? bySlug('ep820')
+    : /шлифоваль/i.test(p.model)
+      ? bySlug('es516')
+      : bySlug('ex620')
+  const pad = /шлифоваль/i.test(p.model) ? bySlug('foam-flat-t80') : bySlug('foam-diamond-t40')
+
+  if (machine && pad) {
+    scenes.push({
+      title: 'Место подложки: между шпинделем и кругом',
+      body:
+        'Подложка — единственная деталь, через которую момент машинки доходит до круга. Резьба должна совпасть со шпинделем, диаметр — с кругом: иначе появляется биение, вибрация в кисть и неравномерный съём.',
+      diagram: {
+        kind: 'mount',
+        items: [
+          {
+            src: machine.image,
+            label: machine.model,
+            note: specValue(machine, 'Резьба') ? `Резьба ${specValue(machine, 'Резьба')}` : machine.kind,
+          },
+          { src: p.image, label: p.model, note: thread ? `Резьба ${thread}` : p.kind },
+          { src: pad.image, label: pad.model, note: mount ? `Крепление: ${mount.toLowerCase()}` : pad.kind },
+        ],
+      },
+    })
+  }
+
+  if (thread) {
+    scenes.push({
+      title: 'Резьба должна совпадать с машинкой',
+      body:
+        'Посадка — это не «подойдёт любая»: у роторных машинок M14, у эксцентриковых M8 и 5/16"-24. Неверная резьба либо не встанет, либо будет работать с биением.',
+      metric: { value: thread, caption: 'Резьба' },
+    })
+  }
+
+  // Реальные исполнения как размерный ряд: цифры прямо из прайса.
+  if (p.variants.length >= 2) {
+    scenes.push({
+      title: 'Размерный ряд под разные круги',
+      body:
+        'Диаметр подложки подбирают под круг, а не наоборот: на маленькой подложке большой круг «гуляет» по краю, на большой — теряется гибкость на рельефе. Ниже — исполнения этой позиции из прайса.',
+      metric: diameters ? { value: diameters, caption: 'Диаметры' } : undefined,
+      diagram: {
+        kind: 'sizes',
+        items: p.variants.map((v) => ({ label: v.axis1 ?? v.label, note: v.label, mm: firstNumber(v.label) ?? 0 })),
+      },
+    })
+  }
+
+  return scenes
 }
 
 function plateCompat(p: Product): CompatGroup[] {
@@ -1083,7 +1349,7 @@ function buildCore(p: Product): StoryCore {
     case 'plate':
       return {
         purpose: simplePurpose(p),
-        scenes: specScenes(p),
+        scenes: plateScenes(p).length ? plateScenes(p) : specScenes(p),
         comparison: comparison(p),
         chain: systemChain(p),
         compat: plateCompat(p),

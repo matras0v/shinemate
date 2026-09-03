@@ -2,11 +2,23 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 
 import { formatPrice, minPrice, type Product } from '../../data/catalog'
+import {
+  BatteryFlow,
+  CutMeter,
+  MountStack,
+  OrbitPrinciple,
+  PowerBar,
+  RotaryPrinciple,
+  SizeScale,
+  SpeedDial,
+  StrokeScale,
+} from './TechDiagrams'
 import type {
   ComparisonTable,
   CompatGroup,
   CutScale,
   ProductStory,
+  SceneDiagram,
   StoryPhoto,
   StoryScene,
   SystemChain,
@@ -82,7 +94,7 @@ export function SpecHighlights({
 export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }) {
   const reduced = useReducedMotion()
   return (
-    <section className="scene relative bg-mist py-20 md:py-32">
+    <section className="scene relative bg-mist py-20 md:py-28">
       <div className="shell-wide">
         <motion.div
           {...revealProps(reduced, stagger(0, 0.08))}
@@ -132,9 +144,52 @@ export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }
  * широкий кадр во весь экран → крупная цифра → тёмная полоса → кадр с
  * текстом сбоку → спокойный текстовый блок.
  */
-type SceneVariant = 'split' | 'metric' | 'band' | 'plain' | 'detail'
+/**
+ * Схема сцены. Каждая связана с заголовком по смыслу: «привод» рисует
+ * движение рабочей поверхности, «мощность» — номинал против пика,
+ * «посадка» — реальные кадры машинки, подложки и круга в одну линию.
+ * Одна и та же фотография больше не иллюстрирует четыре разные мысли.
+ */
+function Diagram({ diagram }: { diagram: SceneDiagram }) {
+  switch (diagram.kind) {
+    case 'rotary':
+      return <RotaryPrinciple rpm={diagram.rpm} />
+    case 'orbit':
+      return <OrbitPrinciple orbit={diagram.orbit} />
+    case 'speed':
+      return <SpeedDial min={diagram.min} max={diagram.max} unit={diagram.unit} />
+    case 'power':
+      return (
+        <PowerBar
+          rated={diagram.rated}
+          peak={diagram.peak}
+          unit={diagram.unit}
+          family={diagram.family}
+          model={diagram.model}
+        />
+      )
+    case 'mount':
+      return <MountStack items={diagram.items} />
+    case 'battery':
+      return <BatteryFlow platform={diagram.platform} capacity={diagram.capacity} />
+    case 'cut':
+      return <CutMeter grades={diagram.grades} active={diagram.active} />
+    case 'stroke':
+      return <StrokeScale items={diagram.items} activeModel={diagram.activeModel} />
+    case 'sizes':
+      return <SizeScale items={diagram.items} />
+  }
+}
+
+/** Схемам, которые сами по себе — крупный объект, рамка не нужна. */
+const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes']
+
+type SceneVariant = 'diagram' | 'split' | 'metric' | 'band' | 'plain' | 'detail'
 
 function variantFor(scene: StoryScene, index: number): SceneVariant {
+  // Схема всегда сильнее любого текстового варианта: если она есть,
+  // сцена строится вокруг неё.
+  if (scene.diagram) return 'diagram'
   /*
    * Кадры товара — это вырезанные рендеры вендора шириной 350–800px
    * (медиана ~505). В широкой «киносцене» на 1568px такой файл занимал
@@ -205,6 +260,67 @@ function Scene({
   const bg = index % 2 === 0 ? 'bg-porcelain' : 'bg-hazeSurface'
   const alt = `ShineMate ${product.model}`
 
+  // Схема принципа: визуал занимает большую часть секции, текст — меньшую.
+  if (variant === 'diagram' && scene.diagram) {
+    const bare = BARE_DIAGRAMS.includes(scene.diagram.kind)
+    return (
+      <section className={`scene relative py-16 md:py-24 ${bg}`}>
+        <div className="shell-wide">
+          <motion.div
+            {...revealProps(reduced, stagger(0, 0.08))}
+            className={`grid items-center gap-10 lg:gap-16 ${
+              bare ? '' : flipped ? 'lg:grid-cols-[minmax(0,1fr)_1.5fr]' : 'lg:grid-cols-[1.5fr_minmax(0,1fr)]'
+            }`}
+          >
+            {bare ? (
+              <>
+                <motion.div variants={rise} className="max-w-[62ch]">
+                  <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
+                    {scene.metric?.caption ?? 'Принцип работы'}
+                  </p>
+                  <h3 className="mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight">
+                    {scene.title}
+                  </h3>
+                  <p className="mt-5 text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
+                </motion.div>
+                <motion.div variants={rise} className="mt-10">
+                  <Diagram diagram={scene.diagram} />
+                </motion.div>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  variants={rise}
+                  className={`overflow-hidden rounded-[2rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E1E9EB_100%)] p-6 sm:p-10 ${
+                    flipped ? 'lg:order-2' : ''
+                  }`}
+                >
+                  <div className="min-h-[15rem] sm:min-h-[19rem] lg:min-h-[23rem]">
+                    <Diagram diagram={scene.diagram} />
+                  </div>
+                </motion.div>
+                <motion.div variants={rise} className={flipped ? 'lg:order-1' : undefined}>
+                  <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
+                    {scene.metric?.caption ?? 'Принцип работы'}
+                  </p>
+                  <h3 className="mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight">
+                    {scene.title}
+                  </h3>
+                  {scene.metric && (
+                    <p className="mt-5 text-[clamp(1.5rem,1.2rem+1.4vw,2.25rem)] font-medium leading-none tracking-tight text-graphite">
+                      {scene.metric.value}
+                    </p>
+                  )}
+                  <p className="mt-6 max-w-[46ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
+                </motion.div>
+              </>
+            )}
+          </motion.div>
+        </div>
+      </section>
+    )
+  }
+
   // Тёмная полоса с крупной цифрой — сильный акцент в середине истории.
   if (variant === 'band') {
     return (
@@ -239,7 +355,7 @@ function Scene({
   // Спокойный текстовый блок — воздух между акцентами.
   if (variant === 'plain') {
     return (
-      <section className={`scene relative py-16 md:py-24 ${bg}`}>
+      <section className={`scene relative py-14 md:py-20 ${bg}`}>
         <div className="shell-wide">
           <motion.div
             {...revealProps(reduced, stagger(0, 0.08))}

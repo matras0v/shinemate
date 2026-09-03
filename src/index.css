@@ -145,6 +145,22 @@
   }
 }
 
+/*
+ * «Бегущий пунктир» для технических схем: показывает направление
+ * вращения, не заставляя саму фигуру кувыркаться. Обычный spin для
+ * эллипса в перспективе выглядел бы как переворот диска, а не как
+ * вращение вокруг оси.
+ */
+@keyframes sm-dash {
+  to {
+    stroke-dashoffset: -390;
+  }
+}
+
+.sm-dash {
+  animation: sm-dash 4.5s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
