@@ -265,7 +265,13 @@ export function ProductPage({ product }: Props) {
                       : ''
                   }
                   aria-hidden={i !== shotIndex}
-                  loading={i === 0 ? 'eager' : 'lazy'}
+                  /*
+                   * Стопка кадров грузится сразу целиком: их максимум пять,
+                   * это главный контент первого экрана, и при lazy первое
+                   * переключение миниатюры показывало пустое место, пока
+                   * кадр догружался.
+                   */
+                  loading="eager"
                   decoding="async"
                   className={`absolute h-[86%] w-[90%] object-contain transition-all duration-[220ms] ease-premium group-hover:scale-[1.03] ${
                     i === shotIndex ? 'opacity-100' : 'opacity-0'

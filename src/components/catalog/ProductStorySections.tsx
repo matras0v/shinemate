@@ -60,6 +60,40 @@ export function SpecHighlights({
 }) {
   const reduced = useReducedMotion()
   if (!items.length) return null
+
+  /*
+   * Одно значение — это не «сетка из четырёх, где три пустые». Раньше
+   * тёмная полоса с единственным словом (Артикул TC026, Объём 20 л)
+   * читалась как сломанный блок. Теперь единственная цифра подаётся
+   * НАМЕРЕННО крупно, во всю полосу: тот же тёмный ритм страницы,
+   * но осознанная композиция.
+   */
+  if (items.length === 1) {
+    const only = items[0]
+    return (
+      <section className="scene relative bg-graphite py-16 text-porcelain md:py-24">
+        <div className="shell-wide">
+          <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
+            <motion.p
+              variants={rise}
+              className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember"
+            >
+              {kicker}
+            </motion.p>
+            <motion.div variants={rise} className="mt-10 border-t border-porcelain/20 pt-8">
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-porcelain/50">
+                {only.label}
+              </p>
+              <p className="mt-4 text-[clamp(2.75rem,1.6rem+4.4vw,5.5rem)] font-medium leading-[0.98] tracking-[-0.035em] text-porcelain">
+                {only.value}
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="scene relative bg-graphite py-14 text-porcelain md:py-20">
       <div className="shell-wide">
@@ -72,7 +106,9 @@ export function SpecHighlights({
           </motion.p>
           <motion.dl
             variants={rise}
-            className="mt-9 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-4"
+            className={`mt-9 grid gap-x-10 gap-y-9 sm:grid-cols-2 ${
+              items.length === 2 ? 'lg:grid-cols-2' : items.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'
+            }`}
           >
             {items.map((item) => (
               <div key={item.label} className="border-t border-porcelain/20 pt-5">
