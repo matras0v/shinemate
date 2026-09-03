@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
@@ -370,7 +370,16 @@ export function MountStack({ items }: { items: MountItem[] }) {
     <ol className="flex w-full flex-col gap-3 sm:flex-row sm:items-stretch">
       {items.map((item, i) => (
         <li key={item.label} className="flex flex-1 items-center gap-3 sm:flex-col sm:gap-0">
-          <div className="relative flex aspect-square w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E1E9EB_100%)] sm:aspect-[4/3] sm:w-full">
+          {/*
+            Фон кадра заметно глубже белого: у ShineMate часть оснастки
+            (многодырчатые подложки, белая шерсть) снята на белом, и на
+            почти белом градиенте товар буквально исчезал.
+          */}
+          <div className="relative flex aspect-square w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[radial-gradient(120%_100%_at_50%_0%,#F2F6F7_0%,#DFE8EA_55%,#CBD7DA_100%)] ring-1 ring-inset ring-graphite/[0.07] sm:aspect-[4/3] sm:w-full">
+            <span
+              aria-hidden
+              className="absolute bottom-[14%] left-1/2 h-[9%] w-[46%] -translate-x-1/2 rounded-[50%] bg-graphite/20 blur-xl"
+            />
             <span className="absolute left-3 top-2.5 font-mono text-[0.625rem] tracking-[0.16em] text-titanium">
               {String(i + 1).padStart(2, '0')}
             </span>
@@ -379,7 +388,7 @@ export function MountStack({ items }: { items: MountItem[] }) {
               alt=""
               loading="lazy"
               decoding="async"
-              className="h-[78%] w-[82%] object-contain"
+              className="relative h-[78%] w-[82%] object-contain"
             />
           </div>
           <div className="min-w-0 sm:mt-4 sm:w-full sm:border-t sm:border-graphite/[0.14] sm:pt-3">
@@ -453,31 +462,24 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
 export function CutMeter({ grades, active }: { grades: number[]; active: number }) {
   const i = Math.max(grades.indexOf(active), 0)
   const pct = grades.length > 1 ? (i / (grades.length - 1)) * 100 : 0
-  const [reveal, setReveal] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) setReveal(pct)
-      },
-      { threshold: 0.3 },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [pct])
 
   return (
-    <div ref={ref} className="w-full">
+    <div className="w-full">
       <div className="flex items-baseline justify-between font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
         <span>Мягче · чище глянец</span>
         <span>Жёстче · больше съём</span>
       </div>
+      {/*
+        Маркер рисуется сразу в нужной позиции, без «доезда» по появлению
+        во вьюпорте: если IntersectionObserver не сработает (фон вкладки,
+        нестандартный браузер), шкала не должна остаться на нуле и врать
+        про градацию круга.
+      */}
       <div className="relative mt-5 h-[3px] w-full rounded-full bg-gradient-to-r from-graphite/15 via-graphite/30 to-graphite">
-        <div
-          className="absolute -top-[7px] h-[17px] w-[17px] rounded-full border-[3px] border-porcelain bg-ember transition-[left] duration-[900ms] ease-premium"
-          style={{ left: `calc(${reveal}% - 8px)` }}
+        <span
+          aria-hidden
+          className="absolute -top-[7px] h-[17px] w-[17px] rounded-full border-[3px] border-porcelain bg-ember transition-[left] duration-500 ease-premium"
+          style={{ left: `calc(${pct}% - 8px)` }}
         />
       </div>
       <ol className="mt-6 flex flex-wrap gap-2">
@@ -486,9 +488,7 @@ export function CutMeter({ grades, active }: { grades: number[]; active: number 
             key={g}
             aria-current={g === active ? 'true' : undefined}
             className={`rounded-full border px-3.5 py-1.5 font-mono text-[0.75rem] tabular-nums ${
-              g === active
-                ? 'border-graphite bg-graphite text-porcelain'
-                : 'border-graphite/[0.16] text-slate'
+              g === active ? 'border-graphite bg-graphite text-porcelain' : 'border-graphite/[0.16] text-slate'
             }`}
           >
             T{g}
