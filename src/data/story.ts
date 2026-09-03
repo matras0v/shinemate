@@ -148,6 +148,8 @@ export type ProductStory = {
   scenes: StoryScene[]
   /** Место в линейке / в цикле обработки. */
   scale?: CutScale
+  /** Шкала жёсткости кругов T10…T160 — только для кругов. */
+  grades?: CutScale
   /** Чем модель отличается от соседей по разделу. */
   comparison?: ComparisonTable
   /** Место позиции в связке машинка → подложка → круг → паста. */
@@ -514,6 +516,33 @@ function padScale(p: Product): CutScale | undefined {
       label: st.title,
       note: st.paste.split('·')[0].trim(),
       active: i === stage,
+    })),
+  }
+}
+
+/**
+ * Шкала градаций кругов, построенная по РЕАЛЬНОМУ составу каталога:
+ * берутся все круги, у которых в названии есть градация T…, дедуплицируются
+ * по числу и сортируются по возрастанию жёсткости. Никаких «процентов
+ * реза» — их в исходных данных нет, и придумывать их нельзя.
+ */
+function padGradeScale(p: Product): CutScale | undefined {
+  const grade = padGrade(p)
+  if (grade === null) return undefined
+  const byGrade = new Map<number, Product>()
+  for (const item of productsByCategory('pads')) {
+    const g = padGrade(item)
+    if (g === null) continue
+    if (!byGrade.has(g)) byGrade.set(g, item)
+  }
+  const steps = [...byGrade.entries()].sort((a, b) => a[0] - b[0])
+  if (steps.length < 3) return undefined
+  return {
+    caption: 'Градация — от чистого финиша к тяжёлому резу',
+    steps: steps.map(([g, item]) => ({
+      label: `T${g}`,
+      note: item.kind.replace(/^.*?круг,?\s*/i, '') || item.kind,
+      active: g === grade,
     })),
   }
 }
@@ -1037,6 +1066,7 @@ function buildCore(p: Product): StoryCore {
         purpose: padPurpose(p),
         scenes: padScenes(p),
         scale: padScale(p),
+        grades: padGradeScale(p),
         comparison: comparison(p),
         chain: systemChain(p),
         compat: padCompat(p),
@@ -1103,6 +1133,7 @@ const SCENE_SIZES: Record<string, [number, number]> = {
   ex620: [1155, 650],
   'mpk-3': [1155, 650],
   'pad-workshop': [776, 781],
+  'tool-cart': [851, 581],
   'v-range': [780, 650],
 }
 
@@ -1223,6 +1254,15 @@ function storyPhotos(p: Product): StoryPhoto[] {
         'В работе',
         'Круг меняется за секунды',
         'Липучка держит круг на подложке и позволяет менять его прямо в процессе — под каждую стадию свой круг, без перестановки оснастки и без пауз на подбор.',
+      ),
+    )
+  } else if (kind === 'accessory' && p.slug === 'tool-cart') {
+    out.push(
+      photo(
+        'tool-cart',
+        'В работе',
+        'Весь пост полировщика на одной тележке',
+        'Машинка, круги по градациям и составы V-Range лежат на своих местах и едут к автомобилю вместе с мастером — вместо того чтобы стоять на полу и на крыле.',
       ),
     )
   } else if (kind === 'plate') {

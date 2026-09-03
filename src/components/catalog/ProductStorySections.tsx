@@ -425,14 +425,24 @@ export function StoryScenes({
 
 /* ─────────────────────────── Шкала / место в цикле ─────────────────────────── */
 
-export function ScaleSection({ scale }: { scale: CutScale }) {
+export function ScaleSection({
+  scale,
+  eyebrow = 'Место в системе',
+  tone = 'haze',
+}: {
+  scale: CutScale
+  eyebrow?: string
+  tone?: 'haze' | 'porcelain'
+}) {
   const reduced = useReducedMotion()
   return (
-    <section className="scene relative bg-haze py-20 md:py-28">
+    <section
+      className={`scene relative py-20 md:py-28 ${tone === 'haze' ? 'bg-haze' : 'bg-porcelain'}`}
+    >
       <div className="shell-wide">
         <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
           <motion.p variants={rise} className="eyebrow">
-            Место в системе
+            {eyebrow}
           </motion.p>
           <motion.h2 variants={rise} className="h2 mt-6 max-w-[20ch]">
             {scale.caption}
@@ -440,13 +450,15 @@ export function ScaleSection({ scale }: { scale: CutScale }) {
 
           <motion.ol
             variants={rise}
-            className="mt-12 grid gap-px overflow-hidden rounded-[1.5rem] bg-graphite/[0.1] sm:grid-cols-2 lg:grid-cols-4"
+            className="mt-12 grid gap-px overflow-hidden rounded-[1.5rem] bg-graphite/[0.1] sm:grid-cols-2 lg:grid-cols-4 xl:auto-cols-fr xl:grid-flow-col"
           >
             {scale.steps.map((step) => (
               <li
                 key={step.label}
                 aria-current={step.active ? 'step' : undefined}
-                className={`relative p-7 sm:p-8 ${step.active ? 'bg-graphite text-porcelain' : 'bg-hazeSurface'}`}
+                className={`relative p-7 sm:p-8 ${
+                  step.active ? 'bg-graphite text-porcelain' : 'bg-hazeSurface'
+                }`}
               >
                 {step.active && <span aria-hidden className="absolute left-0 top-0 h-1 w-full bg-ember" />}
                 <p

@@ -292,6 +292,11 @@ export function ProductPage({ product }: Props) {
       {/* ─── 08. МЕСТО В ЛИНЕЙКЕ / ЦИКЛЕ ──────────────────────────────── */}
       {story.scale && <ScaleSection scale={story.scale} />}
 
+      {/* ─── 08b. ШКАЛА ГРАДАЦИЙ (круги) ─────────────────────────────── */}
+      {story.grades && (
+        <ScaleSection scale={story.grades} eyebrow="Жёсткость" tone="porcelain" />
+      )}
+
       {/* ─── 09. ЧЕМ ОТЛИЧАЕТСЯ ОТ СОСЕДЕЙ ────────────────────────────── */}
       {story.comparison && <ComparisonSection table={story.comparison} />}
 
