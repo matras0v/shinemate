@@ -97,6 +97,12 @@ export type SceneDiagram =
   | { kind: 'cut'; grades: number[]; active: number }
   | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
   | { kind: 'sizes'; items: { label: string; note: string; mm: number }[] }
+  | {
+      kind: 'series'
+      from: string
+      to: string
+      items: { slug: string; href: string; label: string; note: string; image: string; active: boolean }[]
+    }
 
 /** Крупная сцена: заголовок, объяснение и — если есть — реальная цифра из прайса. */
 export type StoryScene = {
@@ -208,7 +214,10 @@ const padGrade = (p: Product) => {
  * отдельно — он не роторная машинка и не аккумуляторная.
  */
 const isSanderLike = (p: Product) => /шлифов/i.test(p.kind)
-const isShaftLike = (p: Product) => /гибкий вал/i.test(p.kind)
+/** Питание платформы — это не машинка: ни оборотов, ни круга у него нет. */
+const isPowerPart = (p: Product) => /аккумулятор[ыа]?\s|зарядн/i.test(p.kind)
+const isShaftLike = (p: Product) =>
+  p.category !== 'pads' && /гибкий вал/i.test(p.kind)
 const isRotaryLike = (p: Product) => !isSanderLike(p) && /роторн/i.test(p.kind)
 const isOrbitalLike = (p: Product) => !isSanderLike(p) && /эксцентриков/i.test(p.kind)
 
@@ -381,7 +390,7 @@ function machineScenes(p: Product): StoryScene[] {
         model: p.model,
         // Соседи по разделу с реальной мощностью из прайса — цифра
         // получает масштаб, а не висит в воздухе.
-        family: productsByCategory(p.category)
+        family: familyOf(p)
           .map((item) => ({ model: item.model, watts: parsePower(specValue(item, 'Мощность'))?.rated ?? 0 }))
           .filter((x) => x.watts > 0)
           .sort((a, b) => a.watts - b.watts),
@@ -403,7 +412,7 @@ function machineScenes(p: Product): StoryScene[] {
   // 04. Ход эксцентрика в масштабе линейки.
   const mm = strokeMm(p)
   if (mm !== null) {
-    const family = productsByCategory(p.category)
+    const family = familyOf(p)
       .map((item) => ({ model: item.model, mm: strokeMm(item) }))
       .filter((x): x is { model: string; mm: number } => x.mm !== null)
     const uniq = family.filter((x, i, a) => a.findIndex((y) => y.mm === x.mm) === i).sort((a, b) => a.mm - b.mm)
@@ -466,7 +475,7 @@ function machineScenes(p: Product): StoryScene[] {
 
 /** Позиция модели внутри своей категории по реальной цифре из прайса. */
 function machineScale(p: Product): CutScale | undefined {
-  const family = productsByCategory(p.category)
+  const family = familyOf(p)
   if (family.length < 2) return undefined
 
   const metricLabel = specValue(p, 'Ход эксцентрика') ? 'Ход эксцентрика' : 'Обороты'
@@ -500,7 +509,9 @@ function machineCompat(p: Product): CompatGroup[] {
   const groups: CompatGroup[] = []
 
   const plate = bySlug(plateSlug)
-  if (plate) {
+  // У гибкого вала опорной подложки нет вовсе: насадка садится прямо на
+  // хвостовик 3 мм, поэтому блок «Подложка» ему не показывается.
+  if (plate && !isShaftLike(p)) {
     groups.push({
       title: 'Подложка',
       note: 'Под тип привода и резьбу этой машинки',
@@ -644,6 +655,40 @@ function padScenes(p: Product): StoryScene[] {
     })
   }
 
+  // Ряд своей серии реальными кадрами: видно, что T120 зелёный, а T10
+  // красный, и где среди них стоит открытый круг.
+  const series = familyOf(p)
+    .map((item) => ({ item, g: padGrade(item) }))
+    .filter((x): x is { item: Product; g: number } => x.g !== null)
+    .sort((a, b) => a.g - b.g)
+  if (series.length >= 3) {
+    const seriesName = /black diamond/i.test(p.model)
+      ? 'Black Diamond'
+      : /flat-face/i.test(p.model)
+        ? 'Flat-face'
+        : /микрофибр/i.test(p.kind)
+          ? 'Микрофибра'
+          : 'Серия'
+    scenes.push({
+      title: `Вся серия ${seriesName} в одном ряду`,
+      body:
+        'Цвет в этой линейке — не украшение, а маркировка жёсткости: чем ниже градация, тем мягче круг и чище глянец. Соседние градации кликабельны — можно сразу перейти к нужной.',
+      diagram: {
+        kind: 'series',
+        from: 'T10 · финиш',
+        to: `T${series[series.length - 1].g} · тяжёлый рез`,
+        items: series.map(({ item, g }) => ({
+          slug: item.slug,
+          href: `catalog/${item.category}/${item.slug}`,
+          label: `T${g}`,
+          note: item.model.replace(/^.*?—\s*/, '').replace(/\s*\(T\d+\)/, ''),
+          image: item.image,
+          active: item.slug === p.slug,
+        })),
+      },
+    })
+  }
+
   const mount = padMountScene(p)
   if (mount) scenes.push(mount)
 
@@ -660,10 +705,22 @@ function padScenes(p: Product): StoryScene[] {
 }
 
 /** Стек «машинка → подложка → круг» со стороны круга. */
+/**
+ * Машинка и подложка для круга берутся по ЕГО собственной
+ * совместимости, а не «эксцентриковая по умолчанию»: полосатая шерсть
+ * со скосом 20 мм в прайсе помечена как «только для роторных машинок»,
+ * и показывать рядом с ней DA-машинку было бы ошибкой.
+ */
+function padRig(p: Product): { machine?: Product; plate?: Product } {
+  const rotaryOnly = /только для роторных/i.test(p.lead) || /для роторных машинок/i.test(p.lead)
+  const daOnly = /da-машин|эксцентриков/i.test(p.kind)
+  if (rotaryOnly && !daOnly) return { machine: bySlug('ep820'), plate: bySlug('plates-rotary') }
+  return { machine: bySlug('ex620'), plate: bySlug('plates-da') }
+}
+
 function padMountScene(p: Product): StoryScene | null {
   if (/гибкий вал|конус/i.test(p.kind)) return null
-  const machine = bySlug('ex620')
-  const plate = bySlug('plates-da')
+  const { machine, plate } = padRig(p)
   if (!machine || !plate) return null
   return {
     title: 'Как круг попадает на машинку',
@@ -754,17 +811,20 @@ function padCompat(p: Product): CompatGroup[] {
       items: bySlugs(pasteSlug),
     })
   }
+  const rig = padRig(p)
   groups.push({
-    title: 'Подложки',
-    note: 'Посадка под ротор и эксцентрик',
-    items: bySlugs(['plates-rotary', 'plates-da']),
+    title: 'Подложка',
+    note: rig.plate === bySlug('plates-rotary') ? 'Резьба M14 под роторную машинку' : 'Резьба M8 под эксцентриковую',
+    items: rig.plate ? [rig.plate] : [],
   })
   groups.push({
     title: 'Машинки',
-    note: 'С чем этот круг обычно работает',
-    items: /микрофибр/i.test(p.kind)
-      ? bySlugs(['ex620', 'ex605'])
-      : bySlugs(['ep820', 'ex620']),
+    note: 'С чем этот круг работает по прайсу',
+    items: /только для роторных/i.test(p.lead)
+      ? bySlugs(['ep820', 'ep801-g2', 'ep830'])
+      : /микрофибр/i.test(p.kind)
+        ? bySlugs(['ex620', 'ex605'])
+        : bySlugs(['ep820', 'ex620']),
   })
   return groups.filter((g) => g.items.length > 0)
 }
@@ -803,6 +863,30 @@ function compoundScenes(p: Product): StoryScene[] {
     body: p.lead,
     image: p.image,
   })
+
+  // Линейка V-Range реальными кадрами: от тяжёлого реза к финишу.
+  const order = ['v80-heavy-cut', 'v82-fast-polish', 'v40-medium-polish', 'v20-final-finish']
+  const line = bySlugs(order)
+  if (line.length >= 3) {
+    scenes.push({
+      title: 'Вся линейка V-Range по стадиям',
+      body:
+        'Составы идут от тяжёлого реза к финишу. Выбор начинается не с пасты, а с дефекта: если он глубже, чем закрывает состав, паста просто «замылит» его вместо снятия.',
+      diagram: {
+        kind: 'series',
+        from: 'V80 · тяжёлый рез',
+        to: 'V20 · финиш',
+        items: line.map((item) => ({
+          slug: item.slug,
+          href: `catalog/${item.category}/${item.slug}`,
+          label: item.model.split(' ')[0],
+          note: item.model.split(' ').slice(1).join(' '),
+          image: item.image,
+          active: item.slug === p.slug,
+        })),
+      },
+    })
+  }
 
   const cm = compoundMountScene(p)
   if (cm) scenes.push(cm)
@@ -889,6 +973,99 @@ function compoundCompat(p: Product): CompatGroup[] {
     items: productsByCategory('chemistry').filter((x) => x.slug !== p.slug),
   })
   return groups.filter((g) => g.items.length > 0)
+}
+
+/* ─────────────────── История: питание платформы ─────────────────── */
+
+/** Напряжение платформы из характеристик — «18 В», «10,8 В». */
+const platformVolts = (p: Product) =>
+  specValue(p, 'Платформа') ?? specValue(p, 'Напряжение') ?? (p.model.match(/([\d,]+\s*В)/)?.[1] ?? undefined)
+
+/** Машинки, которые реально питаются от этой платформы. */
+function platformMachines(p: Product): Product[] {
+  const v = platformVolts(p)
+  if (!v) return []
+  const norm = v.replace(/\s/g, '')
+  return productsByCategory('cordless').filter(
+    (x) => storyKind(x) === 'machine' && (specValue(x, 'Платформа') ?? '').replace(/\s/g, '') === norm,
+  )
+}
+
+function powerPurpose(p: Product): ProductStory['purpose'] {
+  const charger = /зарядн/i.test(p.kind)
+  const v = platformVolts(p)
+  return {
+    title: charger ? 'Зарядное под платформу, а не под модель' : 'Один аккумулятор на всю платформу',
+    body: charger
+      ? `${p.lead} Блок ставится там, где есть обычная розетка: отдельная подготовка поста не нужна.`
+      : `${p.lead} Аккумулятор подходит ко всем машинкам своего напряжения — докупается инструмент, а не новый комплект питания.`,
+    points: [
+      ...(v ? [`Платформа: ${v}`] : []),
+      ...p.specs.filter((x) => !/платформа|напряжение/i.test(x.label)).map((x) => `${x.label}: ${x.value}`),
+      ...(p.variants.length > 1 ? [`Исполнений в прайсе: ${p.variants.length}`] : []),
+    ],
+  }
+}
+
+function powerScenes(p: Product): StoryScene[] {
+  const scenes: StoryScene[] = []
+  const v = platformVolts(p)
+  const charger = /зарядн/i.test(p.kind)
+  const capacity = specValue(p, 'Ёмкость') ?? specValue(p, 'Аккумулятор')
+
+  if (v && !charger) {
+    scenes.push({
+      title: 'Куда уходит заряд',
+      body:
+        'Энергия идёт напрямую в рабочую головку — без кабеля, удлинителей и привязки к розетке. Именно поэтому на выезде держат два блока: один в работе, второй на зарядном.',
+      diagram: { kind: 'battery', platform: v, capacity },
+    })
+  }
+
+  if (p.variants.length >= 2) {
+    scenes.push({
+      title: charger ? 'Исполнения зарядных в прайсе' : 'Ёмкости в прайсе',
+      body: charger
+        ? 'Разные исполнения отличаются числом посадочных мест и платформой. Всё остальное — те же разъёмы и та же сеть.'
+        : 'Ёмкость — это время до подзарядки, а не мощность машинки. Чем она выше, тем дольше блок держит смену без паузы.',
+      diagram: {
+        kind: 'sizes',
+        items: p.variants.map((x) => ({
+          label: x.axis1 ?? x.label,
+          note: x.label,
+          mm: firstNumber(x.label) ?? 0,
+        })),
+      },
+    })
+  }
+
+  return scenes
+}
+
+function powerCompat(p: Product): CompatGroup[] {
+  const groups: CompatGroup[] = []
+  const charger = /зарядн/i.test(p.kind)
+  // Зарядные в прайсе идут на обе платформы сразу, поэтому им
+  // показывается вся аккумуляторная линейка, а не одно напряжение.
+  const machines = charger
+    ? productsByCategory('cordless').filter((x) => storyKind(x) === 'machine').slice(0, 4)
+    : platformMachines(p)
+  if (machines.length) {
+    groups.push({
+      title: charger ? 'Что заряжает' : 'Машинки этой платформы',
+      note: charger
+        ? 'Аккумуляторные машинки линейки — платформы 18 В и 10,8 В'
+        : `Работают от того же напряжения${platformVolts(p) ? ` (${platformVolts(p)})` : ''}`,
+      items: machines.slice(0, 4),
+    })
+  }
+  const siblings = productsByCategory('cordless').filter(
+    (x) => storyKind(x) === 'power' && x.slug !== p.slug,
+  )
+  if (siblings.length) {
+    groups.push({ title: 'Остальное питание', note: 'Аккумуляторы и зарядные линейки', items: siblings })
+  }
+  return groups
 }
 
 /* ─────────────────── История: подложки и аксессуары ─────────────────── */
@@ -1127,6 +1304,30 @@ function gallery(p: Product): string[] {
 
 /* ───────────────────────── Сравнение с соседями ───────────────────────── */
 
+/** Заголовок сравнения называет именно семейство, а не весь раздел. */
+function comparisonCaption(p: Product): string {
+  const f = productFamily(p)
+  const map: Record<string, string> = {
+    rotary: 'Роторные машинки — чем модели отличаются',
+    orbital: 'Эксцентриковые машинки — чем модели отличаются',
+    sander: 'Шлифовальные машинки — чем модели отличаются',
+    'cordless-rotary': 'Аккумуляторные роторные — чем модели отличаются',
+    'cordless-orbital': 'Аккумуляторные эксцентриковые — чем модели отличаются',
+    'cordless-sander': 'Аккумуляторные шлифмашинки — чем модели отличаются',
+    'cordless-machine': 'Аккумуляторные комплекты — чем отличаются',
+    'power-battery': 'Аккумуляторы платформ — чем отличаются',
+    'power-charger': 'Зарядные устройства — чем отличаются',
+    'pad-foam-diamond': 'Black Diamond — чем градации отличаются',
+    'pad-foam-flat': 'Flat-face — чем градации отличаются',
+    'pad-wool': 'Шерстяные круги — чем отличаются',
+    'pad-microfiber': 'Микрофибровые круги — чем отличаются',
+    chemistry: 'Пасты V-Range — чем составы отличаются',
+    plates: 'Подложки и адаптеры — чем отличаются',
+    workshop: 'Рабочее место — что ещё есть в разделе',
+  }
+  return map[f] ?? `${categoryTitle(p.category)} — чем модели отличаются`
+}
+
 /** Метки, по которым осмысленно сравнивать модели одного раздела. */
 const COMPARE_LABELS = [
   'Ход эксцентрика',
@@ -1143,7 +1344,7 @@ const COMPARE_LABELS = [
 ]
 
 function comparison(p: Product): ComparisonTable | undefined {
-  const family = productsByCategory(p.category)
+  const family = familyOf(p)
   if (family.length < 2) return undefined
 
   // Колонка попадает в таблицу, только если значение есть минимум у двух
@@ -1170,7 +1371,7 @@ function comparison(p: Product): ComparisonTable | undefined {
     }))
 
   if (rows.length < 2) return undefined
-  return { caption: `${categoryTitle(p.category)} — чем модели отличаются`, columns, rows }
+  return { caption: comparisonCaption(p), columns, rows }
 }
 
 /* ──────────────────────── Связка «система ShineMate» ──────────────────────── */
@@ -1183,31 +1384,64 @@ function comparison(p: Product): ComparisonTable | undefined {
  */
 function systemChain(p: Product): SystemChain | undefined {
   const kind = storyKind(p)
-  if (kind === 'accessory') return undefined
+  // Аксессуары и питание в связке «машинка → круг → паста» не участвуют:
+  // у аккумулятора нет ни посадки, ни круга, и строить для него цепочку
+  // полировки — прямая ложь о товаре.
+  if (kind === 'accessory' || kind === 'power') return undefined
+  // Шлифовальная машинка заканчивается подложкой и абразивным диском:
+  // полировальный круг и паста на неё не ставятся.
+  const sanding = kind === 'machine' && isSanderLike(p)
+
+  // Гибкий вал и точечные насадки живут в своей связке: полноразмерный
+  // круг и подложка на них не ставятся, у них хвостовик 3 мм.
+  const spot = isShaftLike(p) || (kind === 'pad' && /гибкий вал|конус/i.test(p.kind))
+  if (spot) {
+    const shaft = kind === 'machine' ? p : bySlug('mpk-3')
+    const tips = kind === 'pad' ? p : bySlug('spot-pads')
+    const adaptors = bySlug('adaptors-shafts')
+    const st: SystemChain['steps'] = []
+    if (shaft) st.push({ role: '01 · Привод', product: shaft, note: 'Выносит насадку вперёд', active: shaft.slug === p.slug })
+    if (adaptors) st.push({ role: '02 · Вал', product: adaptors, note: 'Удлинители и адаптеры хвостовика', active: adaptors.slug === p.slug })
+    if (tips) st.push({ role: '03 · Насадка', product: tips, note: 'Конусы и шарики под хвостовик 3 мм', active: tips.slug === p.slug })
+    if (st.length < 2) return undefined
+    return {
+      caption: 'Связка точечной работы',
+      note: 'Кромки, стойки и рельеф обрабатываются насадкой на гибком валу — полноразмерная машинка туда просто не встаёт.',
+      steps: st,
+    }
+  }
 
   // Для не-машинок нужна модель-представитель: у подложки её задаёт
-  // собственное название (роторная/эксцентриковая), у круга и пасты —
-  // эксцентриковая машинка как самый ходовой инструмент линейки.
+  // собственное название, у круга — его собственная совместимость по
+  // прайсу, у пасты — эксцентриковая машинка как самый ходовой инструмент.
+  const rig = kind === 'pad' ? padRig(p) : null
+
   const machine =
     kind === 'machine'
       ? p
-      : kind === 'plate' && /роторн/i.test(p.model)
-        ? bySlug('ep820')
-        : kind === 'plate' && /шлифоваль/i.test(p.model)
-          ? bySlug('es516')
-          : bySlug('ex620')
+      : rig?.machine
+        ? rig.machine
+        : kind === 'plate' && /роторн/i.test(p.model)
+          ? bySlug('ep820')
+          : kind === 'plate' && /шлифоваль/i.test(p.model)
+            ? bySlug('es516')
+            : bySlug('ex620')
+
   const plate =
     kind === 'plate'
       ? p
-      : bySlug(
-          kind === 'machine'
-            ? isOrbitalLike(p)
-              ? 'plates-da'
-              : isSanderLike(p)
-                ? 'plates-sander'
-                : 'plates-rotary'
-            : 'plates-da',
-        )
+      : rig?.plate
+        ? rig.plate
+        : bySlug(
+            kind === 'machine'
+              ? isOrbitalLike(p)
+                ? 'plates-da'
+                : isSanderLike(p)
+                  ? 'plates-sander'
+                  : 'plates-rotary'
+              : 'plates-da',
+          )
+
   const pad =
     kind === 'pad'
       ? p
@@ -1220,6 +1454,7 @@ function systemChain(p: Product): SystemChain | undefined {
           }
           return bySlug(stage !== undefined ? (bySt[stage] ?? 'foam-diamond-t40') : 'foam-diamond-t40')
         })()
+
   const compound =
     kind === 'compound'
       ? p
@@ -1239,29 +1474,69 @@ function systemChain(p: Product): SystemChain | undefined {
   }
   push('01 · Машинка', machine, 'Задаёт тип привода и скорость съёма')
   push('02 · Подложка', plate, 'Резьба и диаметр под эту машинку')
-  push('03 · Круг', pad, 'Определяет агрессивность на этой стадии')
-  push('04 · Паста', compound, 'Работает в паре с кругом своей стадии')
+  if (!sanding) {
+    push('03 · Круг', pad, 'Определяет агрессивность на этой стадии')
+    push('04 · Паста', compound, 'Работает в паре с кругом своей стадии')
+  }
 
-  if (steps.length < 3) return undefined
+  if (steps.length < 2) return undefined
   return {
-    caption: 'Связка, в которой работает эта позиция',
-    note:
-      'Результат даёт не отдельный инструмент, а сочетание: привод, посадка, круг и состав рассчитаны друг под друга внутри одной линейки.',
+    caption: sanding ? 'Чем работает шлифовальная машинка' : 'Связка, в которой работает эта позиция',
+    note: sanding
+      ? 'Шлифование заканчивается подложкой и абразивным диском: полировальный круг и паста подключаются уже на следующей стадии, другой машинкой.'
+      : 'Результат даёт не отдельный инструмент, а сочетание: привод, посадка, круг и состав рассчитаны друг под друга внутри одной линейки.',
     steps,
   }
 }
 
 /* ─────────────────────────────── Сборка ─────────────────────────────── */
 
-export type StoryKind = 'machine' | 'pad' | 'compound' | 'plate' | 'accessory'
+export type StoryKind = 'machine' | 'power' | 'pad' | 'compound' | 'plate' | 'accessory'
 
 export function storyKind(p: Product): StoryKind {
+  // Аккумуляторы и зарядные лежат в разделе аккумуляторных машинок, но
+  // машинками не являются: у них нет ни привода, ни круга, ни пасты, и
+  // сравнивать их с полировальными моделями бессмысленно.
+  if (isPowerPart(p)) return 'power'
   if (['rotary', 'da', 'sander', 'cordless'].includes(p.category)) return 'machine'
   if (p.category === 'pads') return 'pad'
   if (p.category === 'chemistry') return 'compound'
   if (p.category === 'plates') return 'plate'
   return 'accessory'
 }
+
+/**
+ * Семейство позиции — то, с чем её ЕСТЬ СМЫСЛ сравнивать.
+ *
+ * Раздел не равен семейству: в «Роторных машинках» рядом с EP830 лежит
+ * гибкий вал MPK-3, а в «Аккумуляторных» — сами аккумуляторы и зарядные.
+ * Ставить их в одну таблицу сравнения с полноразмерной машинкой значит
+ * сравнивать несравнимое, поэтому сравнение и «соседи» считаются по
+ * семейству, а не по категории.
+ */
+export function productFamily(p: Product): string {
+  if (isPowerPart(p)) return /зарядн/i.test(p.kind) ? 'power-charger' : 'power-battery'
+  if (isShaftLike(p)) return 'shaft'
+  if (p.category === 'pads') {
+    if (/конус|гибкий вал/i.test(p.kind)) return 'pad-spot'
+    if (/микрофибр/i.test(p.kind)) return 'pad-microfiber'
+    if (/шерст/i.test(p.kind)) return 'pad-wool'
+    if (/black diamond/i.test(p.model)) return 'pad-foam-diamond'
+    if (/flat-face/i.test(p.model)) return 'pad-foam-flat'
+    return 'pad-foam'
+  }
+  if (['rotary', 'da', 'sander', 'cordless'].includes(p.category)) {
+    const cordless = p.category === 'cordless' ? 'cordless-' : ''
+    if (isSanderLike(p)) return `${cordless}sander`
+    if (isOrbitalLike(p)) return `${cordless}orbital`
+    if (isRotaryLike(p)) return `${cordless}rotary`
+    return `${cordless}machine`
+  }
+  return p.category
+}
+
+/** Соседи по семейству — основа и для сравнения, и для «похожих». */
+export const familyOf = (p: Product) => products.filter((x) => productFamily(x) === productFamily(p))
 
 /**
  * Единая точка входа: по товару собирается его история. Один и тот же
@@ -1345,6 +1620,13 @@ function buildCore(p: Product): StoryCore {
         comparison: comparison(p),
         chain: systemChain(p),
         compat: compoundCompat(p),
+      }
+    case 'power':
+      return {
+        purpose: powerPurpose(p),
+        scenes: powerScenes(p),
+        comparison: comparison(p),
+        compat: powerCompat(p),
       }
     case 'plate':
       return {

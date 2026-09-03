@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
@@ -366,10 +367,26 @@ export type MountItem = { src: string; label: string; note: string }
  * подписями из прайса.
  */
 export function MountStack({ items }: { items: MountItem[] }) {
+  const reduced = useReducedMotion()
+  /*
+   * Звенья «встают на место» по очереди при появлении блока — это
+   * читается как сборка связки, а не как три отдельные карточки рядом.
+   * Смещение маленькое (18px) и по одной оси: никакого циркового
+   * разлёта элементов.
+   */
+  const step = (i: number) =>
+    reduced
+      ? {}
+      : {
+          initial: { opacity: 0, y: 18 },
+          whileInView: { opacity: 1, y: 0 },
+          viewport: { once: true, amount: 0.35 },
+          transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.12 },
+        }
   return (
     <ol className="flex w-full flex-col gap-3 sm:flex-row sm:items-stretch">
       {items.map((item, i) => (
-        <li key={item.label} className="flex flex-1 items-center gap-3 sm:flex-col sm:gap-0">
+        <motion.li key={item.label} {...step(i)} className="flex flex-1 items-center gap-3 sm:flex-col sm:gap-0">
           {/*
             Фон кадра заметно глубже белого: у ShineMate часть оснастки
             (многодырчатые подложки, белая шерсть) снята на белом, и на
@@ -395,9 +412,78 @@ export function MountStack({ items }: { items: MountItem[] }) {
             <p className="text-[0.9375rem] leading-snug tracking-tight text-graphite">{item.label}</p>
             <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{item.note}</p>
           </div>
-        </li>
+        </motion.li>
       ))}
     </ol>
+  )
+}
+
+/* ───────────────────────── Серия / линейка реальными кадрами ───────────────────────── */
+
+export type SeriesItem = { slug: string; href: string; label: string; note: string; image: string; active: boolean }
+
+/**
+ * Ряд соседей по серии настоящими кадрами каталога: градации круга от
+ * мягкой к жёсткой, составы V-Range от финиша к тяжёлому резу. Каждый
+ * элемент — ссылка на свой товар, текущий подсвечен.
+ *
+ * Порядок и подписи берутся из прайса: никакого «условного рейтинга»
+ * или придуманных процентов реза здесь нет.
+ */
+export function SeriesRow({ items, from, to }: { items: SeriesItem[]; from: string; to: string }) {
+  const reduced = useReducedMotion()
+  return (
+    <div className="w-full">
+      <div className="flex items-baseline justify-between font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
+        <span>{from}</span>
+        <span className="text-right">{to}</span>
+      </div>
+      <ol className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+        {items.map((item, i) => (
+          <motion.li
+            key={item.slug}
+            {...(reduced
+              ? {}
+              : {
+                  initial: { opacity: 0, y: 16 },
+                  whileInView: { opacity: 1, y: 0 },
+                  viewport: { once: true, amount: 0.3 },
+                  transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.07 },
+                })}
+          >
+            <a
+              href={item.href}
+              aria-current={item.active ? 'true' : undefined}
+              className={`group flex h-full flex-col rounded-2xl border p-3 transition-colors duration-300 ease-premium ${
+                item.active
+                  ? 'border-graphite bg-porcelain shadow-[0_18px_40px_-24px_rgba(26,28,30,0.5)]'
+                  : 'border-graphite/[0.12] hover:border-graphite/35 hover:bg-porcelain/70'
+              }`}
+            >
+              <span className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[radial-gradient(120%_100%_at_50%_0%,#F4F7F8_0%,#E2EAEC_60%,#D2DDDF_100%)]">
+                <img
+                  src={item.image.replace('.webp', '-thumb.webp')}
+                  srcSet={`${item.image.replace('.webp', '-thumb.webp')} 320w, ${item.image} 760w`}
+                  sizes="220px"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-[86%] w-[86%] object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.06]"
+                />
+              </span>
+              <span
+                className={`mt-3 block font-mono text-[0.8125rem] tabular-nums ${
+                  item.active ? 'text-graphite' : 'text-ash'
+                }`}
+              >
+                {item.label}
+              </span>
+              <span className="mt-1 block text-[0.75rem] leading-snug text-titanium">{item.note}</span>
+            </a>
+          </motion.li>
+        ))}
+      </ol>
+    </div>
   )
 }
 

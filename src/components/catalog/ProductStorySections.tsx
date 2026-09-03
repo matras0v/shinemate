@@ -9,6 +9,7 @@ import {
   OrbitPrinciple,
   PowerBar,
   RotaryPrinciple,
+  SeriesRow,
   SizeScale,
   SpeedDial,
   StrokeScale,
@@ -178,11 +179,13 @@ function Diagram({ diagram, dark }: { diagram: SceneDiagram; dark?: boolean }) {
       return <StrokeScale items={diagram.items} activeModel={diagram.activeModel} />
     case 'sizes':
       return <SizeScale items={diagram.items} />
+    case 'series':
+      return <SeriesRow items={diagram.items} from={diagram.from} to={diagram.to} />
   }
 }
 
 /** Схемам, которые сами по себе — крупный объект, рамка не нужна. */
-const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes']
+const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series']
 
 /*
  * Схема принципа привода — это «технологический» акцент страницы, и он

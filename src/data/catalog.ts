@@ -1306,10 +1306,20 @@ export const variantsLabel = (count: number) => {
  * Ничего не придумывается: и состав, и подписи ниже читаются из тех же
  * полей, что уже есть в карточке товара.
  */
-export const getRelatedProducts = (product: Product, max = 3): Product[] => {
+/**
+ * Похожие позиции.
+ *
+ * `pool` позволяет сузить выборку до семейства (роторные к роторным,
+ * шерсть к шерсти): раздел не равен семейству — в «Роторных машинках»
+ * рядом с EP830 лежит гибкий вал, и предлагать его как «похожую модель»
+ * неверно. Если в семействе меньше двух соседей, берём весь раздел,
+ * чтобы блок не оставался пустым.
+ */
+export const getRelatedProducts = (product: Product, max = 3, pool?: Product[]): Product[] => {
   const base = minPrice(product) ?? 0
-  return productsByCategory(product.category)
-    .filter((p) => p.slug !== product.slug)
+  const near = (pool ?? []).filter((p) => p.slug !== product.slug)
+  const source = near.length >= 2 ? near : productsByCategory(product.category).filter((p) => p.slug !== product.slug)
+  return source
     .sort((a, b) => Math.abs((minPrice(a) ?? 0) - base) - Math.abs((minPrice(b) ?? 0) - base))
     .slice(0, max)
 }

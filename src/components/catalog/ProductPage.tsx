@@ -12,7 +12,7 @@ import {
   type Product,
   type Variant,
 } from '../../data/catalog'
-import { buildStory } from '../../data/story'
+import { buildStory, familyOf } from '../../data/story'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useLead } from '../../lib/leadContext'
 import { riseProps } from '../../lib/motion'
@@ -101,7 +101,7 @@ export function ProductPage({ product }: Props) {
     if (match) setSelectedSku(match.sku)
   }
 
-  const related = useMemo(() => getRelatedProducts(product), [product])
+  const related = useMemo(() => getRelatedProducts(product, 3, familyOf(product)), [product])
   /*
    * buildStory собирает новые массивы и объекты на каждый вызов. Без
    * useMemo он пересобирался на КАЖДЫЙ рендер, и story.gallery каждый раз
@@ -141,8 +141,21 @@ export function ProductPage({ product }: Props) {
     lastVariantImage.current = undefined
   }, [product.slug])
 
-  const watermarkToken = product.model.split(/[\s—/(]/)[0]
-  const watermark = watermarkToken.length <= 8 ? watermarkToken : null
+  /*
+   * Водяной знак — это АРТИКУЛЬНЫЙ идентификатор позиции, а не первое
+   * слово названия. Раньше бралось первое слово, и над оранжевым кругом
+   * «Black Diamond — оранжевый (T40)» огромными буквами стояло BLACK —
+   * читалось как ошибка. Теперь: EP830 у машинок, T40 у кругов, V80 у
+   * паст; если такого идентификатора нет — знака нет вовсе.
+   */
+  const watermark = useMemo(() => {
+    const grade = product.model.match(/\bT(\d{2,3})\b/)
+    if (grade) return `T${grade[1]}`
+    const vRange = product.model.match(/\bV\d{2}\b/)
+    if (vRange) return vRange[0]
+    const article = product.model.match(/\b[A-Z]{2,4}[- ]?\d{1,4}[A-Z]?(\sG\d)?\b/)
+    return article ? article[0].replace(/\s+/g, ' ').trim() : null
+  }, [product.model])
 
   const shotIndex = Math.min(shot, Math.max(story.gallery.length - 1, 0))
   const heroImage = story.gallery[shotIndex] ?? selectedVariant?.image ?? product.image
