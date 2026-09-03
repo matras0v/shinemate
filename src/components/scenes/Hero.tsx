@@ -295,7 +295,16 @@ export function Hero() {
          * дистрибьютора наезжал на навигацию карусели в углу снимка.
          * justify-start + отступ сверху удерживают его под кадром.
          */
-        className="shell absolute inset-x-0 bottom-0 top-[46dvh] z-20 flex flex-col justify-start pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-7 lg:inset-x-auto lg:left-0 lg:top-0 lg:w-[44%] lg:justify-end lg:pb-14 lg:pt-0"
+        /*
+         * На lg колонка прижата к низу (justify-end) и раньше начиналась от
+         * top-0 без отступа. Слайды с длинным заголовком («Круги под любую
+         * задачу», «Пасты V-Range для результата») выше остальных на целую
+         * строку, и весь блок уезжал вверх — бейдж дистрибьютора оказывался
+         * ЗА фиксированной шапкой, поверх пунктов меню. Отступ сверху
+         * резервирует высоту шапки, поэтому самый высокий слайд всё равно
+         * остаётся под ней.
+         */
+        className="shell absolute inset-x-0 bottom-0 top-[46dvh] z-20 flex flex-col justify-start pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-7 lg:inset-x-auto lg:left-0 lg:top-0 lg:w-[44%] lg:justify-end lg:pb-14 lg:pr-0 lg:pt-[6.75rem]"
       >
         {/*
           Второй заход клиента: цветного текста мало — это всё ещё читалось
@@ -313,7 +322,7 @@ export function Hero() {
           </div>
         </motion.div>
 
-        <h1 className="h1 mt-5 grid max-w-[13ch] font-semibold lg:mt-6">
+        <h1 className="h1-hero mt-5 grid max-w-[13ch] font-semibold lg:mt-6">
           {/*
             Раньше слайды при смене крестфейдили оба в потоке — старый и
             новый текст просто накладывались друг на друга в разметке
@@ -406,7 +415,11 @@ export function Hero() {
           // помещается вместе с заголовком и кнопками, а те же три
           // раздела на мобильном доступны из меню «Каталог» и из блока
           // «Оборудование» ниже по странице.
-          className="mt-8 hidden grid-cols-3 gap-3 border-t border-graphite/10 pt-6 sm:grid lg:mt-10"
+          // hero-quicklinks: на невысоком десктопе (ноутбучные ~800px)
+          // колонка первого экрана перестаёт помещаться целиком и уезжает
+          // вверх под шапку. Строка быстрых ссылок уходит первой — те же
+          // три раздела рядом, в меню «Каталог» и в блоке «Оборудование».
+          className="hero-quicklinks mt-8 hidden grid-cols-3 gap-3 border-t border-graphite/10 pt-6 sm:grid lg:mt-10"
         >
           {[
             { href: 'catalog', src: 'catalog-media/ex620-thumb.webp', label: 'Машинки' },
