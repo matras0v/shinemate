@@ -20,6 +20,8 @@ import { productHref } from '../../lib/router'
 import {
   ComparisonSection,
   CompatSection,
+  PhotoScene,
+  ProcessSection,
   PurposeSection,
   ScaleSection,
   SpecHighlights,
@@ -272,19 +274,28 @@ export function ProductPage({ product }: Props) {
       {/* ─── 02. КЛЮЧЕВЫЕ ЦИФРЫ ──────────────────────────────────────── */}
       <SpecHighlights items={story.highlights} kicker={`${product.model} · ключевые параметры`} />
 
-      {/* ─── 03. НАЗНАЧЕНИЕ ───────────────────────────────────────────── */}
+      {/* ─── 03. ТОВАР В РАБОТЕ (официальный кадр ShineMate) ──────────── */}
+      {story.photos[0] && <PhotoScene photo={story.photos[0]} variant="right" />}
+
+      {/* ─── 04. НАЗНАЧЕНИЕ ───────────────────────────────────────────── */}
       <PurposeSection purpose={story.purpose} />
 
-      {/* ─── 04. СЦЕНЫ ПО РЕАЛЬНЫМ ХАРАКТЕРИСТИКАМ ────────────────────── */}
-      <StoryScenes scenes={story.scenes} product={product} />
+      {/* ─── 05. СЦЕНЫ ПО РЕАЛЬНЫМ ХАРАКТЕРИСТИКАМ ────────────────────── */}
+      <StoryScenes scenes={story.scenes} product={product} photo={story.photos[0]} />
 
-      {/* ─── 05. МЕСТО В ЛИНЕЙКЕ / ЦИКЛЕ ──────────────────────────────── */}
+      {/* ─── 06. ВТОРОЙ КАДР, ЕСЛИ ОН ЕСТЬ (линейка паст) ────────────── */}
+      {story.photos[1] && <PhotoScene photo={story.photos[1]} variant="left" tone="dark" />}
+
+      {/* ─── 07. ЦИКЛ ОБРАБОТКИ (для машинок) ─────────────────────────── */}
+      {story.process && <ProcessSection process={story.process} />}
+
+      {/* ─── 08. МЕСТО В ЛИНЕЙКЕ / ЦИКЛЕ ──────────────────────────────── */}
       {story.scale && <ScaleSection scale={story.scale} />}
 
-      {/* ─── 06. ЧЕМ ОТЛИЧАЕТСЯ ОТ СОСЕДЕЙ ────────────────────────────── */}
+      {/* ─── 09. ЧЕМ ОТЛИЧАЕТСЯ ОТ СОСЕДЕЙ ────────────────────────────── */}
       {story.comparison && <ComparisonSection table={story.comparison} />}
 
-      {/* ─── 07. ХАРАКТЕРИСТИКИ + ИСПОЛНЕНИЯ ─────────────────────────── */}
+      {/* ─── 10. ХАРАКТЕРИСТИКИ + ИСПОЛНЕНИЯ ─────────────────────────── */}
       <section className="scene relative bg-porcelain py-20 md:py-28">
         <div className="shell-wide grid gap-14 lg:grid-cols-[1fr_1fr] lg:gap-24">
           <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
@@ -436,13 +447,13 @@ export function ProductPage({ product }: Props) {
         </div>
       </section>
 
-      {/* ─── 08. СВЯЗКА «СИСТЕМА SHINEMATE» ──────────────────────────── */}
+      {/* ─── 11. СВЯЗКА «СИСТЕМА SHINEMATE» ──────────────────────────── */}
       {story.chain && <SystemChainSection chain={story.chain} />}
 
-      {/* ─── 09. СОВМЕСТИМОСТЬ ───────────────────────────────────────── */}
+      {/* ─── 12. СОВМЕСТИМОСТЬ ───────────────────────────────────────── */}
       <CompatSection groups={story.compat} />
 
-      {/* ─── 10. ПОХОЖИЕ ПОЗИЦИИ ─────────────────────────────────────── */}
+      {/* ─── 13. ПОХОЖИЕ ПОЗИЦИИ ─────────────────────────────────────── */}
       {related.length > 0 && (
         <section className="scene relative bg-mist py-20 md:py-28">
           <div className="shell-wide">
@@ -508,7 +519,7 @@ export function ProductPage({ product }: Props) {
         </section>
       )}
 
-      {/* ─── 11. CTA ─────────────────────────────────────────────────── */}
+      {/* ─── 14. CTA ─────────────────────────────────────────────────── */}
       <StoryCta
         product={product}
         onRequest={() => requestProduct(product, selectedVariant)}

@@ -140,6 +140,10 @@ export type ProductStory = {
   highlights: { label: string; value: string }[]
   /** Все реальные кадры позиции: фото товара + фото исполнений. */
   gallery: string[]
+  /** Официальные съёмочные кадры: товар в работе, а не рендер на белом. */
+  photos: StoryPhoto[]
+  /** Полный цикл обработки — показывается там, где позиция участвует во всех стадиях. */
+  process?: { caption: string; note: string; stages: PolishStage[] }
   /** Визуальные сцены: чередуются по композиции при рендере. */
   scenes: StoryScene[]
   /** Место в линейке / в цикле обработки. */
@@ -971,10 +975,40 @@ export function storyKind(p: Product): StoryKind {
  * данных есть у конкретной позиции.
  */
 export function buildStory(p: Product): ProductStory {
-  return { ...buildCore(p), highlights: highlights(p), gallery: gallery(p) }
+  const core = buildCore(p)
+  return {
+    ...core,
+    highlights: highlights(p),
+    gallery: gallery(p),
+    photos: storyPhotos(p),
+    process: machineProcess(p),
+  }
 }
 
-type StoryCore = Omit<ProductStory, 'highlights' | 'gallery'>
+/**
+ * Полный цикл обработки на странице машинки.
+ *
+ * У круга и пасты есть СВОЯ стадия — им показывается шкала (ScaleSection).
+ * Машинкой же проходят весь цикл, поэтому здесь честнее показать все
+ * четыре стадии целиком: что снимается, какой пастой и каким кругом.
+ * Данные — та же официальная «Таблица применения», что и на странице
+ * «Технологии», один массив на весь сайт.
+ */
+function machineProcess(p: Product): ProductStory['process'] {
+  if (storyKind(p) !== 'machine') return undefined
+  // Аккумуляторы, зарядные и прочая обвязка полировкой не занимаются.
+  if (!/машинка|полировк|шлифов|вал/i.test(p.kind)) return undefined
+  const sander = isSanderLike(p)
+  return {
+    caption: sander ? 'Где машинка стоит в цикле обработки' : 'Полный цикл обработки этой машинкой',
+    note: sander
+      ? 'Шлифование — первая стадия: после неё поверхность уходит на коррекцию и финиш полировальными машинками.'
+      : 'От снятия грубых дефектов до чистого глянца. На каждой стадии — своя паста и своя градация круга.',
+    stages: POLISH_STAGES,
+  }
+}
+
+type StoryCore = Omit<ProductStory, 'highlights' | 'gallery' | 'photos' | 'process'>
 
 function buildCore(p: Product): StoryCore {
   switch (storyKind(p)) {
@@ -1036,3 +1070,171 @@ function buildCore(p: Product): StoryCore {
 
 /** Подпись раздела в хлебных крошках и заголовке story. */
 export const storyKindLabel = (p: Product) => categoryTitle(p.category)
+
+/* ─────────────────── Реальные съёмочные кадры ShineMate ─────────────────── */
+
+/**
+ * Официальные фотографии ShineMate с их же продуктовых страниц — товар в
+ * работе, а не рендер на белом фоне. Отобраны вручную по одному критерию:
+ * на кадре НЕТ вшитого английского маркетингового текста (надписи на
+ * этикетках самих флаконов — это упаковка товара, а не наш перевод).
+ * Кадры с текстом либо обрезаны по границе фотографии, либо не взяты.
+ *
+ * Ключ — либо slug конкретной модели (у машинок свой кадр), либо общая
+ * сцена раздела (круги, пасты). Размеры — реальные размеры файлов в
+ * public/catalog-media/scene, чтобы браузер не пересчитывал раскладку
+ * после загрузки.
+ */
+const SCENE_SIZES: Record<string, [number, number]> = {
+  'compound-apply': [746, 586],
+  'eb210-kit': [1155, 650],
+  'eb251-5': [1155, 650],
+  eb350: [1155, 650],
+  eb351: [1155, 650],
+  'ep801-g2': [1155, 650],
+  ep804: [1150, 650],
+  ep820: [1155, 650],
+  'ero600-g2': [1155, 650],
+  es516: [1155, 650],
+  es550: [1155, 650],
+  es700: [960, 1010],
+  ex603: [1155, 650],
+  ex605: [1155, 650],
+  ex620: [1155, 650],
+  'mpk-3': [1155, 650],
+  'pad-workshop': [776, 781],
+  'v-range': [780, 650],
+}
+
+export type StoryPhoto = {
+  key: string
+  src: string
+  srcSmall: string
+  width: number
+  height: number
+  eyebrow: string
+  title: string
+  body: string
+}
+
+function photo(key: string, eyebrow: string, title: string, body: string): StoryPhoto | null {
+  const size = SCENE_SIZES[key]
+  if (!size) return null
+  return {
+    key,
+    src: `catalog-media/scene/${key}.webp`,
+    srcSmall: `catalog-media/scene/${key}-800.webp`,
+    width: size[0],
+    height: size[1],
+    eyebrow,
+    title,
+    body,
+  }
+}
+
+/**
+ * Подпись к кадру собирается из РЕАЛЬНЫХ характеристик позиции, поэтому
+ * у EP820 и EX620 под одинаковой по смыслу фотографией стоят разные
+ * цифры и разный текст — страницы не выглядят одинаковыми.
+ */
+function machinePhoto(p: Product): StoryPhoto | null {
+  const speed = specValue(p, 'Обороты')
+  const orbit = specValue(p, 'Ход эксцентрика')
+  const plate = specValue(p, 'Подложка') ?? specValue(p, 'Подложки')
+  const platform = specValue(p, 'Платформа')
+
+  if (isShaftLike(p)) {
+    return photo(
+      p.slug,
+      'В работе',
+      'Туда, где полноразмерная машинка не встаёт',
+      `Вал выносит насадку вперёд: кромки, стойки, рельеф и зоны у ручек обрабатываются без риска задеть соседнюю панель корпусом машинки.${
+        speed ? ` Рабочий диапазон — ${speed}.` : ''
+      }`,
+    )
+  }
+  if (isSanderLike(p)) {
+    return photo(
+      p.slug,
+      'В работе',
+      'Подготовка поверхности до полировки',
+      `Шлифование идёт до коррекции: снимается перелив, корка и грубые дефекты, после чего след от диска выводится пастой и кругом своей градации.${
+        orbit ? ` Ход — ${orbit}.` : ''
+      }`,
+    )
+  }
+  if (platform) {
+    return photo(
+      p.slug,
+      'В работе',
+      'Без кабеля — по всему кузову и на выезде',
+      `Аккумуляторное исполнение снимает главное ограничение выездной работы: провод не тянется по свежевымытому кузову и не ограничивает радиус.${
+        platform ? ` Платформа ${platform}.` : ''
+      }${speed ? ` Обороты ${speed}.` : ''}`,
+    )
+  }
+  if (isOrbitalLike(p)) {
+    return photo(
+      p.slug,
+      'В работе',
+      'Коррекция по всему кузову, включая тонкий лак',
+      `Круг одновременно вращается и ходит по орбите, поэтому одна точка лака не греется постоянно.${
+        orbit ? ` Ход эксцентрика ${orbit}.` : ''
+      }${speed ? ` Диапазон ${speed}.` : ''}`,
+    )
+  }
+  return photo(
+    p.slug,
+    'В работе',
+    'Съём под контролем на больших плоскостях',
+    `Прямой привод держит пятно контакта в работе постоянно — капот и крыша закрываются заметно быстрее, чем эксцентриком.${
+      speed ? ` Диапазон ${speed}.` : ''
+    }${plate ? ` Штатная подложка ${plate}.` : ''}`,
+  )
+}
+
+function storyPhotos(p: Product): StoryPhoto[] {
+  const kind = storyKind(p)
+  const out: (StoryPhoto | null)[] = []
+
+  if (kind === 'machine') {
+    out.push(machinePhoto(p))
+  } else if (kind === 'compound') {
+    out.push(
+      photo(
+        'compound-apply',
+        'Как наносится',
+        'Состав работает в паре с кругом',
+        'Паста наносится точками на рабочую поверхность круга и разгоняется на низких оборотах. Результат даёт связка «паста + круг»: по отдельности ни то, ни другое не даёт предсказуемого съёма.',
+      ),
+    )
+    out.push(
+      photo(
+        'v-range',
+        'Линейка',
+        'Место состава в линейке V-Range',
+        'V80 — тяжёлый рез, V82 — рез и финиш за один проход, V40 — средняя коррекция, V20 — финиш. Составы рассчитаны под круги своей стадии и работают и на роторной, и на эксцентриковой машинке.',
+      ),
+    )
+  } else if (kind === 'pad') {
+    out.push(
+      photo(
+        'pad-workshop',
+        'В работе',
+        'Круг меняется за секунды',
+        'Липучка держит круг на подложке и позволяет менять его прямо в процессе — под каждую стадию свой круг, без перестановки оснастки и без пауз на подбор.',
+      ),
+    )
+  } else if (kind === 'plate') {
+    out.push(
+      photo(
+        'pad-workshop',
+        'В работе',
+        'Подложка — то, через что круг держится на машинке',
+        'Диаметр и резьба заданы конструкцией машинки: на правильной подложке круг садится ровно, не бьёт на оборотах и меняется одним движением.',
+      ),
+    )
+  }
+
+  return out.filter((x): x is StoryPhoto => x !== null)
+}

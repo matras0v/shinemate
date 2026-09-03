@@ -184,8 +184,8 @@ export const products: Product[] = [
     includes: ['Боковая рукоять', 'Ключ', 'Опорная подложка 6"'],
     variants: [{ sku: 'EP830 6"', label: 'с подложкой 6"', rrp: 27158.6 }],
     image: 'catalog-media/ep830.webp',
-    imageWidth: 357,
-    imageHeight: 357,
+    imageWidth: 625,
+    imageHeight: 625,
   },
   {
     slug: 'ep820',
@@ -204,8 +204,8 @@ export const products: Product[] = [
     includes: ['Боковая рукоять', 'Ключ', 'Комплект угольных щёток', 'Опорная подложка'],
     variants: [{ sku: 'EP820 5"', label: 'с подложкой 5"', rrp: 19900 }],
     image: 'catalog-media/ep820.webp',
-    imageWidth: 359,
-    imageHeight: 359,
+    imageWidth: 628,
+    imageHeight: 628,
     featured: true,
   },
   {
@@ -225,8 +225,8 @@ export const products: Product[] = [
     includes: ['Боковая рукоять', 'Ключ', 'Комплект угольных щёток', 'Подложка 5"'],
     variants: [{ sku: 'EP801 G2', label: 'с подложкой 5"', rrp: 17300 }],
     image: 'catalog-media/ep801.webp',
-    imageWidth: 349,
-    imageHeight: 349,
+    imageWidth: 611,
+    imageHeight: 611,
     featured: true,
   },
   {
@@ -248,8 +248,8 @@ export const products: Product[] = [
       { sku: 'EP804 Kit', label: 'полный комплект: + удлинители вала и круги', rrp: 17100 },
     ],
     image: 'catalog-media/ep804.webp',
-    imageWidth: 325,
-    imageHeight: 325,
+    imageWidth: 569,
+    imageHeight: 569,
     featured: true,
   },
   {
@@ -273,8 +273,8 @@ export const products: Product[] = [
     ],
     variants: [{ sku: 'MPK-3', label: 'комплект', rrp: 9280 }],
     image: 'catalog-media/mpk3.webp',
-    imageWidth: 332,
-    imageHeight: 332,
+    imageWidth: 581,
+    imageHeight: 581,
   },
 
   // ───────────────────── Эксцентриковые ─────────────────────
@@ -298,8 +298,8 @@ export const products: Product[] = [
       { sku: 'EX620-5/15', label: 'подложка 5", ход 15 мм', rrp: 25200 },
     ],
     image: 'catalog-media/ex620.webp',
-    imageWidth: 386,
-    imageHeight: 386,
+    imageWidth: 676,
+    imageHeight: 676,
     featured: true,
   },
   {
@@ -319,8 +319,8 @@ export const products: Product[] = [
     includes: ['2 полировальных круга', 'Ключ', 'Комплект угольных щёток'],
     variants: [{ sku: 'EX605', label: 'ход 12 мм, + 2 круга', rrp: 17900 }],
     image: 'catalog-media/ex605.webp',
-    imageWidth: 332,
-    imageHeight: 332,
+    imageWidth: 581,
+    imageHeight: 581,
     featured: true,
   },
   {
@@ -340,8 +340,8 @@ export const products: Product[] = [
     includes: ['2 полировальных круга', 'Ключ', 'Комплект угольных щёток'],
     variants: [{ sku: 'EX603', label: 'ход 12 мм, + 2 круга', rrp: 15400 }],
     image: 'catalog-media/ex603.webp',
-    imageWidth: 396,
-    imageHeight: 396,
+    imageWidth: 693,
+    imageHeight: 693,
   },
   {
     slug: 'ero600-g2',
@@ -360,8 +360,8 @@ export const products: Product[] = [
     includes: ['1 полировальный круг', 'Ключ', 'Комплект угольных щёток', 'Подложка 5"'],
     variants: [{ sku: 'ERO600 G2', label: 'ход 9 мм, + 1 круг', rrp: 14900 }],
     image: 'catalog-media/ero600g2.webp',
-    imageWidth: 550,
-    imageHeight: 550,
+    imageWidth: 900,
+    imageHeight: 900,
     featured: true,
   },
 
@@ -386,8 +386,8 @@ export const products: Product[] = [
       { sku: 'ES700-6/5', label: 'ход 5 мм', rrp: 26546.8 },
     ],
     image: 'catalog-media/es700.webp',
-    imageWidth: 386,
-    imageHeight: 386,
+    imageWidth: 676,
+    imageHeight: 676,
   },
   {
     slug: 'es516',
@@ -409,8 +409,8 @@ export const products: Product[] = [
       { sku: 'ES516-6/5', label: 'ход 5 мм', rrp: 14150 },
     ],
     image: 'catalog-media/es516.webp',
-    imageWidth: 351,
-    imageHeight: 351,
+    imageWidth: 614,
+    imageHeight: 614,
   },
   {
     slug: 'es550',
@@ -429,8 +429,8 @@ export const products: Product[] = [
     includes: ['Комплект угольных щёток'],
     variants: [{ sku: 'ES550', label: 'ход 5 мм', rrp: 22450 }],
     image: 'catalog-media/es550.webp',
-    imageWidth: 399,
-    imageHeight: 399,
+    imageWidth: 698,
+    imageHeight: 698,
   },
 
   // ───────────────────── Аккумуляторные машинки ─────────────────────
@@ -449,8 +449,8 @@ export const products: Product[] = [
     includes: ['Опорная подложка 5" M14', 'Боковая рукоять', 'Ключ'],
     variants: [{ sku: 'EB251-5', label: 'машинка без АКБ и зарядного', rrp: 16039.8 }],
     image: 'catalog-media/eb251.webp',
-    imageWidth: 452,
-    imageHeight: 452,
+    imageWidth: 791,
+    imageHeight: 791,
     featured: true,
   },
   {
@@ -469,8 +469,8 @@ export const products: Product[] = [
     includes: ['Опорная подложка 5"', 'Шестигранный ключ'],
     variants: [{ sku: 'EB351-5/15', label: 'машинка без АКБ и зарядного', rrp: 16332.4 }],
     image: 'catalog-media/eb351-5.webp',
-    imageWidth: 433,
-    imageHeight: 433,
+    imageWidth: 758,
+    imageHeight: 758,
   },
   {
     slug: 'eb350',
@@ -487,8 +487,8 @@ export const products: Product[] = [
     ],
     variants: [{ sku: 'EB350-3/12', label: 'машинка без АКБ и зарядного', rrp: 14204.4 }],
     image: 'catalog-media/eb350-3.webp',
-    imageWidth: 416,
-    imageHeight: 416,
+    imageWidth: 728,
+    imageHeight: 728,
   },
   {
     slug: 'eb210-kit',
@@ -512,8 +512,8 @@ export const products: Product[] = [
     ],
     variants: [{ sku: 'EB210 Kit', label: 'полный комплект', rrp: 42560 }],
     image: 'catalog-media/eb210.webp',
-    imageWidth: 421,
-    imageHeight: 421,
+    imageWidth: 737,
+    imageHeight: 737,
   },
   {
     slug: 'eb212-eb213',
@@ -530,12 +530,12 @@ export const products: Product[] = [
     ],
     includes: ['Подложка 3"', 'Аккумулятор 2,5 А·ч', 'Зарядное устройство', 'Шестигранный ключ'],
     variants: [
-      { sku: 'EB212 KIT', label: 'эксцентриковая, + 2 поролоновых круга', rrp: 29041.88, image: 'catalog-media/eb212.webp', imageWidth: 306, imageHeight: 306 },
-      { sku: 'EB213 KIT', label: 'роторная, + 2 поролоновых и 1 шерстяной круг', rrp: 29041.88, image: 'catalog-media/eb213.webp', imageWidth: 347, imageHeight: 284 },
+      { sku: 'EB212 KIT', label: 'эксцентриковая, + 2 поролоновых круга', rrp: 29041.88, image: 'catalog-media/eb212.webp', imageWidth: 536, imageHeight: 536 },
+      { sku: 'EB213 KIT', label: 'роторная, + 2 поролоновых и 1 шерстяной круг', rrp: 29041.88, image: 'catalog-media/eb213.webp', imageWidth: 607, imageHeight: 497 },
     ],
     image: 'catalog-media/eb212.webp',
-    imageWidth: 306,
-    imageHeight: 306,
+    imageWidth: 536,
+    imageHeight: 536,
   },
   {
     slug: 'eb200a-eb201a',
@@ -559,8 +559,8 @@ export const products: Product[] = [
       { sku: 'EB201A-3/5 KIT', label: 'ход 5 мм, подложка 3"', rrp: 23934.68 },
     ],
     image: 'catalog-media/eb200a.webp',
-    imageWidth: 520,
-    imageHeight: 520,
+    imageWidth: 900,
+    imageHeight: 900,
   },
   {
     slug: 'eb202a',
@@ -577,8 +577,8 @@ export const products: Product[] = [
     includes: ['Аккумулятор 5,0 А·ч', 'Зарядное устройство', '6 шлифовальных дисков Roll Lock', 'Ключ', 'Кейс'],
     variants: [{ sku: 'EB202A KIT', label: 'полный комплект', rrp: 22032.78 }],
     image: 'catalog-media/eb200a.webp',
-    imageWidth: 520,
-    imageHeight: 520,
+    imageWidth: 900,
+    imageHeight: 900,
   },
   {
     slug: 'battery-18v',
@@ -615,8 +615,8 @@ export const products: Product[] = [
       { sku: 'B1250A', label: '10,8 В, 5,0 А·ч', rrp: 7769.86 },
     ],
     image: 'catalog-media/battery-108v.webp',
-    imageWidth: 365,
-    imageHeight: 365,
+    imageWidth: 639,
+    imageHeight: 639,
   },
   {
     slug: 'chargers',
@@ -630,13 +630,13 @@ export const products: Product[] = [
       { label: 'Выход', value: '18 В постоянного тока' },
     ],
     variants: [
-      { sku: 'BC181', label: '18 В, 4 А', rrp: 4575.2, image: 'catalog-media/charger-18v.webp', imageWidth: 343, imageHeight: 343 },
-      { sku: 'BC121', label: '10,8 В, 3 А', rrp: 4067.14, image: 'catalog-media/charger-108v-single.webp', imageWidth: 176, imageHeight: 185 },
-      { sku: 'BC122', label: '10,8 В, 3 А × 2 канала', rrp: 8831.2, image: 'catalog-media/charger-108v-dual.webp', imageWidth: 259, imageHeight: 210 },
+      { sku: 'BC181', label: '18 В, 4 А', rrp: 4575.2, image: 'catalog-media/charger-18v.webp', imageWidth: 600, imageHeight: 600 },
+      { sku: 'BC121', label: '10,8 В, 3 А', rrp: 4067.14, image: 'catalog-media/charger-108v-single.webp', imageWidth: 308, imageHeight: 324 },
+      { sku: 'BC122', label: '10,8 В, 3 А × 2 канала', rrp: 8831.2, image: 'catalog-media/charger-108v-dual.webp', imageWidth: 453, imageHeight: 367 },
     ],
     image: 'catalog-media/charger-18v.webp',
-    imageWidth: 343,
-    imageHeight: 343,
+    imageWidth: 600,
+    imageHeight: 600,
   },
 
   // ───────────────────── Подложки и адаптеры ─────────────────────
@@ -657,9 +657,9 @@ export const products: Product[] = [
       // (5"–6") — плоские диски с чёрным поролоновым слоем: это разные по
       // форме подложки, а не один диск в разном масштабе, поэтому фото
       // различается по группе размеров, а не просто дублируется.
-      { sku: '14212-24', label: '1,2" (30 мм)', rrp: 440, axis1: '1,2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 388, imageHeight: 282 },
-      { sku: '14220-24', label: '2" (48 мм)', rrp: 470, axis1: '2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 388, imageHeight: 282 },
-      { sku: '14231-24', label: '3" (74 мм)', rrp: 510, axis1: '3"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 388, imageHeight: 282 },
+      { sku: '14212-24', label: '1,2" (30 мм)', rrp: 440, axis1: '1,2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
+      { sku: '14220-24', label: '2" (48 мм)', rrp: 470, axis1: '2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
+      { sku: '14231-24', label: '3" (74 мм)', rrp: 510, axis1: '3"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
       { sku: '13850-2', label: '5" (123 мм), чёрный поролон', rrp: 900, axis1: '5"', image: 'catalog-media/plate-flexedge.webp', imageWidth: 763, imageHeight: 763 },
       { sku: '13860-2', label: '6" (148 мм), чёрный поролон', rrp: 1150, axis1: '6"', image: 'catalog-media/plate-flexedge.webp', imageWidth: 763, imageHeight: 763 },
     ],
@@ -723,14 +723,14 @@ export const products: Product[] = [
       // не то, что здесь продаётся, клиент заметил рассинхрон на видео.
       // Замена — референс-фото удлинителей от Андрея (реальные детали,
       // ещё в упаковке — студийного рендера у вендора для них нет).
-      { sku: 'ETS-40-14', label: 'удлинитель вала 40 мм', rrp: 800, image: 'catalog-media/extension-40mm.webp', imageWidth: 380, imageHeight: 560 },
-      { sku: 'ETS-80-14', label: 'удлинитель вала 80 мм', rrp: 1000, image: 'catalog-media/extension-80mm.webp', imageWidth: 386, imageHeight: 640 },
+      { sku: 'ETS-40-14', label: 'удлинитель вала 40 мм', rrp: 800, image: 'catalog-media/extension-40mm.webp', imageWidth: 665, imageHeight: 980 },
+      { sku: 'ETS-80-14', label: 'удлинитель вала 80 мм', rrp: 1000, image: 'catalog-media/extension-80mm.webp', imageWidth: 676, imageHeight: 1121 },
       // Фото самого адаптера ещё не пришло — Андрей обещал прислать отдельно.
       { sku: '75061', label: 'адаптер 6" (148 мм) для круга 5"', rrp: 725 },
     ],
     image: 'catalog-media/extension-80mm.webp',
-    imageWidth: 386,
-    imageHeight: 640,
+    imageWidth: 676,
+    imageHeight: 1121,
   },
 
   // ───────────────────── Полировальные круги ─────────────────────
@@ -1115,8 +1115,8 @@ export const products: Product[] = [
     // насаженным конусом на конце — тот же официальный рендер, где хотя бы
     // виден конус, а не постороннее изделие.
     image: 'catalog-media/mpk3.webp',
-    imageWidth: 332,
-    imageHeight: 332,
+    imageWidth: 581,
+    imageHeight: 581,
     sortOrder: 60,
   },
 
@@ -1236,12 +1236,12 @@ export const products: Product[] = [
       'Машинка висит на своём месте, а не лежит на крыле. Полноразмерный держатель крепится на стену, компактный — на перфопанель.',
     specs: [{ label: 'Крепление', value: 'стена или перфопанель' }],
     variants: [
-      { sku: 'UPH-01', label: 'полноразмерный, настенный', rrp: 2250, image: 'catalog-media/polisher-hanger-full.webp', imageWidth: 234, imageHeight: 631 },
-      { sku: 'UPH-05', label: 'компактный, на перфопанель', rrp: 1150, image: 'catalog-media/polisher-hanger-compact.webp', imageWidth: 199, imageHeight: 229 },
+      { sku: 'UPH-01', label: 'полноразмерный, настенный', rrp: 2250, image: 'catalog-media/polisher-hanger-full.webp', imageWidth: 410, imageHeight: 1106 },
+      { sku: 'UPH-05', label: 'компактный, на перфопанель', rrp: 1150, image: 'catalog-media/polisher-hanger-compact.webp', imageWidth: 348, imageHeight: 400 },
     ],
     image: 'catalog-media/polisher-hanger-full.webp',
-    imageWidth: 234,
-    imageHeight: 631,
+    imageWidth: 410,
+    imageHeight: 1106,
   },
   {
     slug: 'wash-kit',
@@ -1252,15 +1252,15 @@ export const products: Product[] = [
       'Сепаратор задерживает песок на дне ведра, поэтому грязь не возвращается на кузов и не добавляет рисок перед полировкой.',
     specs: [{ label: 'Объём ведра', value: '20 л' }],
     variants: [
-      { sku: 'GS263-BK', label: 'сепаратор грязи, чёрный', rrp: 550, image: 'catalog-media/grit-separator-black.webp', imageWidth: 465, imageHeight: 363 },
-      { sku: 'GS263-GY', label: 'сепаратор грязи, серый', rrp: 550, image: 'catalog-media/grit-separator-grey.webp', imageWidth: 353, imageHeight: 239 },
-      { sku: 'Bucket-20L', label: 'ведро 20 л', rrp: 1930, image: 'catalog-media/bucket.webp', imageWidth: 490, imageHeight: 653 },
-      { sku: 'TW4030GO', label: 'микрофибра 40×30 см, 2 шт.', rrp: 500, image: 'catalog-media/towel.webp', imageWidth: 597, imageHeight: 384 },
-      { sku: 'TW4040B', label: 'микрофибра 40×40 см, 5 шт.', rrp: 1100, image: 'catalog-media/towel.webp', imageWidth: 597, imageHeight: 384 },
+      { sku: 'GS263-BK', label: 'сепаратор грязи, чёрный', rrp: 550, image: 'catalog-media/grit-separator-black.webp', imageWidth: 814, imageHeight: 635 },
+      { sku: 'GS263-GY', label: 'сепаратор грязи, серый', rrp: 550, image: 'catalog-media/grit-separator-grey.webp', imageWidth: 618, imageHeight: 418 },
+      { sku: 'Bucket-20L', label: 'ведро 20 л', rrp: 1930, image: 'catalog-media/bucket.webp', imageWidth: 858, imageHeight: 1143 },
+      { sku: 'TW4030GO', label: 'микрофибра 40×30 см, 2 шт.', rrp: 500, image: 'catalog-media/towel.webp', imageWidth: 900, imageHeight: 579 },
+      { sku: 'TW4040B', label: 'микрофибра 40×40 см, 5 шт.', rrp: 1100, image: 'catalog-media/towel.webp', imageWidth: 900, imageHeight: 579 },
     ],
     image: 'catalog-media/grit-separator-black.webp',
-    imageWidth: 465,
-    imageHeight: 363,
+    imageWidth: 814,
+    imageHeight: 635,
   },
 ]
 

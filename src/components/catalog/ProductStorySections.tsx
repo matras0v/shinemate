@@ -7,6 +7,7 @@ import type {
   CompatGroup,
   CutScale,
   ProductStory,
+  StoryPhoto,
   StoryScene,
   SystemChain,
 } from '../../data/story'
@@ -131,32 +132,44 @@ export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }
  * широкий кадр во весь экран → крупная цифра → тёмная полоса → кадр с
  * текстом сбоку → спокойный текстовый блок.
  */
-type SceneVariant = 'stage' | 'split' | 'metric' | 'band' | 'plain'
+type SceneVariant = 'split' | 'metric' | 'band' | 'plain' | 'detail'
 
 function variantFor(scene: StoryScene, index: number): SceneVariant {
-  if (scene.image) return index === 0 ? 'stage' : 'split'
+  /*
+   * Кадры товара — это вырезанные рендеры вендора шириной 350–800px
+   * (медиана ~505). В широкой «киносцене» на 1568px такой файл занимал
+   * бы треть кадра и терялся в пустоте — ровно та претензия, которую
+   * клиент формулировал как «маленький PNG в огромном белом поле».
+   * Поэтому рендеры всегда идут в половинном кадре 4:3, где товар
+   * занимает почти всю площадь, а во всю ширину раскрываются только
+   * настоящие фотографии (см. PhotoScene).
+   */
+  if (scene.image) return 'split'
   if (!scene.metric) return 'plain'
-  const cycle: SceneVariant[] = ['metric', 'band', 'plain', 'metric']
+  // Порядок подобран так, чтобы тёмная полоса не шла подряд с другой
+  // тёмной секцией: кадр → цифра → деталь → текст → тёмная полоса.
+  const cycle: SceneVariant[] = ['metric', 'detail', 'plain', 'band', 'detail', 'metric']
   return cycle[index % cycle.length]
 }
 
+/**
+ * Три кадрирования одного и того же официального снимка: рабочая
+ * головка, корпус, хвост с кабелем. Настоящих детальных фото у вендора
+ * по позиции нет, поэтому вместо выдуманных «разрезов двигателя» здесь
+ * честное увеличение фрагмента реального снимка — так же, как это
+ * делают в печатных каталогах.
+ */
+const DETAIL_CROPS = [
+  { pos: '30% 45%', scale: 1.55 },
+  { pos: '55% 50%', scale: 1.4 },
+  { pos: '72% 55%', scale: 1.55 },
+]
+
 /** Кадр товара на «сцене»: мягкая студийная подложка + отражение. */
-function ProductStage({
-  src,
-  alt,
-  className = '',
-  tall,
-}: {
-  src: string
-  alt: string
-  className?: string
-  tall?: boolean
-}) {
+function ProductStage({ src, alt, className = '' }: { src: string; alt: string; className?: string }) {
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden rounded-[2rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] ${
-        tall ? 'aspect-[4/3]' : 'aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9]'
-      } ${className}`}
+      className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[2rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] ${className}`}
     >
       {/* Мягкая тень под товаром — «студийный стол», а не картинка в рамке. */}
       <span
@@ -168,51 +181,29 @@ function ProductStage({
         alt={alt}
         loading="lazy"
         decoding="async"
-        className="relative h-[84%] w-[88%] object-contain"
+        className="relative h-[88%] w-[92%] object-contain"
       />
     </div>
   )
 }
 
-function Scene({ scene, index, product }: { scene: StoryScene; index: number; product: Product }) {
+function Scene({
+  scene,
+  index,
+  product,
+  photo,
+}: {
+  scene: StoryScene
+  index: number
+  product: Product
+  /** Официальный снимок позиции — источник для «детальных» кадров. */
+  photo?: StoryPhoto
+}) {
   const reduced = useReducedMotion()
   const variant = variantFor(scene, index)
   const flipped = index % 4 === 3 || index % 4 === 2
   const bg = index % 2 === 0 ? 'bg-porcelain' : 'bg-hazeSurface'
   const alt = `ShineMate ${product.model}`
-
-  // Широкая «сцена»: товар занимает всю ширину контента, текст — над ним.
-  if (variant === 'stage') {
-    return (
-      <section className={`scene relative py-16 md:py-24 ${bg}`}>
-        <div className="shell-wide">
-          <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
-            <motion.div variants={rise} className="grid gap-6 md:grid-cols-[1fr_1fr] md:items-end md:gap-16">
-              <h3 className="text-[clamp(1.625rem,1.15rem+1.7vw,2.75rem)] leading-[1.08] tracking-tight">
-                {scene.title}
-              </h3>
-              <div>
-                <p className="max-w-[54ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
-                {scene.metric && (
-                  <p className="mt-6 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
-                    <span className="text-[1.0625rem] tracking-tight text-graphite">
-                      {scene.metric.value}
-                    </span>
-                    <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
-                      {scene.metric.caption}
-                    </span>
-                  </p>
-                )}
-              </div>
-            </motion.div>
-            <motion.div variants={rise} className="mt-10 md:mt-14">
-              <ProductStage src={scene.image ?? product.image} alt={alt} />
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-    )
-  }
 
   // Тёмная полоса с крупной цифрой — сильный акцент в середине истории.
   if (variant === 'band') {
@@ -308,6 +299,79 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
     )
   }
 
+  // Крупный фрагмент реального снимка — «деталь» вместо ещё одного
+  // текстового блока подряд.
+  if (variant === 'detail') {
+    const crop = DETAIL_CROPS[Math.floor(index / 2) % DETAIL_CROPS.length]
+    return (
+      <section className="scene relative bg-mist py-16 md:py-24">
+        <div className="shell-wide">
+          <motion.div
+            {...revealProps(reduced, stagger(0, 0.08))}
+            className="grid items-stretch gap-8 lg:grid-cols-2 lg:gap-14"
+          >
+            <motion.div
+              variants={rise}
+              className={`relative min-h-[16rem] overflow-hidden rounded-[2rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EAEFF1_55%,#D8E2E4_100%)] sm:min-h-[22rem] lg:min-h-[28rem] ${
+                flipped ? 'lg:order-2' : ''
+              }`}
+            >
+              {/*
+                Детальный кадр берётся из НАСТОЯЩЕЙ фотографии позиции
+                (1155×650), а не из вырезанного рендера: рендеры у вендора
+                350–800px, и при таком увеличении они превращались бы в
+                мыло. Если фотографии у позиции нет, увеличение рендера
+                ограничено полутора кратами.
+              */}
+              {photo ? (
+                <img
+                  src={photo.src}
+                  srcSet={`${photo.srcSmall} 800w, ${photo.src} 1400w`}
+                  sizes="(min-width: 1024px) 46vw, 92vw"
+                  alt={alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover"
+                  style={{ objectPosition: crop.pos }}
+                />
+              ) : (
+                <img
+                  src={product.image}
+                  alt={alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-contain"
+                  style={{ objectPosition: crop.pos, transform: `scale(${crop.scale})` }}
+                />
+              )}
+            </motion.div>
+            <motion.div
+              variants={rise}
+              className={`flex flex-col justify-center px-1 py-2 lg:px-10 ${flipped ? 'lg:order-1' : ''}`}
+            >
+              {scene.metric && (
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-ember">
+                  {scene.metric.caption}
+                </p>
+              )}
+              <h3 className="mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight text-graphite">
+                {scene.title}
+              </h3>
+              {scene.metric && (
+                <p className="mt-5 text-[clamp(1.75rem,1.3rem+1.8vw,2.75rem)] font-medium leading-none tracking-tight text-graphite">
+                  {scene.metric.value}
+                </p>
+              )}
+              <p className="mt-6 max-w-[48ch] text-[1.0625rem] leading-relaxed text-ash">
+                {scene.body}
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+    )
+  }
+
   // Кадр с товаром: текст и изображение меняются сторонами.
   return (
     <section className={`scene relative py-16 md:py-24 ${bg}`}>
@@ -332,7 +396,7 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
           </motion.div>
 
           <motion.div variants={rise} className={flipped ? 'lg:order-1' : undefined}>
-            <ProductStage src={scene.image ?? product.image} alt={alt} tall />
+            <ProductStage src={scene.image ?? product.image} alt={alt} />
           </motion.div>
         </motion.div>
       </div>
@@ -340,12 +404,20 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
   )
 }
 
-export function StoryScenes({ scenes, product }: { scenes: StoryScene[]; product: Product }) {
+export function StoryScenes({
+  scenes,
+  product,
+  photo,
+}: {
+  scenes: StoryScene[]
+  product: Product
+  photo?: StoryPhoto
+}) {
   if (!scenes.length) return null
   return (
     <>
       {scenes.map((scene, i) => (
-        <Scene key={scene.title} scene={scene} index={i} product={product} />
+        <Scene key={scene.title} scene={scene} index={i} product={product} photo={photo} />
       ))}
     </>
   )
@@ -740,6 +812,165 @@ export function StoryCta({
               className="relative max-h-full w-full max-w-[26rem] object-contain"
             />
           </div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+/* ─────────────────────────── Официальный кадр в работе ─────────────────────────── */
+
+/**
+ * Широкая сцена с настоящей фотографией ShineMate.
+ *
+ * Клиент отдельно требовал: «каждые 1–2 экрана — сильный визуальный
+ * момент», и товар в работе, а не только рендер на белом. Кадр здесь
+ * идёт почти во всю ширину вьюпорта (шире контентной сетки), текст —
+ * поверх снимка на десктопе и под ним на мобильном, чтобы не закрывать
+ * инструмент на узком экране.
+ *
+ * `variant='left'` переворачивает композицию — на длинной странице с
+ * двумя кадрами подряд они не читаются одинаково.
+ */
+export function PhotoScene({
+  photo,
+  variant = 'right',
+  tone = 'light',
+}: {
+  photo: StoryPhoto
+  variant?: 'left' | 'right'
+  tone?: 'light' | 'dark'
+}) {
+  const reduced = useReducedMotion()
+  const dark = tone === 'dark'
+  return (
+    <section
+      className={`scene relative overflow-hidden py-16 md:py-24 ${dark ? 'bg-graphite' : 'bg-hazeSurface'}`}
+    >
+      <div className="shell-wide">
+        <motion.figure {...revealProps(reduced, stagger(0, 0.08))}>
+          {/*
+            Кадр идёт во всю ширину контентной сетки и не закрывается
+            текстом: на официальных снимках инструмент стоит в разных
+            местах кадра, и любая накладка поверх рано или поздно легла бы
+            прямо на машинку. Подпись — отдельной строкой под снимком,
+            как в editorial-вёрстке.
+          */}
+          <motion.div variants={rise} className="overflow-hidden rounded-[2rem]">
+            <img
+              src={photo.src}
+              srcSet={`${photo.srcSmall} 800w, ${photo.src} 1400w`}
+              sizes="(min-width: 1024px) 92vw, 100vw"
+              width={photo.width}
+              height={photo.height}
+              alt={photo.title}
+              loading="lazy"
+              decoding="async"
+              className="h-[20rem] w-full object-cover sm:h-[26rem] lg:h-[32rem] xl:h-[38rem]"
+            />
+          </motion.div>
+
+          <motion.figcaption
+            variants={rise}
+            className={`mt-9 grid gap-6 border-t pt-8 md:grid-cols-[1fr_1fr] md:gap-16 ${
+              dark ? 'border-porcelain/20' : 'border-graphite/[0.14]'
+            } ${variant === 'left' ? 'md:[direction:rtl] md:[&>*]:[direction:ltr]' : ''}`}
+          >
+            <div>
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
+                {photo.eyebrow}
+              </p>
+              <h3
+                className={`mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.5rem)] leading-[1.1] tracking-tight ${
+                  dark ? 'text-porcelain' : 'text-graphite'
+                }`}
+              >
+                {photo.title}
+              </h3>
+            </div>
+            <p
+              className={`max-w-[52ch] self-center text-[1.0625rem] leading-relaxed ${
+                dark ? 'text-porcelain/70' : 'text-ash'
+              }`}
+            >
+              {photo.body}
+            </p>
+          </motion.figcaption>
+        </motion.figure>
+      </div>
+    </section>
+  )
+}
+
+/* ─────────────────────────── Цикл обработки ─────────────────────────── */
+
+/**
+ * Четыре стадии обработки с реальными пастами и градациями кругов —
+ * та же официальная «Таблица применения», что и на странице «Технологии».
+ * На странице машинки это отвечает на вопрос «что я вообще делаю этим
+ * инструментом», которого не закрывает ни одна таблица характеристик.
+ */
+export function ProcessSection({ process }: { process: NonNullable<ProductStory['process']> }) {
+  const reduced = useReducedMotion()
+  return (
+    <section className="scene relative bg-haze py-20 md:py-28">
+      <div className="shell-wide">
+        <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
+          <motion.p variants={rise} className="eyebrow">
+            Цикл обработки
+          </motion.p>
+          <motion.h2 variants={rise} className="h2 mt-6 max-w-[18ch]">
+            {process.caption}
+          </motion.h2>
+          <motion.p variants={rise} className="lead mt-6 max-w-[56ch] text-ash">
+            {process.note}
+          </motion.p>
+
+          <motion.ol variants={rise} className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {process.stages.map((stage) => (
+              <li
+                key={stage.index}
+                className="flex flex-col rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-6 sm:p-7"
+              >
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-ember">
+                  {stage.index}
+                </p>
+                <h3 className="mt-4 text-[1.25rem] tracking-tight">{stage.title}</h3>
+                <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-slate">{stage.goal}</p>
+
+                <div className="mt-6 border-t border-graphite/[0.12] pt-5">
+                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                    Что снимается
+                  </p>
+                  <ul className="mt-2.5 space-y-1.5">
+                    {stage.defects.map((d) => (
+                      <li key={d} className="flex gap-2.5 text-[0.875rem] leading-relaxed text-ash">
+                        <span aria-hidden className="mt-2 h-px w-3 shrink-0 bg-graphite/30" />
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <span className="flex-1" />
+
+                <div className="mt-6 border-t border-graphite/[0.12] pt-5">
+                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                    Паста
+                  </p>
+                  <p className="mt-1.5 text-[0.9375rem] leading-snug text-graphite">{stage.paste}</p>
+                  <p className="mt-4 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                    Круг
+                  </p>
+                  {stage.pads.map((pad) => (
+                    <p key={pad.kind} className="mt-1.5 text-[0.9375rem] leading-snug text-graphite">
+                      {pad.kind} — {pad.grade}
+                    </p>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </motion.ol>
         </motion.div>
       </div>
     </section>

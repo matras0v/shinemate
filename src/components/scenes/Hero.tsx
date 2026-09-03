@@ -55,7 +55,7 @@ const SLIDES: Slide[] = [
   },
 ]
 
-const AUTOPLAY_MS = 5500
+const AUTOPLAY_MS = 7000
 /** Ниже этого порога свайп считается случайным касанием, а не жестом. */
 const SWIPE_PX = 45
 
@@ -187,10 +187,20 @@ export function Hero() {
               sizes="(min-width: 1024px) 56vw, 100vw"
               alt={slide.alt}
               decoding="async"
-              initial={reduced ? undefined : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduced ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.5, ease: EASE }}
+              /*
+                Переход не «дешёвый фейд»: кадр приходит чуть крупнее и
+                за время показа медленно отъезжает к нормальному масштабу
+                (Ken Burns). Пока идёт кроссфейд, два кадра движутся с
+                разной скоростью — смена читается как съёмка, а не как
+                смена картинки в галерее.
+              */
+              initial={reduced ? undefined : { opacity: 0, scale: 1.06 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+              exit={reduced ? undefined : { opacity: 0, scale: 1.02 }}
+              transition={{
+                opacity: { duration: 0.9, ease: EASE },
+                scale: { duration: AUTOPLAY_MS / 1000 + 1.2, ease: 'linear' },
+              }}
               className="absolute inset-0 h-full w-full object-cover object-center"
               style={{ backgroundImage: `url(media/${slide.slug}-poster.webp)`, backgroundSize: 'cover' }}
             />
