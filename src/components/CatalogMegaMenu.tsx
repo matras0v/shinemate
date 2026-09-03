@@ -55,15 +55,18 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
                     onClick={onNavigate}
                     onMouseEnter={() => setActiveCategory(id)}
                     onFocus={() => setActiveCategory(id)}
-                    className={`flex items-baseline justify-between gap-3 rounded-lg px-3.5 py-2.5 text-[0.9375rem] transition-colors duration-300 ease-premium ${
+                    className={`flex items-start justify-between gap-3 rounded-lg px-3.5 py-2.5 text-[0.9375rem] leading-snug transition-colors duration-300 ease-premium ${
                       activeCategory === id
                         ? 'bg-graphite text-porcelain'
                         : 'text-ash hover:bg-graphite/[0.05] hover:text-graphite'
                     }`}
                   >
-                    <span className="min-w-0 truncate">{categoryLabel(id)}</span>
+                    {/* Без truncate: на 1024px «Полировальные пасты V-Range»
+                        обрезалось многоточием прямо в навигации. Перенос по
+                        словам честнее — строка чуть выше, название целое. */}
+                    <span className="min-w-0">{categoryLabel(id)}</span>
                     <span
-                      className={`shrink-0 font-mono text-[0.6875rem] ${
+                      className={`mt-0.5 shrink-0 font-mono text-[0.6875rem] ${
                         activeCategory === id ? 'text-porcelain/60' : 'text-titanium'
                       }`}
                     >
