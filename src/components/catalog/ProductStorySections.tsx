@@ -331,8 +331,11 @@ function Scene({
                   alt={alt}
                   loading="lazy"
                   decoding="async"
+                  // Заметное увеличение: иначе кадр читался бы как та же
+                  // самая фотография, что и в широкой сцене выше, только
+                  // уже. Здесь это именно макро-фрагмент.
                   className="absolute inset-0 h-full w-full object-cover"
-                  style={{ objectPosition: crop.pos }}
+                  style={{ objectPosition: crop.pos, transform: `scale(${crop.scale})` }}
                 />
               ) : (
                 <img
