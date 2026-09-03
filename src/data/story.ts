@@ -97,6 +97,14 @@ export type SceneDiagram =
   | { kind: 'cut'; grades: number[]; active: number }
   | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
   | { kind: 'sizes'; items: { label: string; note: string; mm: number }[] }
+  /*
+   * Реальный переключатель исполнений внутри истории. Раньше исполнения
+   * аксессуаров показывались рядом ссылок на ту же самую страницу с
+   * жёстко прибитой «активной» первой карточкой: клик не делал ничего,
+   * а подсветка не отражала выбранное исполнение. Теперь карточка
+   * действительно выбирает SKU — меняются артикул, цена и кадр.
+   */
+  | { kind: 'variants'; items: { sku: string; label: string; note?: string; image: string }[] }
   | {
       kind: 'series'
       from: string
@@ -415,7 +423,18 @@ function machineScenes(p: Product): StoryScene[] {
     const family = familyOf(p)
       .map((item) => ({ model: item.model, mm: strokeMm(item) }))
       .filter((x): x is { model: string; mm: number } => x.mm !== null)
-    const uniq = family.filter((x, i, a) => a.findIndex((y) => y.mm === x.mm) === i).sort((a, b) => a.mm - b.mm)
+    /*
+     * Дедуп по ходу, но текущая модель имеет приоритет: у EX603 и EX605
+     * одинаковые 12 мм, и «первый попавшийся» вариант выкидывал со шкалы
+     * саму открытую позицию — активная точка не подсвечивалась вообще.
+     */
+    const uniq = family
+      .filter((x, i, a) => {
+        const same = a.filter((y) => y.mm === x.mm)
+        const preferred = same.find((y) => y.model === p.model) ?? same[0]
+        return a.indexOf(preferred) === i
+      })
+      .sort((a, b) => a.mm - b.mm)
     if (uniq.length >= 2) {
       scenes.push({
         title: 'Чем больше ход, тем быстрее закрывается панель',
@@ -586,6 +605,24 @@ function padPurpose(p: Product): ProductStory['purpose'] {
     `Диаметры: ${specValue(p, 'Диаметры') ?? p.variants.map((v) => v.label).join(' · ')}`,
   ]
 
+  /*
+   * Насадки на гибкий вал — не круг под одну стадию: в одном артикуле
+   * идут разные градации, и стадия у них не одна. Общий заголовок
+   * «Круг под конкретный этап» на этой позиции просто врал.
+   */
+  if (/гибкий вал|конус/i.test(p.kind)) {
+    return {
+      title: 'Насадки под точечную работу',
+      body: p.lead,
+      points: [
+        `Материал: ${material.toLowerCase()}`,
+        ...(specValue(p, 'Хвостовик') ? [`Хвостовик: ${specValue(p, 'Хвостовик')}`] : []),
+        ...(specValue(p, 'Размер') ? [`Размер насадки: ${specValue(p, 'Размер')}`] : []),
+        `Исполнения: ${p.variants.map((v) => v.label).join(' · ')}`,
+      ],
+    }
+  }
+
   return {
     title: st ? `Круг для стадии «${st.title}»` : 'Круг под конкретный этап',
     body: st
@@ -599,6 +636,47 @@ function padScenes(p: Product): StoryScene[] {
   const scenes: StoryScene[] = []
   const grade = padGrade(p)
   const stage = padStageIndex(p)
+
+  /*
+   * Насадки на гибкий вал раньше не получали НИ ОДНОЙ сцены: их отсекали
+   * все ветки обычного круга (нет подложки, нет стадии, нет градации в
+   * названии), и страница обрывалась сразу после назначения. Здесь у них
+   * своя короткая история: чем ставятся, что именно ставится и во что
+   * это собирается.
+   */
+  if (/гибкий вал|конус/i.test(p.kind)) {
+    const shaft = bySlug('mpk-3')
+    scenes.push(...specScenes(p, 2))
+    if (shaft) {
+      scenes.push({
+        title: 'Что стоит между машинкой и кромкой',
+        body:
+          'Насадка работает не на шпинделе машинки, а на гибком валу: привод остаётся в руке, а рабочая головка уходит вперёд на длину вала. Поэтому в узкую зону заходит насадка диаметром меньше 30 мм, а не полноразмерный круг.',
+        diagram: {
+          kind: 'mount',
+          items: [
+            { src: shaft.image, label: shaft.model, note: specValue(shaft, 'Хвостовик') ? `Цанга ${specValue(shaft, 'Хвостовик')}` : shaft.kind },
+            { src: p.image, label: 'Насадки', note: specValue(p, 'Размер') ?? p.kind },
+          ],
+        },
+      })
+    }
+    scenes.push({
+      title: 'Исполнения в прайсе',
+      body:
+        'Комплекты отличаются формой и градацией: конусы заходят в углы и на стыки, цилиндры работают по прямым кромкам. Выберите исполнение — артикул и РРЦ обновятся вместе с ним.',
+      diagram: {
+        kind: 'variants',
+        items: p.variants.map((v) => ({
+          sku: v.sku,
+          label: v.sku,
+          note: v.label,
+          image: v.image ?? p.image,
+        })),
+      },
+    })
+    return scenes
+  }
 
   if (/black diamond/i.test(p.model)) {
     scenes.push({
@@ -1088,7 +1166,14 @@ function simplePurpose(p: Product): ProductStory['purpose'] {
  * если у позиции нет ни одной из перечисленных характеристик, сцен не
  * будет вовсе и страница останется честно компактной.
  */
-const SPEC_SCENES: { match: RegExp; valueMatch?: RegExp; title: string; body: string }[] = [
+const SPEC_SCENES: {
+  match: RegExp
+  valueMatch?: RegExp
+  /** Ограничение по товару: одна и та же метка у разных типов значит разное. */
+  only?: (p: Product) => boolean
+  title: string
+  body: string
+}[] = [
   {
     match: /резьба/i,
     title: 'Резьба должна совпадать с машинкой',
@@ -1096,7 +1181,25 @@ const SPEC_SCENES: { match: RegExp; valueMatch?: RegExp; title: string; body: st
       'Посадка — это не «подойдёт любая»: у роторных машинок M14, у эксцентриковых M8 и 5/16"-24. Неверная резьба либо не встанет, либо будет работать с биением.',
   },
   {
+    match: /^макс\.? диаметр/i,
+    title: 'Насадка выносится туда, куда не встаёт машинка',
+    body:
+      'Диаметр рабочей насадки на валу ограничен конструкцией: чем он меньше, тем в более тесную зону заходит инструмент. Именно поэтому вал берут на кромки, стойки и рельеф, а плоскости продолжает закрывать полноразмерная машинка.',
+  },
+  {
+    match: /хвостовик/i,
+    title: 'Хвостовик задаёт, что можно поставить',
+    body:
+      'Насадки под точечную работу идут с одним хвостовиком — по нему они и подбираются. Совпал хвостовик — насадка встала в цангу вала без переходников.',
+  },
+  {
+    /*
+     * Правило про баланс подложки — только для оснастки. Раньше оно
+     * цеплялось за «Макс. диаметр круга» у гибкого вала, и на странице
+     * MPK-3 стоял текст про подложку, которой у вала вообще нет.
+     */
     match: /диаметр/i,
+    only: (p) => p.category === 'plates',
     title: 'Диаметр задаёт баланс на оборотах',
     body:
       'Подложка не по размеру круга рвёт баланс: появляется вибрация в кисть и неравномерный съём. Поэтому диаметры разведены по типам машинок, а не даются «универсальным» набором.',
@@ -1135,7 +1238,10 @@ function specScenes(p: Product, max = 3): StoryScene[] {
   const out: StoryScene[] = []
   for (const spec of p.specs) {
     const rule = SPEC_SCENES.find(
-      (r) => r.match.test(spec.label) && (!r.valueMatch || r.valueMatch.test(spec.value)),
+      (r) =>
+        r.match.test(spec.label) &&
+        (!r.valueMatch || r.valueMatch.test(spec.value)) &&
+        (!r.only || r.only(p)),
     )
     if (!rule || used.has(rule.title)) continue
     used.add(rule.title)
@@ -1226,11 +1332,31 @@ function plateCompat(p: Product): CompatGroup[] {
   if (machines.length) {
     groups.push({ title: 'Машинки', note: 'Под эту посадку и резьбу', items: machines })
   }
-  groups.push({
-    title: 'Круги',
-    note: 'Что ставится на эту подложку',
-    items: bySlugs(['foam-diamond-t80', 'foam-diamond-t40', 'wool-short-nap']),
-  })
+
+  /*
+   * Круги подбираются по РЕАЛЬНОЙ посадке этой подложки, а не одним
+   * зашитым списком на все три типа. Раньше и роторная, и эксцентриковая,
+   * и — что хуже — шлифовальная подложка показывали одну и ту же тройку
+   * полировальных кругов: у шлифовальной оснастки полировальных кругов
+   * в прайсе нет вовсе, а шерсть «только для роторных» попадала на
+   * страницу DA-подложки. Теперь источник один — padRig(), та же
+   * функция, по которой круг выбирает себе подложку.
+   */
+  if (!/шлифоваль/i.test(p.model)) {
+    const pads = products
+      .filter((x) => x.category === 'pads' && !/гибкий вал|конус/i.test(x.kind))
+      .filter((x) => padRig(x).plate?.slug === p.slug)
+    // По одному представителю на семейство: подложка показывает РАЗНЫЕ
+    // типы кругов (поролон, шерсть, микрофибру), а не три соседние
+    // градации одной и той же серии.
+    const byFamily = pads.filter(
+      (x, i, a) => a.findIndex((y) => productFamily(y) === productFamily(x)) === i,
+    )
+    const items = (byFamily.length >= 2 ? byFamily : pads).slice(0, 3)
+    if (items.length) {
+      groups.push({ title: 'Круги', note: 'Что ставится на эту подложку', items })
+    }
+  }
   return groups.filter((g) => g.items.length > 0)
 }
 
@@ -1241,22 +1367,60 @@ function plateCompat(p: Product): CompatGroup[] {
  */
 function accessoryScenes(p: Product): StoryScene[] {
   const scenes = specScenes(p, 2)
+
+  /*
+   * Аксессуар не должен обрываться после двух строк характеристик.
+   * У тележки и сумки характеристика ровно одна (артикул или размер),
+   * и страница выходила самой пустой на сайте. Здесь у раздела
+   * появляется своя мысль: что именно на этом посту хранится и где он
+   * стоит в рабочем дне — на реальных кадрах каталога, без выдуманных
+   * материалов, объёмов и нагрузок.
+   */
+  if (/тележк|сумка|держател/i.test(p.kind)) {
+    const carried = bySlugs(['ep820', 'foam-diamond-t40', 'v40-medium-polish']).filter(Boolean)
+    if (carried.length === 3) {
+      scenes.push({
+        title: 'Что уезжает вместе с постом',
+        body:
+          'Машинка, круги и составы — это три разные группы расходников, и на выезде они обычно едут вместе. Позиция собирает их в одном месте, поэтому подготовка к работе не начинается с поиска подложки по багажнику.',
+        diagram: {
+          kind: 'mount',
+          items: [
+            { src: carried[0].image, label: carried[0].model, note: carried[0].kind },
+            { src: carried[1].image, label: 'Круги', note: 'Полировальные круги каталога' },
+            { src: carried[2].image, label: 'Составы', note: 'Линейка V-Range' },
+          ],
+        },
+      })
+    }
+  }
+
+  /*
+   * Мойка стоит ДО полировки — это единственная позиция каталога,
+   * которая работает раньше первой стадии цикла, и об этом честно
+   * сказать полезнее, чем добирать страницу общими словами.
+   */
+  if (/вёдра|ведра|сепаратор|микрофибр/i.test(p.kind)) {
+    scenes.push({
+      title: 'Стадия, которая идёт до первой стадии',
+      body:
+        'Полировка начинается с чистой поверхности: песок, оставшийся на кузове после мойки, работает под кругом как абразив и добавляет ровно те риски, которые потом выводят пастой. Сепаратор задерживает грязь на дне ведра, поэтому она не возвращается на лак со следующим заходом губки.',
+      image: p.image,
+    })
+  }
+
   if (p.variants.length >= 2) {
     scenes.push({
       title: 'Исполнения в прайсе',
       body:
-        'Позиция поставляется несколькими исполнениями — они отличаются размером, комплектом или креплением. Переключатель в блоке «Что выбрать» ниже показывает артикул и РРЦ каждого.',
+        'Позиция поставляется несколькими исполнениями — они отличаются размером, комплектом или креплением. Выберите нужное прямо здесь: артикул, РРЦ и кадр на первом экране обновятся вместе с ним.',
       diagram: {
-        kind: 'series',
-        from: p.variants[0]?.label ?? '',
-        to: p.variants[p.variants.length - 1]?.label ?? '',
-        items: p.variants.slice(0, 5).map((v, i) => ({
-          slug: v.sku,
-          href: `catalog/${p.category}/${p.slug}`,
+        kind: 'variants',
+        items: p.variants.map((v) => ({
+          sku: v.sku,
           label: v.sku,
           note: v.label,
           image: v.image ?? p.image,
-          active: i === 0,
         })),
       },
     })

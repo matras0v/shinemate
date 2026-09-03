@@ -487,6 +487,84 @@ export function SeriesRow({ items, from, to }: { items: SeriesItem[]; from: stri
   )
 }
 
+/* ──────────────────────── Выбор исполнения в истории ──────────────────────── */
+
+export type VariantItem = { sku: string; label: string; note?: string; image: string }
+
+/**
+ * Настоящий переключатель исполнений, а не ряд декоративных карточек.
+ *
+ * Здесь была одна из тех «фальшивых кнопок», о которых отдельно говорил
+ * клиент: карточки исполнений вели ссылкой на ту же самую страницу и
+ * подсвечивали жёстко первую позицию. Теперь компонент управляемый —
+ * он получает выбранный SKU снаружи и сообщает наверх о смене, поэтому
+ * артикул, цена и кадр на первом экране меняются вместе с ним.
+ */
+export function VariantPicker({
+  items,
+  activeSku,
+  onSelect,
+}: {
+  items: VariantItem[]
+  activeSku?: string
+  onSelect?: (sku: string) => void
+}) {
+  const reduced = useReducedMotion()
+  return (
+    <ol className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4">
+      {items.map((item, i) => {
+        const active = item.sku === activeSku
+        return (
+          <motion.li
+            key={item.sku}
+            {...(reduced
+              ? {}
+              : {
+                  initial: { opacity: 0, y: 16 },
+                  whileInView: { opacity: 1, y: 0 },
+                  viewport: { once: true, amount: 0.3 },
+                  transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.07 },
+                })}
+          >
+            <button
+              type="button"
+              onClick={() => onSelect?.(item.sku)}
+              aria-pressed={active}
+              className={`group flex h-full w-full flex-col rounded-2xl border p-3 text-left transition-colors duration-300 ease-premium ${
+                active
+                  ? 'border-graphite bg-porcelain shadow-[0_18px_40px_-24px_rgba(26,28,30,0.5)]'
+                  : 'border-graphite/[0.12] hover:border-graphite/35 hover:bg-porcelain/70'
+              }`}
+            >
+              <span className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-[radial-gradient(120%_100%_at_50%_0%,#F4F7F8_0%,#E2EAEC_60%,#D2DDDF_100%)]">
+                <img
+                  src={item.image.replace('.webp', '-thumb.webp')}
+                  srcSet={`${item.image.replace('.webp', '-thumb.webp')} 320w, ${item.image} 760w`}
+                  sizes="220px"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-[86%] w-[86%] object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.06]"
+                />
+              </span>
+              <span
+                className={`mt-3 block font-mono text-[0.8125rem] tabular-nums ${
+                  active ? 'text-graphite' : 'text-ash'
+                }`}
+              >
+                {item.label}
+              </span>
+              {item.note && (
+                <span className="mt-1 block text-[0.75rem] leading-snug text-titanium">{item.note}</span>
+              )}
+            </button>
+          </motion.li>
+        )
+      })}
+    </ol>
+  )
+}
+
 /* ───────────────────────── Аккумуляторная платформа ───────────────────────── */
 
 export function BatteryFlow({ platform, capacity }: { platform: string; capacity?: string }) {

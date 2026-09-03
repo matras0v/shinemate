@@ -10,6 +10,7 @@ import {
   PowerBar,
   RotaryPrinciple,
   SeriesRow,
+  VariantPicker,
   SizeScale,
   SpeedDial,
   StrokeScale,
@@ -151,7 +152,18 @@ export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }
  * «посадка» — реальные кадры машинки, подложки и круга в одну линию.
  * Одна и та же фотография больше не иллюстрирует четыре разные мысли.
  */
-function Diagram({ diagram, dark }: { diagram: SceneDiagram; dark?: boolean }) {
+function Diagram({
+  diagram,
+  dark,
+  activeSku,
+  onSelectSku,
+}: {
+  diagram: SceneDiagram
+  dark?: boolean
+  /** Выбранное исполнение — чтобы схема-переключатель не жила своей жизнью. */
+  activeSku?: string
+  onSelectSku?: (sku: string) => void
+}) {
   switch (diagram.kind) {
     case 'rotary':
       return <RotaryPrinciple rpm={diagram.rpm} dark={dark} />
@@ -179,13 +191,15 @@ function Diagram({ diagram, dark }: { diagram: SceneDiagram; dark?: boolean }) {
       return <StrokeScale items={diagram.items} activeModel={diagram.activeModel} />
     case 'sizes':
       return <SizeScale items={diagram.items} />
+    case 'variants':
+      return <VariantPicker items={diagram.items} activeSku={activeSku} onSelect={onSelectSku} />
     case 'series':
       return <SeriesRow items={diagram.items} from={diagram.from} to={diagram.to} />
   }
 }
 
 /** Схемам, которые сами по себе — крупный объект, рамка не нужна. */
-const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series']
+const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series', 'variants']
 
 /*
  * Схема принципа привода — это «технологический» акцент страницы, и он
@@ -257,12 +271,16 @@ function Scene({
   index,
   product,
   photo,
+  activeSku,
+  onSelectSku,
 }: {
   scene: StoryScene
   index: number
   product: Product
   /** Официальный снимок позиции — источник для «детальных» кадров. */
   photo?: StoryPhoto
+  activeSku?: string
+  onSelectSku?: (sku: string) => void
 }) {
   const reduced = useReducedMotion()
   const variant = variantFor(scene, index)
@@ -300,7 +318,7 @@ function Scene({
                   <p className="mt-5 text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
                 </motion.div>
                 <motion.div variants={rise} className="mt-10">
-                  <Diagram diagram={scene.diagram} />
+                  <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
                 </motion.div>
               </>
             ) : (
@@ -314,7 +332,7 @@ function Scene({
                   } ${right ? 'lg:order-2' : ''}`}
                 >
                   <div className="min-h-[15rem] sm:min-h-[18rem] lg:min-h-[22rem]">
-                    <Diagram diagram={scene.diagram} dark={dark} />
+                    <Diagram diagram={scene.diagram} dark={dark} activeSku={activeSku} onSelectSku={onSelectSku} />
                   </div>
                 </motion.div>
                 <motion.div variants={rise} className={right ? 'lg:order-1' : undefined}>
@@ -559,16 +577,29 @@ export function StoryScenes({
   scenes,
   product,
   photo,
+  activeSku,
+  onSelectSku,
 }: {
   scenes: StoryScene[]
   product: Product
   photo?: StoryPhoto
+  /** Текущее исполнение — сцена-переключатель обязана его отражать. */
+  activeSku?: string
+  onSelectSku?: (sku: string) => void
 }) {
   if (!scenes.length) return null
   return (
     <>
       {scenes.map((scene, i) => (
-        <Scene key={scene.title} scene={scene} index={i} product={product} photo={photo} />
+        <Scene
+          key={scene.title}
+          scene={scene}
+          index={i}
+          product={product}
+          photo={photo}
+          activeSku={activeSku}
+          onSelectSku={onSelectSku}
+        />
       ))}
     </>
   )

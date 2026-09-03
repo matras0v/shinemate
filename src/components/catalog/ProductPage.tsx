@@ -404,7 +404,13 @@ export function ProductPage({ product }: Props) {
       <PurposeSection purpose={story.purpose} />
 
       {/* ─── 05. СЦЕНЫ ПО РЕАЛЬНЫМ ХАРАКТЕРИСТИКАМ ────────────────────── */}
-      <StoryScenes scenes={story.scenes} product={product} photo={story.photos[0]} />
+      <StoryScenes
+        scenes={story.scenes}
+        product={product}
+        photo={story.photos[0]}
+        activeSku={selectedVariant?.sku}
+        onSelectSku={setSelectedSku}
+      />
 
       {/* ─── 06. ВТОРОЙ КАДР, ЕСЛИ ОН ЕСТЬ (линейка паст) ────────────── */}
       {story.photos[1] && <PhotoScene photo={story.photos[1]} variant="left" tone="dark" />}
