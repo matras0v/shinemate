@@ -601,7 +601,13 @@ export function ProductPage({ product }: Props) {
               <p className="eyebrow">Соседи по разделу</p>
               <h2 className="h2 mt-6 max-w-[20ch]">Похожие модели этого раздела</h2>
             </motion.div>
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Соседей бывает двое — тогда и колонок две, а не три с
+                пустой ячейкой справа. */}
+            <div
+              className={`mt-12 grid gap-5 sm:grid-cols-2 ${
+                related.length >= 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'
+              }`}
+            >
               {related.map((candidate) => {
                 const price = minPrice(candidate)
                 const thumb = candidate.image.replace('.webp', '-thumb.webp')

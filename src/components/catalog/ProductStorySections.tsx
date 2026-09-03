@@ -666,9 +666,21 @@ export function ScaleSection({
             {scale.caption}
           </motion.h2>
 
+          {/*
+            Шкала бывает короче четырёх шагов: у шлифовальных машинок их
+            три, у аккумуляторных DA — два. Жёсткие четыре колонки
+            оставляли справа пустые ячейки внутри общей рамки — это
+            читалось как обрезанная таблица.
+          */}
           <motion.ol
             variants={rise}
-            className="mt-12 grid gap-px overflow-hidden rounded-[1.5rem] bg-graphite/[0.1] sm:grid-cols-2 lg:grid-cols-4 xl:auto-cols-fr xl:grid-flow-col"
+            className={`mt-12 grid gap-px overflow-hidden rounded-[1.5rem] bg-graphite/[0.1] sm:grid-cols-2 xl:auto-cols-fr xl:grid-flow-col ${
+              scale.steps.length === 2
+                ? 'lg:grid-cols-2'
+                : scale.steps.length === 3
+                  ? 'lg:grid-cols-3'
+                  : 'lg:grid-cols-4'
+            }`}
           >
             {scale.steps.map((step) => (
               <li
@@ -727,9 +739,21 @@ export function SystemChainSection({ chain }: { chain: SystemChain }) {
             {chain.note}
           </motion.p>
 
+          {/*
+            Шагов в связке бывает два (шлифование заканчивается подложкой)
+            или три (точечная работа на гибком валу). В жёсткой сетке из
+            четырёх колонок справа оставалась пустая ячейка на треть
+            экрана — ряд читался как недогруженный, а не как короткая цепь.
+          */}
           <motion.ol
             variants={rise}
-            className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5"
+            className={`mt-12 grid gap-4 sm:grid-cols-2 lg:gap-5 ${
+              chain.steps.length === 2
+                ? 'lg:grid-cols-2'
+                : chain.steps.length === 3
+                  ? 'lg:grid-cols-3'
+                  : 'lg:grid-cols-4'
+            }`}
           >
             {chain.steps.map((step) => {
               const thumb = step.product.image.replace('.webp', '-thumb.webp')
@@ -965,7 +989,19 @@ export function CompatSection({ groups }: { groups: CompatGroup[] }) {
                 <h3 className="text-[1.25rem] tracking-tight">{group.title}</h3>
                 <p className="text-[0.875rem] text-slate">{group.note}</p>
               </div>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+              {/* Та же логика: группа из двух-трёх позиций не должна
+                  растягиваться на четыре колонки с пустотой справа. */}
+              <div
+                className={`mt-6 grid gap-4 lg:gap-5 ${
+                  group.items.length === 1
+                    ? 'max-w-sm grid-cols-1'
+                    : group.items.length === 2
+                      ? 'sm:grid-cols-2'
+                      : group.items.length === 3
+                        ? 'sm:grid-cols-2 lg:grid-cols-3'
+                        : 'sm:grid-cols-2 lg:grid-cols-4'
+                }`}
+              >
                 {group.items.map((item) => (
                   <CompatCard key={item.slug} item={item} />
                 ))}
