@@ -438,7 +438,17 @@ export function SeriesRow({ items, from, to }: { items: SeriesItem[]; from: stri
         <span>{from}</span>
         <span className="text-right">{to}</span>
       </div>
-      <ol className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+      {/*
+        Число колонок = числу позиций (максимум пять). Жёсткие пять колонок
+        оставляли у линейки V-Range из четырёх составов пустую ячейку
+        справа: ряд обрывался на середине, а подпись «V20 · финиш» висела
+        над пустотой. У кругов позиций пять — там сетка не меняется.
+      */}
+      <ol
+        className={`mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:gap-4 ${
+          items.length <= 3 ? 'lg:grid-cols-3' : items.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-5'
+        }`}
+      >
         {items.map((item, i) => (
           <motion.li
             key={item.slug}
@@ -511,7 +521,18 @@ export function VariantPicker({
 }) {
   const reduced = useReducedMotion()
   return (
-    <ol className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4">
+    // Та же логика, что и у ряда серии: колонок ровно столько, сколько
+    // исполнений. У сумок их два — в жёсткой сетке из четырёх половина
+    // ряда оставалась пустой.
+    <ol
+      className={`grid w-full grid-cols-2 gap-3 lg:gap-4 ${
+        items.length === 2
+          ? 'sm:grid-cols-2'
+          : items.length === 3
+            ? 'sm:grid-cols-3'
+            : 'sm:grid-cols-3 lg:grid-cols-4'
+      }`}
+    >
       {items.map((item, i) => {
         const active = item.sku === activeSku
         return (
