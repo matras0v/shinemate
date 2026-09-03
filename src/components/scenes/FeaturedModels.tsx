@@ -12,7 +12,7 @@ export function FeaturedModels() {
     <section id="models" className="scene relative bg-porcelain py-24 sm:py-28 md:py-36">
       <motion.div
         {...revealProps(reduced, stagger(0, 0.08))}
-        className="shell"
+        className="shell-wide"
       >
         <motion.p variants={rise} className="eyebrow">
           Избранные модели
@@ -39,9 +39,17 @@ export function FeaturedModels() {
         </div>
       </motion.div>
 
-      <div className="shell mt-10 sm:mt-12">
-        <div className="grid gap-px overflow-hidden rounded-[1.25rem] bg-graphite/[0.1] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {featured.map((product, i) => (
+      {/*
+        Клиент: «не надо любой ценой впихивать 4 карточки в строку — если
+        от этого товар становится мелким, лучше 3». Максимум три колонки:
+        на 1440–1680px карточка получается ~500px, и машинка на фото
+        читается, а не угадывается.
+      */}
+      <div className="shell-wide mt-12 sm:mt-14">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Шесть, а не семь: при трёх колонках седьмая карточка оставалась
+              одна в последней строке и выглядела обрывом сетки. */}
+          {featured.slice(0, 6).map((product, i) => (
             <ProductCard key={product.slug} product={product} index={i} />
           ))}
         </div>

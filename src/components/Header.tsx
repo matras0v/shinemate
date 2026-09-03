@@ -84,7 +84,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
           : 'border-b border-transparent bg-transparent'
       }`}
     >
-      <div className="shell flex h-[4.5rem] items-center justify-between gap-4">
+      <div className="shell flex h-[4.75rem] items-center justify-between gap-4 lg:h-[5.25rem]">
         <a
           href="."
           onClick={(e) => {
@@ -97,7 +97,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
           <BrandLockup />
         </a>
 
-        <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
+        <nav className="hidden items-center gap-7 lg:flex xl:gap-9">
           <div
             className="relative"
             onMouseEnter={openCatalogMenu}
@@ -113,35 +113,16 @@ export function Header({ onHome, onOpenSearch }: Props) {
               }}
               aria-expanded={catalogOpen}
               aria-haspopup="true"
-              className="group flex items-center gap-1.5 whitespace-nowrap text-[0.9375rem] text-ash transition-colors duration-500 ease-premium hover:text-graphite"
+              className={`group flex items-center gap-1.5 whitespace-nowrap text-[1rem] transition-colors duration-500 ease-premium ${
+                catalogOpen ? 'text-graphite' : 'text-ash hover:text-graphite'
+              }`}
             >
               Каталог
               <ChevronDown
-                size={14}
+                size={15}
                 className={`transition-transform duration-400 ease-premium ${catalogOpen ? 'rotate-180' : ''}`}
               />
             </a>
-
-            <AnimatePresence>
-              {catalogOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.25, ease: EASE }}
-                  // Раньше меню центрировалось под триггером (left-1/2 +
-                  // -translate-x-1/2) — на 1280px это выталкивало правый
-                  // край меню (928px) за пределы вьюпорта, потому что
-                  // "Каталог" стоит у левого края шапки, а не по центру
-                  // страницы. Привязка к левому краю триггера с меню,
-                  // растущим вправо, всегда остаётся в границах экрана.
-                  className="absolute left-0 top-full z-40 mt-3 w-[58rem] max-w-[92vw] rounded-2xl border border-graphite/[0.08] bg-porcelain p-8 shadow-[0_30px_70px_-30px_rgba(26,28,30,0.35)]"
-                >
-                  <CatalogMegaMenuContent onNavigate={() => setCatalogOpen(false)} />
-                  <CatalogMegaMenuFooter onNavigate={() => setCatalogOpen(false)} />
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           {nav.map((item) => (
@@ -162,7 +143,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   go(item.href)
                 }
               }}
-              className={`group relative whitespace-nowrap text-[0.9375rem] transition-colors duration-500 ease-premium ${
+              className={`group relative whitespace-nowrap text-[1rem] transition-colors duration-500 ease-premium ${
                 item.href === 'contacts'
                   ? 'font-semibold text-ember hover:text-ember/70'
                   : 'text-ash hover:text-graphite'
@@ -184,7 +165,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
             // терялись среди остальных пунктов — жирнее и с фирменным
             // акцентом, чтобы было видно, что это отдельные CTA, а не
             // рядовые ссылки навигации.
-            className="whitespace-nowrap text-[0.9375rem] font-semibold text-ember transition-colors duration-500 ease-premium hover:text-ember/70"
+            className="whitespace-nowrap text-[1rem] font-semibold text-ember transition-colors duration-500 ease-premium hover:text-ember/70"
           >
             Розница/Опт
           </a>
@@ -222,6 +203,37 @@ export function Header({ onHome, onOpenSearch }: Props) {
         </div>
       </div>
 
+      {/*
+        Мега-меню каталога — не «плашка под пунктом», а полноширинная
+        панель на всю сетку страницы. Клиент прямо просил ощущение
+        оригинального shinemate.com: открыл каталог — перед глазами
+        крупный товарный браузер, а не список ссылок в углу. Панель живёт
+        на уровне <header>, а не внутри пункта навигации: так её ширина
+        задаётся вьюпортом, а не положением слова «Каталог», и никакой
+        центровки, вылезающей за экран на 1280px, больше не требуется.
+      */}
+      <AnimatePresence>
+        {catalogOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: EASE }}
+            onMouseEnter={openCatalogMenu}
+            onMouseLeave={scheduleCloseCatalogMenu}
+            onBlur={onCatalogBlur}
+            className="absolute inset-x-0 top-full z-40 hidden lg:block"
+          >
+            <div className="shell-wide pb-6">
+              <div className="max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-[1.75rem] border border-graphite/[0.08] bg-porcelain p-8 shadow-[0_40px_90px_-40px_rgba(26,28,30,0.45)] xl:p-10">
+                <CatalogMegaMenuContent onNavigate={() => setCatalogOpen(false)} />
+                <CatalogMegaMenuFooter onNavigate={() => setCatalogOpen(false)} />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {open && (
           <motion.div
@@ -229,7 +241,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.45, ease: EASE }}
-            className="max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl lg:hidden"
+            className="max-h-[calc(100dvh-4.75rem)] overflow-y-auto border-t border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl lg:hidden"
           >
             <nav className="shell flex flex-col py-2">
               <button

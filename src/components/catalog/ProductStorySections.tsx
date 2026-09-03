@@ -1,8 +1,15 @@
 import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
 
 import { formatPrice, minPrice, type Product } from '../../data/catalog'
-import type { CompatGroup, CutScale, ProductStory, StoryScene } from '../../data/story'
+import type {
+  ComparisonTable,
+  CompatGroup,
+  CutScale,
+  ProductStory,
+  StoryScene,
+  SystemChain,
+} from '../../data/story'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
 import { productHref } from '../../lib/router'
@@ -10,38 +17,96 @@ import { productHref } from '../../lib/router'
 /**
  * Презентационный слой продуктовой истории.
  *
- * Композиция сцен намеренно чередуется (текст слева / кадр слева /
- * широкая метрика), а фоны секций идут ритмом porcelain → mist →
- * porcelain, чтобы длинная страница не читалась как одна белая
- * простыня. Данные приходят готовыми из data/story.ts — здесь только
- * вёрстка.
+ * Клиент показывал официальный shinemate.com как ориентир по подаче:
+ * товар не заканчивается таблицей, а разворачивается длинной визуальной
+ * историей, где продукт занимает половину экрана, крупные цифры вынесены
+ * в тёмные полосы, а связка «машинка → подложка → круг → паста» показана
+ * реальными фото, а не текстом.
+ *
+ * Здесь собраны блоки, из которых эта история складывается. Данные
+ * приходят готовыми из data/story.ts — тут только композиция. Фон секций
+ * идёт заданным ритмом (porcelain → mist → haze → graphite), чтобы
+ * длинная страница не читалась одной белой простынёй.
  */
+
+/* ─────────────────── Ключевые характеристики крупно ─────────────────── */
+
+/**
+ * Главные параметры позиции — крупными значениями сразу под hero.
+ * Полная таблица характеристик остаётся ниже по странице: здесь только
+ * то, по чему модель узнают и сравнивают.
+ */
+export function SpecHighlights({
+  items,
+  kicker,
+}: {
+  items: ProductStory['highlights']
+  kicker: string
+}) {
+  const reduced = useReducedMotion()
+  if (!items.length) return null
+  return (
+    <section className="scene relative bg-graphite py-14 text-porcelain md:py-20">
+      <div className="shell-wide">
+        <motion.div {...revealProps(reduced, stagger(0, 0.07))}>
+          <motion.p
+            variants={rise}
+            className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember"
+          >
+            {kicker}
+          </motion.p>
+          <motion.dl
+            variants={rise}
+            className="mt-9 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {items.map((item) => (
+              <div key={item.label} className="border-t border-porcelain/20 pt-5">
+                <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-porcelain/50">
+                  {item.label}
+                </dt>
+                <dd className="mt-3 text-[clamp(1.375rem,1.05rem+1.1vw,2.125rem)] font-medium leading-[1.1] tracking-tight text-porcelain">
+                  {item.value}
+                </dd>
+              </div>
+            ))}
+          </motion.dl>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
 
 /* ─────────────────────────────── Назначение ─────────────────────────────── */
 
 export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }) {
   const reduced = useReducedMotion()
   return (
-    <section className="scene relative bg-mist py-20 md:py-28">
-      <div className="shell">
-        <motion.div {...revealProps(reduced, stagger(0, 0.08))} className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:gap-20">
+    <section className="scene relative bg-mist py-20 md:py-32">
+      <div className="shell-wide">
+        <motion.div
+          {...revealProps(reduced, stagger(0, 0.08))}
+          className="grid gap-10 lg:grid-cols-[1fr_1.15fr] lg:gap-24"
+        >
           <div>
             <motion.p variants={rise} className="eyebrow">
               Назначение
             </motion.p>
-            <motion.h2 variants={rise} className="h2 mt-5 max-w-[16ch]">
+            <motion.h2 variants={rise} className="h2 mt-6 max-w-[15ch]">
               {purpose.title}
             </motion.h2>
           </div>
           <div>
-            <motion.p variants={rise} className="lead text-ash">
+            <motion.p
+              variants={rise}
+              className="text-[clamp(1.0625rem,1rem+0.35vw,1.375rem)] leading-[1.6] text-ash"
+            >
               {purpose.body}
             </motion.p>
             {purpose.points.length > 0 && (
-              <motion.ul variants={rise} className="mt-8 space-y-3 border-t border-graphite/[0.12] pt-6">
+              <motion.ul variants={rise} className="mt-10 space-y-4 border-t border-graphite/[0.12] pt-8">
                 {purpose.points.map((point) => (
-                  <li key={point} className="flex gap-3 text-[0.9375rem] leading-relaxed text-slate">
-                    <span aria-hidden className="mt-2.5 h-px w-4 shrink-0 bg-ember" />
+                  <li key={point} className="flex gap-4 text-[1rem] leading-relaxed text-slate">
+                    <span aria-hidden className="mt-2.5 h-px w-5 shrink-0 bg-ember" />
                     {point}
                   </li>
                 ))}
@@ -57,58 +122,119 @@ export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }
 /* ──────────────────────────────── Сцены ──────────────────────────────── */
 
 /**
- * Одна сцена истории. Вариант композиции выбирается по индексу, а не
- * задаётся в данных: сцены приходят из общего билдера для всех 113
- * позиций, и ритм страницы не должен зависеть от того, сколько именно
- * характеристик оказалось у конкретной модели.
- */
-/**
- * Композиция выбирается по индексу сцены, а не по данным.
+ * Композиция сцены выбирается по индексу, а не по данным.
  *
- * Важно: у большинства машинок все сцены приходят с цифрой и без
- * собственного фото (фото у позиции ровно одно). Если рендерить их
- * одинаково, страница превращается в четыре идентичные карточки подряд —
- * ровно то, чего просили избежать. Поэтому вариантов четыре, и они
- * чередуются: кадр с товаром → широкая цифра → тёмная полоса-акцент →
- * спокойный текстовый блок.
+ * У большинства машинок все сцены приходят с цифрой и без собственного
+ * фото (официальный кадр у позиции ровно один). Если рендерить их
+ * одинаково, страница превращается в стопку идентичных карточек — ровно
+ * то, чего просили избежать. Поэтому вариантов пять и они чередуются:
+ * широкий кадр во весь экран → крупная цифра → тёмная полоса → кадр с
+ * текстом сбоку → спокойный текстовый блок.
  */
-type SceneVariant = 'media' | 'metric' | 'band' | 'plain'
+type SceneVariant = 'stage' | 'split' | 'metric' | 'band' | 'plain'
 
 function variantFor(scene: StoryScene, index: number): SceneVariant {
-  // Сцена с собственной иллюстрацией всегда показывается кадром.
-  if (scene.image) return 'media'
+  if (scene.image) return index === 0 ? 'stage' : 'split'
   if (!scene.metric) return 'plain'
-  const cycle: SceneVariant[] = ['metric', 'band', 'metric', 'plain']
+  const cycle: SceneVariant[] = ['metric', 'band', 'plain', 'metric']
   return cycle[index % cycle.length]
+}
+
+/** Кадр товара на «сцене»: мягкая студийная подложка + отражение. */
+function ProductStage({
+  src,
+  alt,
+  className = '',
+  tall,
+}: {
+  src: string
+  alt: string
+  className?: string
+  tall?: boolean
+}) {
+  return (
+    <div
+      className={`relative flex items-center justify-center overflow-hidden rounded-[2rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] ${
+        tall ? 'aspect-[4/3]' : 'aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9]'
+      } ${className}`}
+    >
+      {/* Мягкая тень под товаром — «студийный стол», а не картинка в рамке. */}
+      <span
+        aria-hidden
+        className="absolute bottom-[12%] left-1/2 h-[8%] w-[52%] -translate-x-1/2 rounded-[50%] bg-graphite/[0.13] blur-2xl"
+      />
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className="relative h-[84%] w-[88%] object-contain"
+      />
+    </div>
+  )
 }
 
 function Scene({ scene, index, product }: { scene: StoryScene; index: number; product: Product }) {
   const reduced = useReducedMotion()
   const variant = variantFor(scene, index)
-  const flipped = index % 4 === 3
-  const bg = index % 2 === 0 ? 'bg-porcelain' : 'bg-mist'
+  const flipped = index % 4 === 3 || index % 4 === 2
+  const bg = index % 2 === 0 ? 'bg-porcelain' : 'bg-hazeSurface'
+  const alt = `ShineMate ${product.model}`
 
-  // Тёмная полоса с крупной цифрой — редкий сильный акцент в середине истории.
-  if (variant === 'band') {
+  // Широкая «сцена»: товар занимает всю ширину контента, текст — над ним.
+  if (variant === 'stage') {
     return (
-      <section className="scene relative bg-graphite py-16 text-porcelain md:py-24">
-        <div className="shell">
-          <motion.div
-            {...revealProps(reduced, stagger(0, 0.08))}
-            className="grid items-end gap-8 md:grid-cols-[1fr_auto] md:gap-16"
-          >
-            <motion.div variants={rise} className="max-w-[46ch]">
-              <h3 className="text-[clamp(1.375rem,1.05rem+1.1vw,2rem)] leading-tight tracking-tight text-porcelain">
+      <section className={`scene relative py-16 md:py-24 ${bg}`}>
+        <div className="shell-wide">
+          <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
+            <motion.div variants={rise} className="grid gap-6 md:grid-cols-[1fr_1fr] md:items-end md:gap-16">
+              <h3 className="text-[clamp(1.625rem,1.15rem+1.7vw,2.75rem)] leading-[1.08] tracking-tight">
                 {scene.title}
               </h3>
-              <p className="mt-5 text-[1rem] leading-relaxed text-porcelain/70">{scene.body}</p>
+              <div>
+                <p className="max-w-[54ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
+                {scene.metric && (
+                  <p className="mt-6 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
+                    <span className="text-[1.0625rem] tracking-tight text-graphite">
+                      {scene.metric.value}
+                    </span>
+                    <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                      {scene.metric.caption}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </motion.div>
+            <motion.div variants={rise} className="mt-10 md:mt-14">
+              <ProductStage src={scene.image ?? product.image} alt={alt} />
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+    )
+  }
+
+  // Тёмная полоса с крупной цифрой — сильный акцент в середине истории.
+  if (variant === 'band') {
+    return (
+      <section className="scene relative bg-graphite py-20 text-porcelain md:py-28">
+        <div className="shell-wide">
+          <motion.div
+            {...revealProps(reduced, stagger(0, 0.08))}
+            className="grid items-end gap-10 md:grid-cols-[1fr_auto] md:gap-20"
+          >
+            <motion.div variants={rise} className="max-w-[42ch]">
+              <h3 className="text-[clamp(1.5rem,1.15rem+1.4vw,2.5rem)] leading-[1.1] tracking-tight text-porcelain">
+                {scene.title}
+              </h3>
+              <p className="mt-6 text-[1.0625rem] leading-relaxed text-porcelain/70">{scene.body}</p>
             </motion.div>
             {scene.metric && (
               <motion.div variants={rise} className="shrink-0 md:text-right">
-                <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ember">
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-ember">
                   {scene.metric.caption}
                 </p>
-                <p className="mt-3 text-[clamp(2rem,1.4rem+2vw,3.25rem)] font-medium leading-none tracking-tight text-porcelain">
+                <p className="mt-4 text-[clamp(2.5rem,1.6rem+3.4vw,4.75rem)] font-medium leading-[0.95] tracking-tight text-porcelain">
                   {scene.metric.value}
                 </p>
               </motion.div>
@@ -123,21 +249,21 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
   if (variant === 'plain') {
     return (
       <section className={`scene relative py-16 md:py-24 ${bg}`}>
-        <div className="shell">
+        <div className="shell-wide">
           <motion.div
             {...revealProps(reduced, stagger(0, 0.08))}
-            className="grid gap-8 border-t border-graphite/[0.12] pt-10 md:grid-cols-[1fr_1.4fr] md:gap-16"
+            className="grid gap-8 border-t border-graphite/[0.12] pt-12 md:grid-cols-[1fr_1.4fr] md:gap-20"
           >
             <motion.h3
               variants={rise}
-              className="text-[clamp(1.25rem,1rem+0.9vw,1.75rem)] leading-tight tracking-tight"
+              className="text-[clamp(1.375rem,1.05rem+1.1vw,2rem)] leading-[1.12] tracking-tight"
             >
               {scene.title}
             </motion.h3>
             <motion.div variants={rise}>
-              <p className="max-w-[54ch] text-[1rem] leading-relaxed text-ash">{scene.body}</p>
+              <p className="max-w-[56ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
               {scene.metric && (
-                <p className="mt-6 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
+                <p className="mt-7 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
                   <span className="text-[1.0625rem] tracking-tight text-graphite">
                     {scene.metric.value}
                   </span>
@@ -153,28 +279,28 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
     )
   }
 
-  // Широкая карточка с цифрой.
+  // Крупная цифра как самостоятельный визуальный объект.
   if (variant === 'metric') {
     return (
       <section className={`scene relative py-16 md:py-24 ${bg}`}>
-        <div className="shell">
+        <div className="shell-wide">
           <motion.div
             {...revealProps(reduced, stagger(0, 0.08))}
-            className="grid items-center gap-8 rounded-[1.75rem] border border-graphite/[0.08] bg-gradient-to-br from-frost/40 via-porcelain to-porcelain p-8 md:grid-cols-[minmax(0,20rem)_1fr] md:gap-14 md:p-12"
+            className="grid items-center gap-10 overflow-hidden rounded-[2rem] border border-graphite/[0.08] bg-[linear-gradient(120deg,#FFFFFF_0%,#EEF2F3_60%,#E4EBEC_100%)] p-9 md:grid-cols-[minmax(0,26rem)_1fr] md:gap-20 md:p-16"
           >
             <motion.div variants={rise}>
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-titanium">
                 {scene.metric?.caption}
               </p>
-              <p className="mt-3 text-[clamp(1.5rem,1.1rem+1.4vw,2.25rem)] font-medium leading-[1.1] tracking-tight text-graphite">
+              <p className="mt-4 text-[clamp(2rem,1.35rem+2.4vw,3.5rem)] font-medium leading-[1.02] tracking-tight text-graphite">
                 {scene.metric?.value}
               </p>
             </motion.div>
             <motion.div variants={rise}>
-              <h3 className="text-[clamp(1.25rem,1rem+0.9vw,1.75rem)] leading-tight tracking-tight">
+              <h3 className="text-[clamp(1.375rem,1.05rem+1.1vw,2rem)] leading-[1.12] tracking-tight">
                 {scene.title}
               </h3>
-              <p className="mt-4 max-w-[52ch] text-[0.9375rem] leading-relaxed text-ash">{scene.body}</p>
+              <p className="mt-5 max-w-[54ch] text-[1rem] leading-relaxed text-ash">{scene.body}</p>
             </motion.div>
           </motion.div>
         </div>
@@ -185,18 +311,18 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
   // Кадр с товаром: текст и изображение меняются сторонами.
   return (
     <section className={`scene relative py-16 md:py-24 ${bg}`}>
-      <div className="shell">
+      <div className="shell-wide">
         <motion.div
           {...revealProps(reduced, stagger(0, 0.08))}
           className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20"
         >
           <motion.div variants={rise} className={flipped ? 'lg:order-2' : undefined}>
-            <h3 className="text-[clamp(1.375rem,1.05rem+1.1vw,2rem)] leading-tight tracking-tight">
+            <h3 className="text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight">
               {scene.title}
             </h3>
-            <p className="mt-5 max-w-[52ch] text-[1rem] leading-relaxed text-ash">{scene.body}</p>
+            <p className="mt-6 max-w-[52ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
             {scene.metric && (
-              <div className="mt-7 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
+              <div className="mt-8 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
                 <span className="text-[1.0625rem] tracking-tight text-graphite">{scene.metric.value}</span>
                 <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
                   {scene.metric.caption}
@@ -205,23 +331,8 @@ function Scene({ scene, index, product }: { scene: StoryScene; index: number; pr
             )}
           </motion.div>
 
-          <motion.div
-            variants={rise}
-            className={`flex aspect-[4/3] items-center justify-center rounded-[1.75rem] bg-gradient-to-br from-frost/50 via-mist to-porcelain p-10 ${
-              flipped ? 'lg:order-1' : ''
-            }`}
-          >
-            {/* См. комментарий в ProductPage: у части позиций исходник
-                маленький, w-full по кадру не даёт ему потеряться. */}
-            <img
-              src={scene.image ?? product.image}
-              width={product.imageWidth}
-              height={product.imageHeight}
-              alt={`ShineMate ${product.model}`}
-              loading="lazy"
-              decoding="async"
-              className="max-h-full w-full max-w-[34rem] object-contain"
-            />
+          <motion.div variants={rise} className={flipped ? 'lg:order-1' : undefined}>
+            <ProductStage src={scene.image ?? product.image} alt={alt} tall />
           </motion.div>
         </motion.div>
       </div>
@@ -246,40 +357,35 @@ export function ScaleSection({ scale }: { scale: CutScale }) {
   const reduced = useReducedMotion()
   return (
     <section className="scene relative bg-haze py-20 md:py-28">
-      <div className="shell">
+      <div className="shell-wide">
         <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
           <motion.p variants={rise} className="eyebrow">
             Место в системе
           </motion.p>
-          <motion.h2 variants={rise} className="h2 mt-5 max-w-[20ch]">
+          <motion.h2 variants={rise} className="h2 mt-6 max-w-[20ch]">
             {scale.caption}
           </motion.h2>
 
           <motion.ol
             variants={rise}
-            className="mt-12 grid gap-px overflow-hidden rounded-2xl bg-graphite/[0.1] sm:grid-cols-2 lg:grid-cols-4"
+            className="mt-12 grid gap-px overflow-hidden rounded-[1.5rem] bg-graphite/[0.1] sm:grid-cols-2 lg:grid-cols-4"
           >
             {scale.steps.map((step) => (
               <li
                 key={step.label}
                 aria-current={step.active ? 'step' : undefined}
-                className={`relative p-6 sm:p-7 ${step.active ? 'bg-graphite text-porcelain' : 'bg-hazeSurface'}`}
+                className={`relative p-7 sm:p-8 ${step.active ? 'bg-graphite text-porcelain' : 'bg-hazeSurface'}`}
               >
-                {step.active && (
-                  <span
-                    aria-hidden
-                    className="absolute left-0 top-0 h-1 w-full bg-ember"
-                  />
-                )}
+                {step.active && <span aria-hidden className="absolute left-0 top-0 h-1 w-full bg-ember" />}
                 <p
-                  className={`text-[1.0625rem] tracking-tight ${
+                  className={`text-[1.125rem] tracking-tight ${
                     step.active ? 'text-porcelain' : 'text-graphite'
                   }`}
                 >
                   {step.label}
                 </p>
                 <p
-                  className={`mt-1.5 text-[0.8125rem] leading-relaxed ${
+                  className={`mt-2 text-[0.875rem] leading-relaxed ${
                     step.active ? 'text-porcelain/70' : 'text-slate'
                   }`}
                 >
@@ -294,6 +400,208 @@ export function ScaleSection({ scale }: { scale: CutScale }) {
   )
 }
 
+/* ──────────────────────── Связка «система ShineMate» ──────────────────────── */
+
+/**
+ * Цепочка машинка → подложка → круг → паста реальными фото.
+ *
+ * Клиент называл это главной фишкой сайта: человек должен видеть не
+ * «похожие товары», а собранную систему, в которой позиция работает.
+ * Текущая позиция в цепочке подсвечена, остальные звенья — кликабельны.
+ */
+export function SystemChainSection({ chain }: { chain: SystemChain }) {
+  const reduced = useReducedMotion()
+  return (
+    <section className="scene relative bg-porcelain py-20 md:py-28">
+      <div className="shell-wide">
+        <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
+          <motion.p variants={rise} className="eyebrow">
+            Собери систему
+          </motion.p>
+          <motion.h2 variants={rise} className="h2 mt-6 max-w-[18ch]">
+            {chain.caption}
+          </motion.h2>
+          <motion.p variants={rise} className="lead mt-6 max-w-[58ch] text-ash">
+            {chain.note}
+          </motion.p>
+
+          <motion.ol
+            variants={rise}
+            className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5"
+          >
+            {chain.steps.map((step) => {
+              const thumb = step.product.image.replace('.webp', '-thumb.webp')
+              const body = (
+                <>
+                  <span className="flex items-center justify-between gap-3">
+                    <span
+                      className={`font-mono text-[0.625rem] uppercase tracking-[0.16em] ${
+                        step.active ? 'text-ember' : 'text-titanium'
+                      }`}
+                    >
+                      {step.role}
+                    </span>
+                    {step.active && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ember text-porcelain">
+                        <Check size={11} />
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className={`mt-5 flex h-32 items-center justify-center rounded-xl sm:h-36 ${
+                      step.active ? 'bg-porcelain/10' : 'bg-mist'
+                    }`}
+                  >
+                    <img
+                      src={thumb}
+                      srcSet={`${thumb} 300w, ${step.product.image} 700w`}
+                      sizes="240px"
+                      alt={`ShineMate ${step.product.model}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="max-h-full w-auto max-w-full object-contain"
+                    />
+                  </span>
+                  <span
+                    className={`mt-5 block text-[1.0625rem] leading-snug tracking-tight ${
+                      step.active ? 'text-porcelain' : 'text-graphite'
+                    }`}
+                  >
+                    {step.product.model}
+                  </span>
+                  <span
+                    className={`mt-2 block text-[0.8125rem] leading-relaxed ${
+                      step.active ? 'text-porcelain/65' : 'text-slate'
+                    }`}
+                  >
+                    {step.note}
+                  </span>
+                </>
+              )
+              return (
+                <li key={step.role}>
+                  {step.active ? (
+                    <div className="flex h-full flex-col rounded-2xl bg-graphite p-5 sm:p-6">{body}</div>
+                  ) : (
+                    <a
+                      href={productHref(step.product)}
+                      className="group flex h-full flex-col rounded-2xl border border-graphite/[0.1] bg-porcelain p-5 transition-colors duration-400 ease-premium hover:border-graphite/30 hover:bg-mist/60 sm:p-6"
+                    >
+                      {body}
+                    </a>
+                  )}
+                </li>
+              )
+            })}
+          </motion.ol>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+/* ─────────────────────────── Сравнение с соседями ─────────────────────────── */
+
+/**
+ * Таблица отличий внутри раздела. На узких экранах превращается в
+ * горизонтально прокручиваемую ленту — сжимать четыре колонки цифр в
+ * 375px нечитаемо, а прятать сравнение на мобильном клиент запретил.
+ */
+export function ComparisonSection({ table }: { table: ComparisonTable }) {
+  const reduced = useReducedMotion()
+  return (
+    <section className="scene relative bg-mist py-20 md:py-28">
+      <div className="shell-wide">
+        <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
+          <p className="eyebrow">Сравнение</p>
+          <h2 className="h2 mt-6 max-w-[20ch]">{table.caption}</h2>
+        </motion.div>
+
+        <motion.div
+          {...riseProps(reduced, { y: 24, amount: 0.1 })}
+          className="-mx-[var(--shell)] mt-12 overflow-x-auto px-[var(--shell)] pb-2"
+        >
+          <table className="w-full min-w-[46rem] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-graphite/20">
+                <th className="w-[22rem] py-4 pr-6 font-mono text-[0.625rem] font-medium uppercase tracking-[0.16em] text-titanium">
+                  Модель
+                </th>
+                {table.columns.map((col) => (
+                  <th
+                    key={col}
+                    className="py-4 pr-6 font-mono text-[0.625rem] font-medium uppercase tracking-[0.16em] text-titanium"
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.rows.map((row) => {
+                const thumb = row.image.replace('.webp', '-thumb.webp')
+                return (
+                  <tr
+                    key={row.slug}
+                    className={`border-b border-graphite/[0.1] align-middle ${
+                      row.active ? 'bg-porcelain' : ''
+                    }`}
+                  >
+                    <td className="py-4 pr-6">
+                      <a
+                        href={row.href}
+                        className="group flex items-center gap-4"
+                        aria-current={row.active ? 'true' : undefined}
+                      >
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-porcelain p-1.5">
+                          <img
+                            src={thumb}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="max-h-full w-auto max-w-full object-contain"
+                          />
+                        </span>
+                        <span className="min-w-0">
+                          <span
+                            className={`block truncate text-[0.9375rem] tracking-tight ${
+                              row.active ? 'text-graphite' : 'text-ash group-hover:text-graphite'
+                            }`}
+                          >
+                            {row.model}
+                            {row.active && (
+                              <span className="ml-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-ember">
+                                эта модель
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[0.75rem] text-slate">
+                            {row.kind}
+                          </span>
+                        </span>
+                      </a>
+                    </td>
+                    {row.values.map((value, i) => (
+                      <td
+                        key={table.columns[i]}
+                        className={`py-4 pr-6 font-mono text-[0.875rem] tracking-tight ${
+                          value ? 'text-graphite' : 'text-smoke'
+                        }`}
+                      >
+                        {value ?? '—'}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
 /* ────────────────────────────── Совместимость ────────────────────────────── */
 
 function CompatCard({ item }: { item: Product }) {
@@ -302,29 +610,30 @@ function CompatCard({ item }: { item: Product }) {
   return (
     <a
       href={productHref(item)}
-      className="group flex flex-col rounded-2xl border border-graphite/[0.1] bg-porcelain p-4 transition-colors duration-400 ease-premium hover:border-graphite/25 hover:bg-mist/60"
+      className="group flex flex-col rounded-2xl border border-graphite/[0.1] bg-porcelain p-5 transition-colors duration-400 ease-premium hover:border-graphite/25 hover:bg-mist/60"
     >
-      <span className="flex h-28 items-center justify-center rounded-xl bg-mist p-3 transition-colors duration-400 ease-premium group-hover:bg-porcelain">
+      <span className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-mist p-4 transition-colors duration-400 ease-premium group-hover:bg-porcelain sm:h-44">
         <img
           src={thumb}
           srcSet={`${thumb} 300w, ${item.image} 700w`}
-          sizes="180px"
+          sizes="(min-width: 1024px) 300px, 45vw"
           alt={`ShineMate ${item.model}`}
           loading="lazy"
           decoding="async"
-          className="max-h-full w-auto max-w-full object-contain"
+          className="max-h-full w-auto max-w-full object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.04]"
         />
       </span>
-      <span className="mt-4 block text-[0.9375rem] leading-snug tracking-tight text-graphite">
+      <span className="mt-5 block text-[1.0625rem] leading-snug tracking-tight text-graphite">
         {item.model}
       </span>
-      <span className="mt-1 block text-[0.75rem] leading-relaxed text-slate">{item.kind}</span>
-      <span className="mt-3 flex items-center justify-between gap-2 border-t border-graphite/[0.1] pt-3">
-        <span className="text-[0.875rem] tracking-tight text-graphite">
+      <span className="mt-1.5 block text-[0.8125rem] leading-relaxed text-slate">{item.kind}</span>
+      <span className="flex-1" />
+      <span className="mt-4 flex items-center justify-between gap-2 border-t border-graphite/[0.1] pt-4">
+        <span className="text-[0.9375rem] tracking-tight text-graphite">
           {price != null ? `${item.variants.length > 1 ? 'от ' : ''}${formatPrice(price)}` : '—'}
         </span>
         <ArrowRight
-          size={14}
+          size={15}
           className="shrink-0 text-graphite/30 transition-transform duration-400 ease-premium group-hover:translate-x-0.5 group-hover:text-graphite/60"
         />
       </span>
@@ -336,25 +645,25 @@ export function CompatSection({ groups }: { groups: CompatGroup[] }) {
   const reduced = useReducedMotion()
   if (!groups.length) return null
   return (
-    <section className="scene relative bg-porcelain py-20 md:py-28">
-      <div className="shell">
+    <section className="scene relative bg-hazeSurface py-20 md:py-28">
+      <div className="shell-wide">
         <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
-          <p className="eyebrow">Собирается в систему</p>
-          <h2 className="h2 mt-5 max-w-[22ch]">Что работает с этой позицией</h2>
-          <p className="lead mt-6 max-w-[52ch] text-ash">
-            Подбор внутри линейки просчитан: машинка, подложка, круг и паста рассчитаны друг
-            под друга, поэтому связку не приходится собирать из разных брендов.
+          <p className="eyebrow">Совместимость</p>
+          <h2 className="h2 mt-6 max-w-[22ch]">Что работает с этой позицией</h2>
+          <p className="lead mt-6 max-w-[56ch] text-ash">
+            Подбор внутри линейки просчитан: машинка, подложка, круг и паста рассчитаны друг под
+            друга, поэтому связку не приходится собирать из разных брендов.
           </p>
         </motion.div>
 
-        <div className="mt-12 space-y-12">
+        <div className="mt-14 space-y-14">
           {groups.map((group) => (
             <motion.div key={group.title} {...riseProps(reduced, { y: 24, amount: 0.15 })}>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-graphite/[0.12] pt-5">
-                <h3 className="text-[1.0625rem] tracking-tight">{group.title}</h3>
-                <p className="text-[0.8125rem] text-slate">{group.note}</p>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-graphite/[0.12] pt-6">
+                <h3 className="text-[1.25rem] tracking-tight">{group.title}</h3>
+                <p className="text-[0.875rem] text-slate">{group.note}</p>
               </div>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
                 {group.items.map((item) => (
                   <CompatCard key={item.slug} item={item} />
                 ))}
@@ -379,33 +688,57 @@ export function StoryCta({
   onWholesale: () => void
 }) {
   const reduced = useReducedMotion()
+  const thumb = product.image.replace('.webp', '-thumb.webp')
   return (
     <section className="scene relative overflow-hidden bg-graphite py-20 text-porcelain md:py-28">
-      <div className="shell">
-        <motion.div {...riseProps(reduced, { y: 24, amount: 0.25 })} className="max-w-[46ch]">
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.18em] text-ember">
-            {product.model}
-          </p>
-          <h2 className="h2 mt-5 text-porcelain">Подберём конфигурацию под вашу задачу</h2>
-          <p className="lead mt-6 text-porcelain/70">
-            Расскажите, с какими покрытиями и объёмами работаете — предложим связку машинки,
-            подложек, кругов и паст и пришлём актуальный прайс.
-          </p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={onRequest}
-              className="inline-flex items-center rounded-full bg-porcelain px-7 py-3.5 text-sm text-graphite transition-colors duration-500 ease-premium hover:bg-mist"
-            >
-              Запросить прайс
-            </button>
-            <button
-              type="button"
-              onClick={onWholesale}
-              className="inline-flex items-center rounded-full border border-porcelain/25 px-7 py-3.5 text-sm text-porcelain transition-colors duration-500 ease-premium hover:border-porcelain/60"
-            >
-              Оптовые условия
-            </button>
+      <div className="shell-wide">
+        <motion.div
+          {...riseProps(reduced, { y: 24, amount: 0.25 })}
+          className="grid items-center gap-12 lg:grid-cols-[1.2fr_1fr] lg:gap-20"
+        >
+          <div className="max-w-[46ch]">
+            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-ember">
+              {product.model}
+            </p>
+            <h2 className="h2 mt-6 text-porcelain">Подберём конфигурацию под вашу задачу</h2>
+            <p className="lead mt-6 text-porcelain/70">
+              Расскажите, с какими покрытиями и объёмами работаете — предложим связку машинки,
+              подложек, кругов и паст и пришлём актуальный прайс.
+            </p>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={onRequest}
+                className="inline-flex items-center rounded-full bg-porcelain px-8 py-4 text-[0.9375rem] text-graphite transition-colors duration-500 ease-premium hover:bg-mist"
+              >
+                Запросить прайс
+              </button>
+              <button
+                type="button"
+                onClick={onWholesale}
+                className="inline-flex items-center rounded-full border border-porcelain/25 px-8 py-4 text-[0.9375rem] text-porcelain transition-colors duration-500 ease-premium hover:border-porcelain/60"
+              >
+                Оптовые условия
+              </button>
+            </div>
+          </div>
+
+          {/* Товар остаётся перед глазами в момент решения — не абстрактный
+              тёмный блок с кнопками, а закрывающий кадр именно этой позиции. */}
+          <div className="relative hidden aspect-[4/3] items-center justify-center lg:flex">
+            <span
+              aria-hidden
+              className="absolute inset-x-[8%] bottom-[16%] h-[10%] rounded-[50%] bg-ink/60 blur-2xl"
+            />
+            <img
+              src={thumb}
+              srcSet={`${thumb} 300w, ${product.image} 700w`}
+              sizes="480px"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="relative max-h-full w-full max-w-[26rem] object-contain"
+            />
           </div>
         </motion.div>
       </div>

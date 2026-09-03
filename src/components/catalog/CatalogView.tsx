@@ -51,8 +51,8 @@ export function CatalogView({ category }: Props) {
   const shownSkus = list.reduce((n, p) => n + p.variants.length, 0)
 
   return (
-    <div className="min-h-[100dvh] bg-mist pb-24 pt-[5.5rem] md:pb-32">
-      <div className="shell pt-8 md:pt-12">
+    <div className="min-h-[100dvh] bg-mist pb-24 pt-[6.25rem] md:pb-32">
+      <div className="shell-wide pt-8 md:pt-12">
         <a
           href="."
           className="group inline-flex items-center gap-2 text-[0.875rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
@@ -88,9 +88,9 @@ export function CatalogView({ category }: Props) {
         </motion.div>
       </div>
 
-      <div className="shell mt-10 lg:grid lg:grid-cols-[260px_1fr] lg:items-start lg:gap-12">
+      <div className="shell-wide mt-10 lg:grid lg:grid-cols-[280px_1fr] lg:items-start lg:gap-14 xl:gap-16">
         {/* Desktop: вертикальная навигация по разделам, липкая под шапкой. */}
-        <aside className="hidden lg:sticky lg:top-[6.5rem] lg:block">
+        <aside className="hidden lg:sticky lg:top-[7.25rem] lg:block">
           <CategorySidebar activeId={category} />
         </aside>
 
@@ -116,7 +116,7 @@ export function CatalogView({ category }: Props) {
             <SortControl sort={sort} onChange={setSort} open={sortOpen} setOpen={setSortOpen} />
           </div>
 
-          <div className="mt-6 grid gap-px overflow-hidden rounded-[1.25rem] bg-graphite/[0.1] sm:grid-cols-2 xl:grid-cols-3 lg:mt-4">
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 lg:mt-4">
             {list.map((product, i) => (
               <ProductCard key={product.slug} product={product} index={i} />
             ))}

@@ -22,7 +22,7 @@
   html {
     scroll-behavior: smooth;
     /* Якорная навигация не должна заезжать под плавающий хедер. */
-    scroll-padding-top: 5.5rem;
+    scroll-padding-top: 6.25rem;
   }
 
   body {
@@ -50,9 +50,36 @@
 }
 
 @layer components {
+  /*
+   * Система контейнеров, а не один max-width на всё.
+   *
+   * Клиент отдельно отмечал: на 1440–1600px сайт выглядел «как страница с
+   * zoom 70%» — потому что и текстовая колонка, и каталог, и продуктовые
+   * сцены сидели в одной и той же 1440-й рамке с большими полями.
+   * Теперь ширина задаётся ролью блока:
+   *   .shell       — базовая рамка страницы (1440)
+   *   .shell-wide  — каталог, мега-меню, продуктовые сетки (1680)
+   *   .shell-text  — длинный читаемый текст (1180)
+   * Отступ по краям общий (--shell), поэтому блоки разной ширины всё
+   * равно выравниваются по одной сетке на узких экранах.
+   */
   .shell {
     width: 100%;
     max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: var(--shell);
+  }
+
+  .shell-wide {
+    width: 100%;
+    max-width: 1680px;
+    margin-inline: auto;
+    padding-inline: var(--shell);
+  }
+
+  .shell-text {
+    width: 100%;
+    max-width: 1180px;
     margin-inline: auto;
     padding-inline: var(--shell);
   }

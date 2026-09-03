@@ -18,11 +18,14 @@ import { useLead } from '../../lib/leadContext'
 import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
 import { productHref } from '../../lib/router'
 import {
+  ComparisonSection,
   CompatSection,
   PurposeSection,
   ScaleSection,
+  SpecHighlights,
   StoryCta,
   StoryScenes,
+  SystemChainSection,
 } from './ProductStorySections'
 
 type Props = {
@@ -33,16 +36,20 @@ type Props = {
  * Страница товара — реальный маршрут /catalog/<категория>/<slug>.
  *
  * Клиент показал на видео официальный shinemate.com: там товар не
- * заканчивается таблицей характеристик, а разворачивается в историю,
- * которую листают. Здесь та же глубина, но собранная из НАШИХ данных:
- * hero → назначение → сцены по реальным характеристикам → место в
- * системе → характеристики → исполнения → совместимость → похожие → CTA.
+ * заканчивается таблицей характеристик, а разворачивается в длинную
+ * визуальную историю, которую листают. Здесь та же глубина, но собранная
+ * из НАШИХ данных:
  *
- * Шаблон один на все 113 позиций (см. data/story.ts): глубина страницы
- * подстраивается под то, сколько реальных данных есть у конкретного
- * товара. У машинки с ходом эксцентрика, мощностью и платформой
- * получится длинная история; у аксессуара — честная компактная
- * страница без выдуманных блоков.
+ *   hero с галереей → ключевые цифры (тёмная полоса) → назначение →
+ *   сцены по реальным характеристикам → место в линейке → сравнение с
+ *   соседями → полные характеристики и исполнения → связка «система» →
+ *   совместимость → похожие → CTA.
+ *
+ * Отдельных страниц руками не создаётся: композиция одна на все 113
+ * позиций (см. data/story.ts), а глубина подстраивается под то, сколько
+ * реальных данных есть у конкретного товара. У машинки с ходом
+ * эксцентрика, мощностью и платформой получится длинная история; у
+ * аксессуара — честная компактная страница без выдуманных блоков.
  */
 export function ProductPage({ product }: Props) {
   const reduced = useReducedMotion()
@@ -95,11 +102,29 @@ export function ProductPage({ product }: Props) {
   const related = getRelatedProducts(product)
   const story = buildStory(product)
 
+  /*
+   * Галерея показывает только РЕАЛЬНЫЕ кадры позиции: фото товара плюс
+   * отдельные фото исполнений там, где вендор их снимал (например,
+   * зелёный T120 против жёлтого T80). Клонировать один и тот же снимок,
+   * чтобы «набрать» галерею из шести миниатюр, здесь нельзя — тогда
+   * переключение кадров ничего бы не меняло и выглядело обманом.
+   */
+  const [shot, setShot] = useState(0)
+  useEffect(() => setShot(0), [product.slug])
+  // Выбор исполнения переводит галерею на кадр этого исполнения, если он есть.
+  useEffect(() => {
+    if (!selectedVariant?.image) return
+    const i = story.gallery.indexOf(selectedVariant.image)
+    if (i >= 0) setShot(i)
+  }, [selectedVariant?.image, story.gallery])
+
+  const heroImage = story.gallery[shot] ?? selectedVariant?.image ?? product.image
+
   return (
     <div className="min-h-[100dvh] bg-porcelain">
       {/* ─── 01. HERO ─────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-b from-mist via-porcelain to-porcelain pb-16 pt-[5.5rem] md:pb-24">
-        <div className="shell pt-8 md:pt-12">
+      <div className="bg-gradient-to-b from-mist via-porcelain to-porcelain pb-16 pt-[6.5rem] md:pb-24">
+        <div className="shell-wide pt-8 md:pt-12">
           <nav
             aria-label="Хлебные крошки"
             className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-slate"
@@ -119,82 +144,101 @@ export function ProductPage({ product }: Props) {
           </nav>
         </div>
 
-        <div className="shell mt-8 grid items-center gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
-          {/* Товар доминирует: крупный кадр с мягкой подложкой, а не
-              маленькое фото в белой пустоте. */}
-          <motion.div {...riseProps(reduced, { y: 24, amount: 0.25 })}>
+        <div className="shell-wide mt-8 grid items-start gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-16 xl:gap-20">
+          {/* Товар доминирует: крупный кадр на студийной подложке, а не
+              маленькое фото, потерянное в белой пустоте. */}
+          <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
             <button
               type="button"
               onClick={() => setZoomOpen(true)}
               aria-label="Увеличить фото"
-              className="group relative flex aspect-[4/3] w-full items-center justify-center rounded-[2rem] bg-gradient-to-br from-frost/50 via-mist to-porcelain p-6 sm:p-10"
+              className="group relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[2rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_45%,#E1E9EB_100%)]"
             >
+              <span
+                aria-hidden
+                className="absolute bottom-[13%] left-1/2 h-[8%] w-[54%] -translate-x-1/2 rounded-[50%] bg-graphite/[0.14] blur-2xl"
+              />
               {/*
-                Часть официальных фото у вендора — маленькие (у EP830
-                исходник вообще 396×124). При w-auto такое фото рисовалось
-                в натуральную величину и терялось в центре большого кадра.
-                object-contain + w-full растягивает по ширине кадра, сохраняя
-                пропорции: мелкий исходник занимает кадр целиком, крупный —
-                не обрезается. Апскейл ограничен разумным пределом, чтобы не
-                получить мыло из 396px-исходника.
+                Часть официальных фото у вендора мелкая (у EP830 исходник
+                396×124). Процентная высота/ширина внутри кадра растягивает
+                такой снимок по сцене, сохраняя пропорции: мелкий исходник
+                занимает кадр целиком, крупный — не обрезается.
               */}
               <img
-                src={selectedVariant?.image ?? product.image}
+                src={heroImage}
                 width={selectedVariant?.imageWidth ?? product.imageWidth}
                 height={selectedVariant?.imageHeight ?? product.imageHeight}
                 alt={`ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}
-                className="max-h-full w-full max-w-[42rem] object-contain"
+                className="relative h-[84%] w-[88%] object-contain transition-transform duration-700 ease-premium group-hover:scale-[1.03]"
               />
               <span
                 aria-hidden
-                className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/90 text-slate backdrop-blur-sm transition-colors duration-300 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
+                className="absolute bottom-5 right-5 flex h-11 w-11 items-center justify-center rounded-full border border-graphite/15 bg-porcelain/90 text-slate backdrop-blur-sm transition-colors duration-300 ease-premium group-hover:border-graphite/40 group-hover:text-graphite"
               >
-                <ZoomIn size={16} />
+                <ZoomIn size={17} />
               </span>
             </button>
+
+            {story.gallery.length > 1 && (
+              <ul className="mt-4 flex flex-wrap gap-3">
+                {story.gallery.map((src, i) => (
+                  <li key={src}>
+                    <button
+                      type="button"
+                      onClick={() => setShot(i)}
+                      aria-label={`Кадр ${i + 1}`}
+                      aria-pressed={i === shot}
+                      className={`flex h-20 w-20 items-center justify-center rounded-xl border bg-mist p-2 transition-colors duration-300 ease-premium ${
+                        i === shot
+                          ? 'border-graphite'
+                          : 'border-graphite/[0.12] hover:border-graphite/35'
+                      }`}
+                    >
+                      <img
+                        src={src.replace('.webp', '-thumb.webp')}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="max-h-full w-auto max-w-full object-contain"
+                      />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
             {selectedVariant?.note && (
-              <p className="mt-3 text-[0.8125rem] leading-relaxed text-titanium">{selectedVariant.note}</p>
+              <p className="mt-4 max-w-[52ch] text-[0.8125rem] leading-relaxed text-titanium">
+                {selectedVariant.note}
+              </p>
             )}
           </motion.div>
 
-          <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
+          <motion.div {...revealProps(reduced, stagger(0, 0.08))} className="lg:pt-6">
             <motion.p
               variants={rise}
-              className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-titanium"
+              className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-titanium"
             >
               {categoryTitle(product.category)}
             </motion.p>
             <motion.h1 variants={rise} className="h1-sm mt-4">
               {product.model}
             </motion.h1>
-            <motion.p variants={rise} className="mt-2 text-[1rem] text-slate">
+            <motion.p variants={rise} className="mt-3 text-[1.0625rem] text-slate">
               {product.kind}
             </motion.p>
-            <motion.p variants={rise} className="mt-5 max-w-[52ch] text-[1rem] leading-relaxed text-ash">
+            <motion.p
+              variants={rise}
+              className="mt-6 max-w-[52ch] text-[1.0625rem] leading-relaxed text-ash"
+            >
               {product.lead}
             </motion.p>
 
-            {product.specs.length > 0 && (
-              <motion.dl
-                variants={rise}
-                className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-graphite/[0.12] pt-7 sm:grid-cols-3"
-              >
-                {product.specs.slice(0, 6).map((spec) => (
-                  <div key={spec.label}>
-                    <dt className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-titanium">
-                      {spec.label}
-                    </dt>
-                    <dd className="mt-1.5 text-[1rem] tracking-tight">{spec.value}</dd>
-                  </div>
-                ))}
-              </motion.dl>
-            )}
-
             <motion.div
               variants={rise}
-              className="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-graphite/[0.12] pt-7"
+              className="mt-9 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-graphite/[0.12] pt-8"
             >
-              <p className="text-[2rem] leading-none tracking-tight">
+              <p className="text-[clamp(2rem,1.6rem+1.2vw,2.75rem)] leading-none tracking-tight">
                 {selectedVariant ? formatPrice(selectedVariant.rrp) : '—'}
               </p>
               <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
@@ -209,38 +253,44 @@ export function ProductPage({ product }: Props) {
               <button
                 type="button"
                 onClick={() => requestProduct(product, selectedVariant)}
-                className="inline-flex items-center rounded-full bg-graphite px-7 py-3.5 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
+                className="inline-flex items-center rounded-full bg-graphite px-8 py-4 text-[0.9375rem] text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
               >
                 Запросить прайс
               </button>
               <button
                 type="button"
                 onClick={requestWholesale}
-                className="inline-flex items-center rounded-full border border-graphite/20 px-7 py-3.5 text-sm text-graphite transition-colors duration-500 ease-premium hover:border-graphite/50 hover:bg-graphite/[0.04]"
+                className="inline-flex items-center rounded-full border border-graphite/20 px-8 py-4 text-[0.9375rem] text-graphite transition-colors duration-500 ease-premium hover:border-graphite/50 hover:bg-graphite/[0.04]"
               >
-                Получить консультацию
+                Подобрать систему
               </button>
             </motion.div>
           </motion.div>
         </div>
       </div>
 
-      {/* ─── 02. НАЗНАЧЕНИЕ ───────────────────────────────────────────── */}
+      {/* ─── 02. КЛЮЧЕВЫЕ ЦИФРЫ ──────────────────────────────────────── */}
+      <SpecHighlights items={story.highlights} kicker={`${product.model} · ключевые параметры`} />
+
+      {/* ─── 03. НАЗНАЧЕНИЕ ───────────────────────────────────────────── */}
       <PurposeSection purpose={story.purpose} />
 
-      {/* ─── 03. СЦЕНЫ ПО РЕАЛЬНЫМ ХАРАКТЕРИСТИКАМ ────────────────────── */}
+      {/* ─── 04. СЦЕНЫ ПО РЕАЛЬНЫМ ХАРАКТЕРИСТИКАМ ────────────────────── */}
       <StoryScenes scenes={story.scenes} product={product} />
 
-      {/* ─── 04. МЕСТО В СИСТЕМЕ / ЛИНЕЙКЕ ────────────────────────────── */}
+      {/* ─── 05. МЕСТО В ЛИНЕЙКЕ / ЦИКЛЕ ──────────────────────────────── */}
       {story.scale && <ScaleSection scale={story.scale} />}
 
-      {/* ─── 05. ХАРАКТЕРИСТИКИ + ИСПОЛНЕНИЯ ─────────────────────────── */}
+      {/* ─── 06. ЧЕМ ОТЛИЧАЕТСЯ ОТ СОСЕДЕЙ ────────────────────────────── */}
+      {story.comparison && <ComparisonSection table={story.comparison} />}
+
+      {/* ─── 07. ХАРАКТЕРИСТИКИ + ИСПОЛНЕНИЯ ─────────────────────────── */}
       <section className="scene relative bg-porcelain py-20 md:py-28">
-        <div className="shell grid gap-14 lg:grid-cols-[1fr_1fr] lg:gap-20">
+        <div className="shell-wide grid gap-14 lg:grid-cols-[1fr_1fr] lg:gap-24">
           <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
             <p className="eyebrow">Характеристики</p>
-            <h2 className="h2 mt-5 max-w-[14ch]">Полные данные по позиции</h2>
-            <dl className="mt-8 divide-y divide-graphite/[0.1] border-t border-graphite/[0.12]">
+            <h2 className="h2 mt-6 max-w-[14ch]">Полные данные по позиции</h2>
+            <dl className="mt-10 divide-y divide-graphite/[0.1] border-t border-graphite/[0.12]">
               {product.specs.map((spec) => (
                 <div key={spec.label} className="flex items-baseline justify-between gap-6 py-4">
                   <dt className="text-[0.9375rem] text-slate">{spec.label}</dt>
@@ -252,7 +302,7 @@ export function ProductPage({ product }: Props) {
             {product.includes && product.includes.length > 0 && (
               <div className="mt-12">
                 <p className="eyebrow">Комплектация</p>
-                <ul className="mt-4 space-y-2.5 border-t border-graphite/[0.12] pt-5">
+                <ul className="mt-5 space-y-3 border-t border-graphite/[0.12] pt-6">
                   {product.includes.map((item) => (
                     <li key={item} className="flex gap-3 text-[0.9375rem] leading-relaxed text-ash">
                       <Check size={15} className="mt-1 shrink-0 text-ember" />
@@ -268,11 +318,11 @@ export function ProductPage({ product }: Props) {
             <p className="eyebrow">
               {product.variants.length > 1 ? 'Исполнения и РРЦ' : 'Артикул и РРЦ'}
             </p>
-            <h2 className="h2 mt-5 max-w-[14ch]">
+            <h2 className="h2 mt-6 max-w-[14ch]">
               {product.variants.length > 1 ? 'Что выбрать' : 'Позиция в прайсе'}
             </h2>
 
-            <div className="mt-8">
+            <div className="mt-10">
               {showAxisChips ? (
                 <div className="space-y-6">
                   <div>
@@ -286,7 +336,7 @@ export function ProductPage({ product }: Props) {
                           type="button"
                           onClick={() => selectAxis1(axis1)}
                           aria-pressed={selectedVariant?.axis1 === axis1}
-                          className={`rounded-full border px-4 py-2 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
+                          className={`rounded-full border px-4 py-2.5 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
                             selectedVariant?.axis1 === axis1
                               ? 'border-graphite bg-graphite text-porcelain'
                               : 'border-graphite/[0.15] text-graphite hover:border-graphite/40'
@@ -309,7 +359,7 @@ export function ProductPage({ product }: Props) {
                             type="button"
                             onClick={() => selectAxis2(axis2)}
                             aria-pressed={selectedVariant?.axis2 === axis2}
-                            className={`rounded-full border px-4 py-2 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
+                            className={`rounded-full border px-4 py-2.5 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
                               selectedVariant?.axis2 === axis2
                                 ? 'border-graphite bg-graphite text-porcelain'
                                 : 'border-graphite/[0.15] text-graphite hover:border-graphite/40'
@@ -322,14 +372,14 @@ export function ProductPage({ product }: Props) {
                     </div>
                   )}
                   {selectedVariant && (
-                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-mist p-5">
+                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-mist p-6">
                       <div className="min-w-0">
                         <p className="font-mono text-[0.875rem] tracking-tight">{selectedVariant.sku}</p>
                         {selectedVariant.label && (
                           <p className="mt-1 text-[0.8125rem] text-slate">{selectedVariant.label}</p>
                         )}
                       </div>
-                      <p className="shrink-0 text-[1.125rem] tracking-tight">
+                      <p className="shrink-0 text-[1.25rem] tracking-tight">
                         {formatPrice(selectedVariant.rrp)}
                       </p>
                     </div>
@@ -373,10 +423,10 @@ export function ProductPage({ product }: Props) {
                   ))}
                 </ul>
               ) : (
-                <div className="rounded-2xl bg-mist p-6">
+                <div className="rounded-2xl bg-mist p-7">
                   <p className="font-mono text-[0.9375rem] tracking-tight">{product.variants[0]?.sku}</p>
                   <p className="mt-1.5 text-[0.875rem] text-slate">{product.variants[0]?.label}</p>
-                  <p className="mt-4 text-[1.5rem] tracking-tight">
+                  <p className="mt-5 text-[1.75rem] tracking-tight">
                     {product.variants[0] ? formatPrice(product.variants[0].rrp) : '—'}
                   </p>
                 </div>
@@ -386,18 +436,21 @@ export function ProductPage({ product }: Props) {
         </div>
       </section>
 
-      {/* ─── 06. СОВМЕСТИМОСТЬ ───────────────────────────────────────── */}
+      {/* ─── 08. СВЯЗКА «СИСТЕМА SHINEMATE» ──────────────────────────── */}
+      {story.chain && <SystemChainSection chain={story.chain} />}
+
+      {/* ─── 09. СОВМЕСТИМОСТЬ ───────────────────────────────────────── */}
       <CompatSection groups={story.compat} />
 
-      {/* ─── 07. ПОХОЖИЕ ПОЗИЦИИ ─────────────────────────────────────── */}
+      {/* ─── 10. ПОХОЖИЕ ПОЗИЦИИ ─────────────────────────────────────── */}
       {related.length > 0 && (
         <section className="scene relative bg-mist py-20 md:py-28">
-          <div className="shell">
+          <div className="shell-wide">
             <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
               <p className="eyebrow">Соседи по разделу</p>
-              <h2 className="h2 mt-5 max-w-[20ch]">Похожие модели этого раздела</h2>
+              <h2 className="h2 mt-6 max-w-[20ch]">Похожие модели этого раздела</h2>
             </motion.div>
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((candidate) => {
                 const price = minPrice(candidate)
                 const thumb = candidate.image.replace('.webp', '-thumb.webp')
@@ -406,35 +459,35 @@ export function ProductPage({ product }: Props) {
                     key={candidate.slug}
                     {...riseProps(reduced, { y: 20, amount: 0.15 })}
                     href={productHref(candidate)}
-                    className="group flex items-center gap-4 rounded-2xl border border-graphite/[0.1] bg-porcelain p-4 transition-colors duration-400 ease-premium hover:border-graphite/25"
+                    className="group flex flex-col rounded-2xl border border-graphite/[0.1] bg-porcelain p-6 transition-colors duration-400 ease-premium hover:border-graphite/25"
                   >
-                    <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-mist p-2">
+                    <span className="flex h-44 items-center justify-center overflow-hidden rounded-xl bg-mist p-4 transition-colors duration-400 ease-premium group-hover:bg-porcelain sm:h-48">
                       <img
                         src={thumb}
                         srcSet={`${thumb} 300w, ${candidate.image} 700w`}
-                        sizes="160px"
+                        sizes="(min-width: 1024px) 380px, 45vw"
                         alt={`ShineMate ${candidate.model}`}
                         loading="lazy"
                         decoding="async"
-                        className="max-h-full w-auto max-w-full object-contain"
+                        className="max-h-full w-auto max-w-full object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.04]"
                       />
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[1rem] tracking-tight">{candidate.model}</span>
-                      <span className="mt-1 block truncate text-[0.8125rem] text-slate">
-                        {relatedNote(candidate, product)}
-                      </span>
-                      {price != null && (
-                        <span className="mt-2 block text-[0.9375rem] tracking-tight text-graphite">
-                          {candidate.variants.length > 1 ? 'от ' : ''}
-                          {formatPrice(price)}
-                        </span>
-                      )}
+                    <span className="mt-6 block text-[1.25rem] tracking-tight">{candidate.model}</span>
+                    <span className="mt-2 block text-[0.875rem] leading-relaxed text-slate">
+                      {relatedNote(candidate, product)}
                     </span>
-                    <ArrowRight
-                      size={16}
-                      className="shrink-0 text-graphite/30 transition-transform duration-400 ease-premium group-hover:translate-x-0.5 group-hover:text-graphite/60"
-                    />
+                    <span className="flex-1" />
+                    <span className="mt-5 flex items-center justify-between gap-3 border-t border-graphite/[0.1] pt-4">
+                      <span className="text-[1rem] tracking-tight text-graphite">
+                        {price != null
+                          ? `${candidate.variants.length > 1 ? 'от ' : ''}${formatPrice(price)}`
+                          : '—'}
+                      </span>
+                      <ArrowRight
+                        size={16}
+                        className="shrink-0 text-graphite/30 transition-transform duration-400 ease-premium group-hover:translate-x-0.5 group-hover:text-graphite/60"
+                      />
+                    </span>
                   </motion.a>
                 )
               })}
@@ -443,7 +496,7 @@ export function ProductPage({ product }: Props) {
             <motion.a
               {...riseProps(reduced, { y: 20, delay: 0.1, amount: 0.2 })}
               href={`catalog/${product.category}`}
-              className="group mt-10 inline-flex items-center gap-2 text-[0.9375rem] text-ash transition-colors duration-500 ease-premium hover:text-graphite"
+              className="group mt-12 inline-flex items-center gap-2 text-[0.9375rem] text-ash transition-colors duration-500 ease-premium hover:text-graphite"
             >
               <ArrowLeft
                 size={16}
@@ -455,7 +508,7 @@ export function ProductPage({ product }: Props) {
         </section>
       )}
 
-      {/* ─── 08. CTA ─────────────────────────────────────────────────── */}
+      {/* ─── 11. CTA ─────────────────────────────────────────────────── */}
       <StoryCta
         product={product}
         onRequest={() => requestProduct(product, selectedVariant)}
@@ -471,7 +524,7 @@ export function ProductPage({ product }: Props) {
             className="absolute inset-0 cursor-zoom-out bg-ink/85 backdrop-blur-sm"
           />
           <img
-            src={selectedVariant?.image ?? product.image}
+            src={heroImage}
             width={selectedVariant?.imageWidth ?? product.imageWidth}
             height={selectedVariant?.imageHeight ?? product.imageHeight}
             alt={`ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}

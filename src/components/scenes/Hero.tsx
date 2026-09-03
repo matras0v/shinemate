@@ -55,7 +55,9 @@ const SLIDES: Slide[] = [
   },
 ]
 
-const AUTOPLAY_MS = 6000
+const AUTOPLAY_MS = 5500
+/** Ниже этого порога свайп считается случайным касанием, а не жестом. */
+const SWIPE_PX = 45
 
 export function Hero() {
   const section = useRef<HTMLElement>(null)
@@ -85,6 +87,14 @@ export function Hero() {
 
   useClearCoat(canvas, { pointer, intensity: 0.9, enabled: !reduced })
 
+  /*
+   * Любое ручное действие (стрелка, точка, свайп) сбрасывает таймер
+   * автопрокрутки: иначе человек листает вручную, а через полсекунды
+   * слайд уезжает сам — ощущение сломанного управления. Счётчик в
+   * зависимостях эффекта пересоздаёт интервал с нуля.
+   */
+  const [tick, setTick] = useState(0)
+
   useEffect(() => {
     if (reduced || paused) return
     const id = window.setInterval(() => {
@@ -96,10 +106,37 @@ export function Hero() {
       setIndex((i) => (i + 1) % SLIDES.length)
     }, AUTOPLAY_MS)
     return () => window.clearInterval(id)
-  }, [reduced, paused])
+  }, [reduced, paused, tick])
 
   const go = (delta: number) => {
     setIndex((i) => (i + delta + SLIDES.length) % SLIDES.length)
+    setTick((t) => t + 1)
+  }
+  const goTo = (i: number) => {
+    setIndex(i)
+    setTick((t) => t + 1)
+  }
+
+  /*
+   * Свайп по кадру на touch-экранах: на мобильном стрелки в углу кадра
+   * маленькие и попасть в них сложно, а листать карусель пальцем —
+   * ожидаемый жест. Порог по X и проверка, что движение горизонтальное,
+   * не дают жесту перехватывать обычный вертикальный скролл страницы.
+   */
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current
+    touchStart.current = null
+    if (!start) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return
+    go(dx < 0 ? 1 : -1)
   }
 
   /** Стартовое состояние блока hero: при отключённом движении его нет. */
@@ -134,6 +171,8 @@ export function Hero() {
       */}
       <div
         ref={pointerRef}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         className="absolute inset-x-0 top-0 h-[46dvh] lg:inset-0 lg:h-auto"
       >
         <motion.div
@@ -162,25 +201,46 @@ export function Hero() {
               привязана к левому краю всей секции и на lg заезжала прямо на
               текстовую колонку и CTA-кнопки под ней. Внутри контейнера фото
               она всегда остаётся над снимком, где бы текст ни заканчивался. */}
-          <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1 rounded-full bg-porcelain p-1 shadow-[0_4px_16px_rgba(26,28,30,0.14)] lg:bottom-8 lg:left-8">
+          <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1.5 rounded-full bg-porcelain p-1.5 shadow-[0_4px_16px_rgba(26,28,30,0.14)] lg:bottom-8 lg:left-8">
             <button
               type="button"
               onClick={() => go(-1)}
               aria-label="Предыдущий слайд"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft size={16} />
             </button>
-            <span className="px-1.5 font-mono text-[0.6875rem] tabular-nums tracking-[0.1em] text-graphite">
-              {String(index + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
-            </span>
+
+            {/* Индикаторы — не декоративные точки: каждая переключает слайд
+                и сбрасывает таймер автопрокрутки, как и стрелки. */}
+            <div className="flex items-center gap-1.5 px-1.5">
+              {SLIDES.map((s, i) => (
+                <button
+                  key={s.slug}
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-label={`Слайд ${i + 1}: ${s.lines.join(' ')}`}
+                  aria-current={i === index}
+                  className="group flex h-6 w-4 items-center justify-center"
+                >
+                  <span
+                    className={`block h-1.5 rounded-full transition-all duration-500 ease-premium ${
+                      i === index
+                        ? 'w-5 bg-graphite'
+                        : 'w-1.5 bg-graphite/25 group-hover:bg-graphite/50'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
               onClick={() => go(1)}
               aria-label="Следующий слайд"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
             >
-              <ChevronRight size={15} />
+              <ChevronRight size={16} />
             </button>
           </div>
         </motion.div>
@@ -346,20 +406,23 @@ export function Hero() {
             <a
               key={item.label}
               href={item.href}
-              // Горизонтальная раскладка (иконка + подпись в строку) не
-              // влезала в узкую колонку на мобильном — "Машинки"/"Пасты"
-              // с иконкой и стрелкой упирались в край и переносились
-              // криво. Вертикальная раскладка не зависит от ширины слова.
-              className="group flex flex-col items-center gap-2 rounded-xl px-1 py-2 text-center transition-colors duration-400 ease-premium hover:bg-mist"
+              /*
+               * Это полноценные переходы в разделы каталога, а не подписи
+               * под кадром: клиент отмечал, что строка выглядела
+               * кликабельной, но выглядела мелко и «случайно». Теперь у
+               * каждого раздела своя карточка с реальным фото товара,
+               * рамкой и стрелкой — вес соответствует роли навигации.
+               */
+              className="group flex flex-col items-start gap-3 rounded-2xl border border-graphite/[0.1] bg-porcelain/60 p-4 transition-colors duration-400 ease-premium hover:border-graphite/30 hover:bg-porcelain"
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mist transition-colors duration-400 ease-premium group-hover:bg-porcelain">
-                <img src={item.src} alt="" className="h-7 w-7 object-contain" />
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-mist transition-colors duration-400 ease-premium group-hover:bg-frost/40 xl:h-16 xl:w-16">
+                <img src={item.src} alt="" className="h-10 w-10 object-contain xl:h-12 xl:w-12" />
               </div>
-              <span className="flex items-center gap-1 text-[0.8125rem] text-ash transition-colors duration-400 ease-premium group-hover:text-graphite">
+              <span className="flex min-w-0 items-center gap-1.5 text-[0.9375rem] text-ash transition-colors duration-400 ease-premium group-hover:text-graphite xl:text-[1rem]">
                 {item.label}
                 <ArrowUpRight
-                  size={12}
-                  className="text-graphite/30 transition-all duration-400 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-slate"
+                  size={14}
+                  className="shrink-0 text-graphite/30 transition-all duration-400 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-slate"
                 />
               </span>
             </a>

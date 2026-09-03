@@ -92,23 +92,23 @@ export default function App() {
         // переход в пункт меню, где показывают уже пролистанное, лишён
         // смысла. BrandStory — отдельный материал: из чего собрана система,
         // совместимость внутри линейки и сферы применения.
-        <main className="pt-[4.5rem]">
+        <main className="pt-[5.25rem]">
           <BrandStory />
         </main>
       ) : route.name === 'technologies' ? (
         // Тоже полностью своё наполнение: карта подбора связки по стадиям
         // обработки и технологии самого оборудования. Про завод здесь
         // ничего нет — сайт дилерский, мы продаём, а не производим.
-        <main className="pt-[4.5rem]">
+        <main className="pt-[5.25rem]">
           <PolishingProcess />
           <TechFeatures />
         </main>
       ) : route.name === 'contacts' ? (
-        <main className="pt-[4.5rem]">
+        <main className="pt-[5.25rem]">
           <Contact onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
         </main>
       ) : route.name === 'wholesale' ? (
-        <main className="pt-[4.5rem]">
+        <main className="pt-[5.25rem]">
           <Wholesale onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />
         </main>
       ) : (

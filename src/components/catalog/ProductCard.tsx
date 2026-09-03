@@ -51,7 +51,17 @@ export function ProductCard({ product, index }: Props) {
       {...riseProps(reduced, { y: 28, delay: Math.min(index, 5) * 0.05, amount: 0.15 })}
       ref={cardRef}
       onMouseMove={handlePointerMove}
-      className="group relative flex flex-col overflow-hidden bg-porcelain transition-colors duration-500 ease-premium hover:bg-mist"
+      /*
+       * Карточка — самостоятельный объект с рамкой и скруглением, а не
+       * ячейка сетки, разделённая цветным «швом». Раньше сетка красилась
+       * фоном bg-graphite/10 с gap-px: в разделах, где товаров меньше,
+       * чем ячеек в строке (например, «Аксессуары» — 4 позиции на 3
+       * колонки), пустые ячейки показывались голыми серыми
+       * прямоугольниками — ровно тот визуальный дефект, который клиент
+       * отметил на видео. С рамкой у самой карточки пустых ячеек
+       * не существует в принципе, при любом числе товаров в разделе.
+       */
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-graphite/[0.1] bg-porcelain transition-colors duration-500 ease-premium hover:border-graphite/25 hover:bg-mist/50"
     >
       {!reduced && (
         <div
@@ -74,7 +84,7 @@ export function ProductCard({ product, index }: Props) {
       <a
         href={productHref(product)}
         aria-label={`Открыть карточку ${product.model}`}
-        className="relative z-10 flex flex-1 flex-col p-5 text-left outline-none focus-visible:ring-1 focus-visible:ring-graphite/40 sm:p-6"
+        className="relative z-10 flex flex-1 flex-col p-6 text-left outline-none focus-visible:ring-1 focus-visible:ring-graphite/40 sm:p-7"
       >
         {/* Клиент дважды отмечал, что подпись типа товара над фото плохо
             видна — titanium технически проходит контраст, но на мелком
@@ -90,7 +100,7 @@ export function ProductCard({ product, index }: Props) {
           горизонтали), поэтому кадру можно отдать больше высоты — товар
           читается сразу, а не угадывается.
         */}
-        <div className="relative mt-5 flex h-40 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-frost/25 via-transparent to-transparent sm:h-44 [perspective:700px]">
+        <div className="relative mt-6 flex h-52 items-center justify-center overflow-hidden rounded-2xl bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#F0F3F4_55%,#E6ECEE_100%)] sm:h-60 xl:h-64 [perspective:700px]">
           {/*
             Бейдж числа вариантов виден всегда, не только на hover — на
             touch-экране hover не срабатывает вовсе, и было неясно, что за
@@ -111,18 +121,18 @@ export function ProductCard({ product, index }: Props) {
             alt={`ShineMate ${product.model}`}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-contain transition-transform duration-500 ease-premium group-hover:[transform:perspective(700px)_rotateX(var(--tilt-y,0deg))_rotateY(var(--tilt-x,0deg))_scale(1.05)]"
+            className="h-full w-[88%] object-contain transition-transform duration-500 ease-premium group-hover:[transform:perspective(700px)_rotateX(var(--tilt-y,0deg))_rotateY(var(--tilt-x,0deg))_scale(1.05)]"
           />
         </div>
 
-        <h3 className="mt-5 text-xl tracking-tight sm:text-2xl">{product.model}</h3>
+        <h3 className="mt-6 text-[1.375rem] tracking-tight sm:text-[1.625rem]">{product.model}</h3>
         {/* Артикул виден сразу на карточке, а не только внутри drawer — для
             товара с одним исполнением это его SKU, для многовариантного —
             SKU того, что выбрано по умолчанию (бейдж выше поясняет, что есть ещё). */}
         <p className="mt-1 font-mono text-[0.75rem] tracking-tight text-titanium">
           Арт. {product.variants[0]?.sku}
         </p>
-        <p className="mt-2.5 line-clamp-2 text-[0.875rem] leading-relaxed text-slate">
+        <p className="mt-3 line-clamp-2 text-[0.9375rem] leading-relaxed text-slate">
           {product.lead}
         </p>
 
@@ -144,7 +154,7 @@ export function ProductCard({ product, index }: Props) {
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
               {multi ? `РРЦ от · ${variantsLabel(product.variants.length)}` : 'РРЦ'}
             </p>
-            <p className="mt-1 truncate text-lg tracking-tight">{formatPriceOrInquire(price)}</p>
+            <p className="mt-1.5 truncate text-[1.25rem] tracking-tight">{formatPriceOrInquire(price)}</p>
           </div>
           {/* Всегда видимая стрелка — сигнал «нажми, откроется подробнее», не завязанный на hover. */}
           <span

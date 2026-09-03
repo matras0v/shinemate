@@ -17,3 +17,4 @@ assets/raw
 # не для публичного репозитория
 PROJECT_STATE.md
 .claude/
+graphify-out/

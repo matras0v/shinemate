@@ -101,13 +101,53 @@ export type CompatGroup = {
   items: Product[]
 }
 
+/**
+ * Сравнение модели с соседями по разделу — только те характеристики,
+ * которые реально заполнены минимум у двух моделей раздела. Если общих
+ * характеристик нет, таблица не строится вовсе: пустая таблица со
+ * сплошными прочерками хуже её отсутствия.
+ */
+export type ComparisonTable = {
+  caption: string
+  columns: string[]
+  rows: {
+    slug: string
+    /** Готовая ссылка на карточку (категория + slug), как в остальном каталоге. */
+    href: string
+    model: string
+    kind: string
+    image: string
+    values: (string | null)[]
+    active: boolean
+  }[]
+}
+
+/**
+ * Связка «машинка → подложка → круг → паста»: то, что клиент называл
+ * «собери правильную систему ShineMate». Каждый шаг — реальная позиция
+ * каталога, а не абстрактная иконка; шаг самого товара подсвечен.
+ */
+export type SystemChain = {
+  caption: string
+  note: string
+  steps: { role: string; product: Product; note: string; active: boolean }[]
+}
+
 export type ProductStory = {
   /** Что это за товар и для какой работы — крупный блок под hero. */
   purpose: { title: string; body: string; points: string[] }
+  /** Ключевые характеристики крупными значениями (не таблицей). */
+  highlights: { label: string; value: string }[]
+  /** Все реальные кадры позиции: фото товара + фото исполнений. */
+  gallery: string[]
   /** Визуальные сцены: чередуются по композиции при рендере. */
   scenes: StoryScene[]
   /** Место в линейке / в цикле обработки. */
   scale?: CutScale
+  /** Чем модель отличается от соседей по разделу. */
+  comparison?: ComparisonTable
+  /** Место позиции в связке машинка → подложка → круг → паста. */
+  chain?: SystemChain
   /** Совместимость — только реальные товары из этого же каталога. */
   compat: CompatGroup[]
 }
@@ -725,6 +765,193 @@ function accessoryCompat(p: Product): CompatGroup[] {
     : []
 }
 
+/* ───────────────── Ключевые характеристики крупным планом ───────────────── */
+
+/**
+ * Порядок важности характеристик для editorial-блока под hero.
+ *
+ * Клиент отдельно просил: главные параметры — крупными значениями, а не
+ * строкой в таблице (таблица остаётся ниже, целиком). Список ранжирует
+ * реальные метки из прайса; берутся ПЕРВЫЕ ЧЕТЫРЕ существующие у товара,
+ * ничего не добирается «для красоты», если характеристик меньше.
+ */
+const HIGHLIGHT_ORDER = [
+  'Обороты',
+  'Ход эксцентрика',
+  'Ход',
+  'Мощность',
+  'Платформа',
+  'Напряжение',
+  'Ёмкость',
+  'Подложка',
+  'Подложки',
+  'Градация',
+  'Диаметры',
+  'Объём',
+  'Резьба',
+  'Толщина',
+  'Хвостовик',
+  'Кабель',
+  'Тип',
+  'Крепление',
+]
+
+function highlights(p: Product): { label: string; value: string }[] {
+  const out: { label: string; value: string }[] = []
+  for (const label of HIGHLIGHT_ORDER) {
+    const spec = p.specs.find((s) => s.label === label)
+    if (spec) out.push(spec)
+    if (out.length === 4) break
+  }
+  // Позиция может быть описана метками вне списка (например, «Совместимость»
+  // у адаптеров) — тогда добираем по порядку из прайса, но не выдумываем.
+  if (out.length < 3) {
+    for (const spec of p.specs) {
+      if (out.length === 4) break
+      if (!out.some((s) => s.label === spec.label)) out.push(spec)
+    }
+  }
+  return out
+}
+
+/** Все реальные кадры позиции без повторов: фото товара + фото исполнений. */
+function gallery(p: Product): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const src of [p.image, ...p.variants.map((v) => v.image)]) {
+    if (!src || seen.has(src)) continue
+    seen.add(src)
+    out.push(src)
+  }
+  return out
+}
+
+/* ───────────────────────── Сравнение с соседями ───────────────────────── */
+
+/** Метки, по которым осмысленно сравнивать модели одного раздела. */
+const COMPARE_LABELS = [
+  'Ход эксцентрика',
+  'Обороты',
+  'Мощность',
+  'Подложка',
+  'Платформа',
+  'Кабель',
+  'Градация',
+  'Толщина',
+  'Диаметры',
+  'Объём',
+  'Резьба',
+]
+
+function comparison(p: Product): ComparisonTable | undefined {
+  const family = productsByCategory(p.category)
+  if (family.length < 2) return undefined
+
+  // Колонка попадает в таблицу, только если значение есть минимум у двух
+  // моделей раздела — иначе получилась бы таблица из прочерков.
+  const columns = COMPARE_LABELS.filter(
+    (label) => family.filter((item) => item.specs.some((s) => s.label === label)).length >= 2,
+  ).slice(0, 4)
+  if (!columns.length) return undefined
+
+  // Максимум пять строк: сама модель плюс ближайшие соседи по цене — так
+  // сравнение остаётся читаемым и на мобильном, и в разделе из 19 позиций.
+  const price = (item: Product) => Math.min(...item.variants.map((v) => v.rrp))
+  const own = price(p)
+  const rows = [p, ...family.filter((x) => x.slug !== p.slug).sort((a, b) => Math.abs(price(a) - own) - Math.abs(price(b) - own)).slice(0, 4)]
+    .sort((a, b) => price(a) - price(b))
+    .map((item) => ({
+      slug: item.slug,
+      href: `catalog/${item.category}/${item.slug}`,
+      model: item.model,
+      kind: item.kind,
+      image: item.image,
+      values: columns.map((label) => item.specs.find((s) => s.label === label)?.value ?? null),
+      active: item.slug === p.slug,
+    }))
+
+  if (rows.length < 2) return undefined
+  return { caption: `${categoryTitle(p.category)} — чем модели отличаются`, columns, rows }
+}
+
+/* ──────────────────────── Связка «система ShineMate» ──────────────────────── */
+
+/**
+ * Собирает цепочку машинка → подложка → круг → паста вокруг текущей
+ * позиции. Все четыре шага — реальные товары каталога; шаг, которым
+ * является сам товар, помечается active. Если какого-то звена в каталоге
+ * нет, цепочка просто короче — заглушек не появляется.
+ */
+function systemChain(p: Product): SystemChain | undefined {
+  const kind = storyKind(p)
+  if (kind === 'accessory') return undefined
+
+  // Для не-машинок нужна модель-представитель: у подложки её задаёт
+  // собственное название (роторная/эксцентриковая), у круга и пасты —
+  // эксцентриковая машинка как самый ходовой инструмент линейки.
+  const machine =
+    kind === 'machine'
+      ? p
+      : kind === 'plate' && /роторн/i.test(p.model)
+        ? bySlug('ep820')
+        : kind === 'plate' && /шлифоваль/i.test(p.model)
+          ? bySlug('es516')
+          : bySlug('ex620')
+  const plate =
+    kind === 'plate'
+      ? p
+      : bySlug(
+          kind === 'machine'
+            ? isOrbitalLike(p)
+              ? 'plates-da'
+              : isSanderLike(p)
+                ? 'plates-sander'
+                : 'plates-rotary'
+            : 'plates-da',
+        )
+  const pad =
+    kind === 'pad'
+      ? p
+      : (() => {
+          const stage = kind === 'compound' ? COMPOUND_STAGE[p.slug] : undefined
+          const bySt: Record<number, string> = {
+            1: 'foam-diamond-t80',
+            2: 'foam-diamond-t40',
+            3: 'foam-diamond-t10',
+          }
+          return bySlug(stage !== undefined ? (bySt[stage] ?? 'foam-diamond-t40') : 'foam-diamond-t40')
+        })()
+  const compound =
+    kind === 'compound'
+      ? p
+      : (() => {
+          const stage = kind === 'pad' ? padStageIndex(p) : null
+          const bySt: Record<number, string> = {
+            1: 'v80-heavy-cut',
+            2: 'v40-medium-polish',
+            3: 'v20-final-finish',
+          }
+          return bySlug(stage !== null ? (bySt[stage] ?? 'v40-medium-polish') : 'v40-medium-polish')
+        })()
+
+  const steps: SystemChain['steps'] = []
+  const push = (role: string, product: Product | undefined, note: string) => {
+    if (product) steps.push({ role, product, note, active: product.slug === p.slug })
+  }
+  push('01 · Машинка', machine, 'Задаёт тип привода и скорость съёма')
+  push('02 · Подложка', plate, 'Резьба и диаметр под эту машинку')
+  push('03 · Круг', pad, 'Определяет агрессивность на этой стадии')
+  push('04 · Паста', compound, 'Работает в паре с кругом своей стадии')
+
+  if (steps.length < 3) return undefined
+  return {
+    caption: 'Связка, в которой работает эта позиция',
+    note:
+      'Результат даёт не отдельный инструмент, а сочетание: привод, посадка, круг и состав рассчитаны друг под друга внутри одной линейки.',
+    steps,
+  }
+}
+
 /* ─────────────────────────────── Сборка ─────────────────────────────── */
 
 export type StoryKind = 'machine' | 'pad' | 'compound' | 'plate' | 'accessory'
@@ -744,6 +971,12 @@ export function storyKind(p: Product): StoryKind {
  * данных есть у конкретной позиции.
  */
 export function buildStory(p: Product): ProductStory {
+  return { ...buildCore(p), highlights: highlights(p), gallery: gallery(p) }
+}
+
+type StoryCore = Omit<ProductStory, 'highlights' | 'gallery'>
+
+function buildCore(p: Product): StoryCore {
   switch (storyKind(p)) {
     case 'machine': {
       // У аккумуляторов и зарядных нет оборотов/хода/мощности — для них
@@ -760,6 +993,8 @@ export function buildStory(p: Product): ProductStory {
         purpose: machinePurpose(p),
         scenes,
         scale: machineScale(p),
+        comparison: comparison(p),
+        chain: systemChain(p),
         compat: machineCompat(p),
       }
     }
@@ -768,6 +1003,8 @@ export function buildStory(p: Product): ProductStory {
         purpose: padPurpose(p),
         scenes: padScenes(p),
         scale: padScale(p),
+        comparison: comparison(p),
+        chain: systemChain(p),
         compat: padCompat(p),
       }
     case 'compound':
@@ -775,18 +1012,23 @@ export function buildStory(p: Product): ProductStory {
         purpose: compoundPurpose(p),
         scenes: compoundScenes(p),
         scale: compoundScale(p),
+        comparison: comparison(p),
+        chain: systemChain(p),
         compat: compoundCompat(p),
       }
     case 'plate':
       return {
         purpose: simplePurpose(p),
         scenes: specScenes(p),
+        comparison: comparison(p),
+        chain: systemChain(p),
         compat: plateCompat(p),
       }
     default:
       return {
         purpose: simplePurpose(p),
         scenes: specScenes(p, 2),
+        comparison: comparison(p),
         compat: accessoryCompat(p),
       }
   }
