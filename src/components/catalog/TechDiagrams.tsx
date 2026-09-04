@@ -242,10 +242,18 @@ export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: 
    */
   const wrap = useRef<HTMLDivElement>(null)
   const inView = useInView(wrap, { once: true, amount: 0.5 })
+  // Свип обрывается, как только человек сам тронул регулятор — иначе
+  // ручной выбор чипа посреди 780-миллисекундного свипа сбросило бы
+  // следующим тиком.
+  const userTouched = useRef(false)
   useEffect(() => {
     if (!inView || reduced) return
     let i = 0
     const id = window.setInterval(() => {
+      if (userTouched.current) {
+        window.clearInterval(id)
+        return
+      }
       i += 1
       setActive(Math.min(i, steps - 1))
       if (i >= steps - 1) window.clearInterval(id)
@@ -278,7 +286,14 @@ export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: 
         {values.map((v, i) => {
           const [x, y] = polar(cx, cy, r, angleFor(i))
           return (
-            <g key={v} onMouseEnter={() => setActive(i)} className="cursor-pointer">
+            <g
+              key={v}
+              onMouseEnter={() => {
+                userTouched.current = true
+                setActive(i)
+              }}
+              className="cursor-pointer"
+            >
               <circle cx={x} cy={y} r="16" fill="transparent" />
               <circle
                 cx={x}
@@ -306,7 +321,10 @@ export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: 
           <button
             key={v}
             type="button"
-            onClick={() => setActive(i)}
+            onClick={() => {
+              userTouched.current = true
+              setActive(i)
+            }}
             aria-pressed={i === active}
             className={`rounded-full border px-3.5 py-1.5 font-mono text-[0.75rem] tabular-nums transition-colors duration-300 ease-premium ${
               i === active
