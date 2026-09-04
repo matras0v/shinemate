@@ -4,6 +4,7 @@ import { ArrowRight, Check } from 'lucide-react'
 import { formatPrice, minPrice, type Product } from '../../data/catalog'
 import {
   AssemblyChain,
+  MachineExploded,
   BatteryFlow,
   CutMeter,
   DefectProcess,
@@ -13,6 +14,7 @@ import {
   PadConstruction,
   PowerBar,
   RotaryPrinciple,
+  RoleLine,
   SeriesRow,
   VariantPicker,
   SizeScale,
@@ -236,11 +238,35 @@ function Diagram({
     case 'series':
       return <SeriesRow items={diagram.items} from={diagram.from} to={diagram.to} />
     case 'layers':
-      return <PadConstruction items={diagram.items} />
+      return (
+        <PadConstruction
+          items={diagram.items}
+          face={diagram.face}
+          color={diagram.color}
+          thickness={diagram.thickness}
+          hole={diagram.hole}
+        />
+      )
     case 'materials':
       return <MaterialCompare active={diagram.active} />
     case 'assembly':
       return <AssemblyChain items={diagram.items} />
+    case 'roles':
+      return <RoleLine items={diagram.items} />
+    case 'exploded':
+      return (
+        <MachineExploded
+          machineImage={diagram.machineImage}
+          machineLabel={diagram.machineLabel}
+          plateImage={diagram.plateImage}
+          plateLabel={diagram.plateLabel}
+          padImage={diagram.padImage}
+          padLabel={diagram.padLabel}
+          nodes={diagram.nodes}
+          motion={diagram.motion}
+          motionNote={diagram.motionNote}
+        />
+      )
     case 'process':
       return (
         <DefectProcess
@@ -256,7 +282,20 @@ function Diagram({
 }
 
 /** Схемам, которые сами по себе — крупный объект, рамка не нужна. */
-const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series', 'variants', 'process', 'layers', 'materials', 'assembly']
+const BARE_DIAGRAMS: SceneDiagram['kind'][] = [
+  'mount',
+  'cut',
+  'stroke',
+  'sizes',
+  'series',
+  'variants',
+  'process',
+  'layers',
+  'materials',
+  'assembly',
+  'exploded',
+  'roles',
+]
 
 /*
  * Схема принципа привода — это «технологический» акцент страницы, и он
@@ -264,6 +303,9 @@ const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes'
  * восемь одинаковых светлых секций подряд.
  */
 const DARK_DIAGRAMS: SceneDiagram['kind'][] = ['rotary', 'orbit']
+
+/** Схемы-чертежи, которым нужна высокая рамка: они масштабируются по ширине. */
+const TALL_DIAGRAMS: SceneDiagram['kind'][] = ['rotary', 'orbit', 'speed']
 
 type SceneVariant = 'diagram' | 'split' | 'metric' | 'band' | 'plain' | 'detail'
 
@@ -365,16 +407,26 @@ function Scene({
           >
             {bare ? (
               <>
-                <motion.div variants={rise} className="max-w-[62ch]">
-                  <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
-                    {scene.metric?.caption ?? 'Принцип работы'}
-                  </p>
-                  <h3 className="mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight">
-                    {scene.title}
-                  </h3>
-                  <p className="mt-5 text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
+                {/*
+                  Заголовок и пояснение стоят в две колонки, а не одной узкой
+                  строкой слева: иначе правая половина широкого экрана
+                  оставалась пустой, и секция читалась как недовёрстанная.
+                */}
+                <motion.div
+                  variants={rise}
+                  className="grid gap-x-12 gap-y-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-end"
+                >
+                  <div>
+                    <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
+                      {scene.metric?.caption ?? 'Принцип работы'}
+                    </p>
+                    <h3 className="mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight">
+                      {scene.title}
+                    </h3>
+                  </div>
+                  <p className="max-w-[54ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
                 </motion.div>
-                <motion.div variants={rise} className="mt-10">
+                <motion.div variants={rise} className="mt-12">
                   <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
                 </motion.div>
               </>
@@ -388,7 +440,14 @@ function Scene({
                       : 'border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E1E9EB_100%)]'
                   } ${right ? 'lg:order-2' : ''}`}
                 >
-                  <div className="min-h-[15rem] sm:min-h-[18rem] lg:min-h-[22rem]">
+                  {/*
+                    Высокая рамка нужна только схемам, которые сами по себе
+                    крупный чертёж (привод, регулятор оборотов): они
+                    масштабируются по ширине и заполняют её. Шкала мощности и
+                    поток батареи короткие — раньше их запирали в те же 22rem,
+                    и под содержимым оставалась пустая половина карточки.
+                  */}
+                  <div className={TALL_DIAGRAMS.includes(scene.diagram.kind) ? 'min-h-[15rem] sm:min-h-[18rem] lg:min-h-[22rem]' : ''}>
                     <Diagram diagram={scene.diagram} dark={dark} activeSku={activeSku} onSelectSku={onSelectSku} />
                   </div>
                 </motion.div>

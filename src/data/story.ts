@@ -94,7 +94,8 @@ export type SceneDiagram =
   | { kind: 'power'; rated: number; peak?: number; unit: string; family?: { model: string; watts: number }[]; model?: string }
   | { kind: 'mount'; items: { src: string; label: string; note: string }[] }
   | { kind: 'battery'; platform: string; capacity?: string }
-  | { kind: 'cut'; grades: number[]; active: number }
+  /* Цвет точки — реальный цвет круга из его характеристик, а не палитра. */
+  | { kind: 'cut'; grades: { value: number; color?: string; label?: string }[]; active: number }
   | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
   | { kind: 'sizes'; items: { label: string; note: string; mm: number }[] }
   /*
@@ -102,7 +103,18 @@ export type SceneDiagram =
    * → тело круга → крепление Velcro), а не разрез конкретной модели:
    * точной раскладки слоёв и толщин каждого слоя в прайсе нет.
    */
-  | { kind: 'layers'; items: { label: string; note: string }[] }
+  | {
+      kind: 'layers'
+      items: { label: string; note: string }[]
+      /** Форма рабочей кромки: рельеф / плоскость / ворс / микрофибра. */
+      face?: 'diamond' | 'flat' | 'nap' | 'fiber'
+      /** Цвет круга — из характеристики «Градация», если он там указан. */
+      color?: string
+      /** Реальная толщина из характеристик позиции. */
+      thickness?: string
+      /** Реальное центральное отверстие из характеристик позиции. */
+      hole?: string
+    }
   /*
    * Три материала кругов рядом: статичное сравнение, переиспользуемое на
    * каждой странице круга — меняется только то, какая карточка активна.
@@ -115,6 +127,32 @@ export type SceneDiagram =
    * в открытом доступе нет.
    */
   | { kind: 'assembly'; items: { label: string; note: string }[] }
+  /*
+   * Роли позиций внутри линейки — «Тип» и «Совместимость» берутся прямо
+   * из характеристик каждой позиции, поэтому четыре состава V-Range
+   * перестают быть четырьмя одинаковыми карточками с разным названием.
+   */
+  | {
+      kind: 'roles'
+      items: { href: string; image: string; model: string; role: string; compat?: string; stage?: string; active: boolean }[]
+    }
+  /*
+   * Машинка собирается в систему по мере скролла: тракт → подложка →
+   * круг → движение рабочей поверхности. Кадры настоящие, узлы названы
+   * общими терминами, внутреннего разреза не показывается.
+   */
+  | {
+      kind: 'exploded'
+      machineImage: string
+      machineLabel: string
+      plateImage?: string
+      plateLabel?: string
+      padImage?: string
+      padLabel?: string
+      nodes: { label: string; note: string }[]
+      motion: 'rotary' | 'orbit'
+      motionNote?: string
+    }
   /*
    * Дефект → абразив → результат. Только для составов, только с реальными
    * дефектами стадии из официальной таблицы применения — никаких
@@ -430,22 +468,40 @@ function machineScenes(p: Product): StoryScene[] {
   const orbital = isOrbitalLike(p) || (isSanderLike(p) && !!orbit)
   if (orbital || isRotaryLike(p)) {
     const workUnit = orbital
-      ? { label: 'Орбитальный узел', note: 'Задаёт орбитальную траекторию рабочей поверхности' }
-      : { label: 'Шпиндель', note: 'Ось вращения совпадает с осью круга' }
-    const items: { label: string; note: string }[] = [
+      ? { label: 'Рабочий узел — эксцентрик', note: 'Смещает ось круга и задаёт орбитальную траекторию' }
+      : { label: 'Рабочий узел — шпиндель', note: 'Ось вращения совпадает с осью круга' }
+    const nodes: { label: string; note: string }[] = [
       ...(p.category === 'cordless'
-        ? [{ label: 'Аккумулятор', note: 'Источник питания, общий для всей платформы' }]
+        ? [{ label: 'Аккумулятор', note: 'Питание платформы: инструмент не привязан к розетке и посту' }]
         : []),
-      { label: 'Управление', note: 'Держит выбранные обороты под нажимом и нагрузкой' },
+      { label: 'Управление', note: 'Держит выбранный режим под нажимом, а не только на холостом ходу' },
+      { label: 'Двигатель', note: /бесщёточн|brushless/i.test(p.kind + p.lead) ? 'Бесщёточный: нет щёток как расходника, ровнее момент под нагрузкой' : 'Источник вращения рабочего тракта' },
       { label: 'Привод', note: 'Передаёт вращение от двигателя к рабочему узлу' },
       workUnit,
-      { label: 'Подложка и круг', note: 'Превращают траекторию рабочего узла в работу по лаку' },
+      { label: 'Подложка', note: 'Соединяет инструмент с кругом: резьба под машинку, диаметр под круг' },
+      { label: 'Круг', note: 'Единственное, что касается лака — характер работы задаёт он' },
     ]
+
+    /* Оснастка берётся РЕАЛЬНАЯ: подложка своего типа машинки и круг, совместимый с ней. */
+    const plate = plateForMachine(p)
+    const pad = orbital ? bySlug('foam-diamond-t40') : bySlug('wool-high-nap')
+
     scenes.push({
-      title: 'От управления к рабочей поверхности',
+      title: 'Машинка собирается в систему',
       body:
-        'Каждый узел решает свою задачу: управление держит режим, привод передаёт вращение, рабочий блок задаёт траекторию, а подложка с кругом превращают её в работу по лакокрасочному покрытию.',
-      diagram: { kind: 'assembly', items },
+        'Инструмент имеет смысл только целиком: управление держит режим, двигатель даёт вращение, привод доводит его до рабочего узла, а подложка с кругом превращают это движение в работу по лаку. Прокрутите — система соберётся.',
+      diagram: {
+        kind: 'exploded',
+        machineImage: p.image,
+        machineLabel: p.model,
+        plateImage: plate?.image,
+        plateLabel: plate?.model,
+        padImage: pad?.image,
+        padLabel: pad?.model,
+        nodes,
+        motion: orbital ? 'orbit' : 'rotary',
+        motionNote: orbital ? (orbit ? `ход ${orbit}` : 'орбита') : speed ?? 'вращение',
+      },
     })
   }
 
@@ -567,13 +623,18 @@ function machineScenes(p: Product): StoryScene[] {
     })
   }
 
-  // 07. Бесщёточный двигатель — только там, где это прямо указано у вендора.
+  /*
+   * 07. Бесщёточный двигатель — только там, где это прямо указано у
+   * вендора. Раньше здесь стояло ЕЩЁ ОДНО фото той же машинки: снимок
+   * корпуса ничего не рассказывает про двигатель. Теперь это текстовая
+   * сцена с вынесенной сутью — а сам узел показан в сцене сборки выше.
+   */
   if (/бесщёточн|brushless/i.test(p.kind + p.lead)) {
     scenes.push({
       title: 'Бесщёточный двигатель',
       body:
-        'Нет щёток — нет расходника, который стирается и меняется. Двигатель ровнее держит момент под нагрузкой и меньше греется на долгой смене, а обслуживание сводится к чистке.',
-      image: p.image,
+        'Нет щёток — нет расходника, который стирается и меняется по регламенту. Двигатель ровнее держит момент под нагрузкой и меньше греется на долгой смене, а обслуживание сводится к чистке инструмента.',
+      metric: { value: 'Без щёток', caption: 'Двигатель' },
     })
   }
 
@@ -747,26 +808,75 @@ function padPurpose(p: Product): ProductStory['purpose'] {
  * фото-референсах клиента одна и та же позиция подписана то 24, то
  * 25 мм — то есть это не источник, которому можно доверять цифру.
  */
+/** Цвет круга берётся из его же характеристики «Градация»: «T40, оранжевый». */
+const PAD_COLORS: { re: RegExp; hex: string; name: string }[] = [
+  { re: /зелён/i, hex: '#2F7D53', name: 'зелёный' },
+  { re: /жёлт|желт/i, hex: '#E0A81B', name: 'жёлтый' },
+  { re: /син/i, hex: '#2D5FA6', name: 'синий' },
+  { re: /оранж/i, hex: '#DE6A18', name: 'оранжевый' },
+  { re: /красн/i, hex: '#BC3B2E', name: 'красный' },
+  { re: /чёрн|черн/i, hex: '#33383B', name: 'чёрный' },
+]
+
+function padColor(p: Product): { hex: string; name: string } | null {
+  const grade = specValue(p, 'Градация') ?? ''
+  return PAD_COLORS.find((c) => c.re.test(grade)) ?? null
+}
+
+/** Форма рабочей кромки — по типу круга, а не по догадке. */
+function padFace(p: Product): 'diamond' | 'flat' | 'nap' | 'fiber' {
+  if (/шерст/i.test(p.kind)) return 'nap'
+  if (/микрофибр/i.test(p.kind)) return 'fiber'
+  if (/black diamond/i.test(p.model)) return 'diamond'
+  return 'flat'
+}
+
 function padConstructionScene(p: Product): StoryScene | null {
   if (/гибкий вал|конус/i.test(p.kind)) return null
   const material = /шерст/i.test(p.kind) ? 'шерсть' : /микрофибр/i.test(p.kind) ? 'микрофибра' : 'поролон'
+  const face = padFace(p)
+  const color = padColor(p)
+  const thickness = specValue(p, 'Толщина') ?? undefined
+  const hole = specValue(p, 'Центральное отверстие') ?? undefined
+  /*
+   * Подушка есть не у всех кругов — но там, где она указана в прайсе
+   * (микрофибра 6 и 12 мм, шерсть с подушкой 6 мм), это реальный
+   * промежуточный слой, и он должен быть в разрезе, а не пропадать.
+   */
+  const cushion = specValue(p, 'Подушка') ?? (/подушка/i.test(specValue(p, 'Исполнение') ?? '') ? specValue(p, 'Исполнение') : null)
+
   const faceNote =
-    material === 'шерсть'
+    face === 'nap'
       ? 'Ворс определяет характер контакта с ЛКП и скорость съёма'
-      : material === 'микрофибра'
-        ? 'Плетение определяет характер контакта с ЛКП и чистоту финиша'
-        : 'Жёсткость поролона определяет характер контакта с ЛКП'
+      : face === 'fiber'
+        ? 'Короткое плотное волокно: рез близко к шерсти, след чище'
+        : face === 'diamond'
+          ? 'Рельеф «алмазная грань»: паста меньше разбрызгивается, пятно контакта дольше держит форму'
+          : 'Ровная плоскость: одинаковое давление по всей площади круга'
+
+  const items = [
+    { label: 'Рабочая поверхность', note: faceNote },
+    ...(cushion
+      ? [{ label: 'Подушка', note: `${cushion} — промежуточный слой между рабочей поверхностью и креплением` }]
+      : []),
+    {
+      label: `Тело круга — ${material}`,
+      note: thickness ? `Держит форму и амортизирует нажим. Общая толщина ${thickness}` : 'Держит форму и амортизирует нажим машинки',
+    },
+    { label: 'Крепление Velcro', note: 'Фиксирует круг на подложке, позволяет менять его без инструмента' },
+  ]
+
   return {
     title: 'Как устроен рабочий круг',
     body:
       'Круг — это не один сплошной материал, а несколько слоёв с разной задачей: у каждого своя роль в передаче давления от машинки к лакокрасочному покрытию.',
     diagram: {
       kind: 'layers',
-      items: [
-        { label: 'Рабочая поверхность', note: faceNote },
-        { label: `Тело круга — ${material}`, note: 'Держит форму и амортизирует нажим машинки' },
-        { label: 'Крепление Velcro', note: 'Фиксирует круг на подложке, позволяет менять его без инструмента' },
-      ],
+      items,
+      face,
+      color: color?.hex,
+      thickness,
+      hole,
     },
   }
 }
@@ -880,15 +990,29 @@ function padScenes(p: Product): StoryScene[] {
   if (compare) scenes.push(compare)
 
   if (grade !== null) {
-    // Шкала строится по РЕАЛЬНОМУ составу каталога: все градации, которые
-    // действительно есть в прайсе, без придуманных «cut 8 из 10».
-    const grades = Array.from(
-      new Set(
-        productsByCategory('pads')
-          .map(padGrade)
-          .filter((g): g is number => g !== null),
-      ),
-    ).sort((a, b) => a - b)
+    /*
+     * Шкала строится по РЕАЛЬНОМУ составу каталога: все градации, которые
+     * действительно есть в прайсе, без придуманных «cut 8 из 10». Цвет
+     * каждой точки берётся из характеристики того круга, который эту
+     * градацию занимает — «T40, оранжевый» действительно оранжевый.
+     */
+    const byGrade = new Map<number, Product>()
+    for (const item of productsByCategory('pads')) {
+      const g = padGrade(item)
+      if (g === null) continue
+      // Приоритет у того круга, который совпадает по материалу с открытым:
+      // на странице микрофибры шкала не должна краситься в цвета поролона.
+      const existing = byGrade.get(g)
+      const sameKind = item.kind === p.kind
+      if (!existing || (sameKind && existing.kind !== p.kind)) byGrade.set(g, item)
+    }
+    const grades = [...byGrade.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([value, item]) => ({
+        value,
+        color: padColor(item)?.hex,
+        label: value === grade ? p.model : undefined,
+      }))
     scenes.push({
       title: 'Что означает градация',
       body:
@@ -1168,6 +1292,35 @@ function compoundScenes(p: Product): StoryScene[] {
           image: item.image,
           active: item.slug === p.slug,
         })),
+      },
+    })
+  }
+
+  /*
+   * У каждого состава своя роль в линейке. И «Тип», и «Совместимость» —
+   * реальные характеристики позиции из прайса, поэтому карточки
+   * отличаются содержательно, а не только названием.
+   */
+  const roleLine = bySlugs(order)
+  if (roleLine.length >= 3) {
+    scenes.push({
+      title: 'Четыре состава — четыре разные задачи',
+      body:
+        'Линейка не про «сильнее — слабее»: у каждого состава свой тип реза и свой набор кругов, с которыми он рассчитан работать. Выбор начинается с дефекта на панели, а не с номера на флаконе.',
+      diagram: {
+        kind: 'roles',
+        items: roleLine.map((item) => {
+          const st = COMPOUND_STAGE[item.slug]
+          return {
+            href: `catalog/${item.category}/${item.slug}`,
+            image: item.image,
+            model: item.model,
+            role: specValue(item, 'Тип') ?? item.kind,
+            compat: specValue(item, 'Совместимость') ?? undefined,
+            stage: st !== undefined ? `Стадия ${POLISH_STAGES[st].index} · ${POLISH_STAGES[st].title}` : undefined,
+            active: item.slug === p.slug,
+          }
+        }),
       },
     })
   }
@@ -1522,6 +1675,37 @@ function plateScenes(p: Product): StoryScene[] {
     })
   }
 
+  /*
+   * Из чего состоит сама подложка. Слои названы теми деталями, которые
+   * есть в характеристиках позиции (резьба, липучка) — про внутренний
+   * демпфер и его жёсткость данных нет, и заявлять их нельзя.
+   */
+  scenes.push({
+    title: sanding ? 'Из чего состоит подложка' : 'Липучка — расходник, а не вечная деталь',
+    body: sanding
+      ? 'Подложка собрана из посадочной части, тела и рабочей плоскости с липучкой. Липучка изнашивается быстрее самой машинки, поэтому подложка в прайсе идёт отдельной позицией и меняется без сервиса.'
+      : 'Подложка собрана из посадочной части, тела и рабочей плоскости с липучкой. Именно липучка изнашивается первой — круг начинает «ползти» под нагрузкой. Поэтому подложка идёт отдельной позицией и меняется без обращения в сервис.',
+    diagram: {
+      kind: 'layers',
+      face: 'flat',
+      color: '#8A9296',
+      items: [
+        {
+          label: thread ? `Посадка — резьба ${thread}` : 'Посадочная часть',
+          note: 'Соединяется со шпинделем машинки: тип резьбы задаёт совместимость',
+        },
+        {
+          label: 'Тело подложки',
+          note: diameters ? `Задаёт рабочую плоскость. Диаметры: ${diameters}` : 'Задаёт рабочую плоскость и передаёт нажим равномерно',
+        },
+        {
+          label: mount ? `Рабочая плоскость — ${mount.toLowerCase()}` : 'Рабочая плоскость с липучкой',
+          note: sanding ? 'Удерживает абразивный диск и изнашивается первой' : 'Удерживает круг и изнашивается первой',
+        },
+      ],
+    },
+  })
+
   // Реальные исполнения как размерный ряд: цифры прямо из прайса.
   if (p.variants.length >= 2) {
     scenes.push({
@@ -1610,23 +1794,70 @@ function accessoryScenes(p: Product): StoryScene[] {
    * стоит в рабочем дне — на реальных кадрах каталога, без выдуманных
    * материалов, объёмов и нагрузок.
    */
-  if (/тележк|сумка|держател/i.test(p.kind)) {
-    const carried = bySlugs(['ep820', 'foam-diamond-t40', 'v40-medium-polish']).filter(Boolean)
+  /*
+   * У каждого аксессуара своя роль в рабочем дне, и раньше все трое —
+   * тележка, сумка и держатель — получали ОДНУ И ТУ ЖЕ сцену «что уезжает
+   * вместе с постом». Теперь у каждого свой сценарий, но собранный из
+   * реальных позиций каталога и реальных характеристик самой позиции.
+   */
+  const carried = bySlugs(['ep820', 'foam-diamond-t40', 'v40-medium-polish']).filter(Boolean)
+
+  if (/тележк/i.test(p.kind) && carried.length === 3) {
+    scenes.push({
+      title: 'Рабочее место собирается вокруг поста',
+      body:
+        'Пост нужен не для хранения, а для того, чтобы во время работы всё было в одном шаге: машинка под рукой, круги разложены по стадиям, составы стоят рядом. Переход к следующей панели не превращается в поход за оснасткой через весь бокс.',
+      diagram: {
+        kind: 'mount',
+        items: [
+          { src: carried[0].image, label: 'Машинки', note: 'Основной инструмент под рукой' },
+          { src: carried[1].image, label: 'Круги по стадиям', note: 'Рез, полировка, финиш — раздельно' },
+          { src: carried[2].image, label: 'Составы', note: 'Линейка V-Range на своём месте' },
+        ],
+      },
+    })
+  }
+
+  if (/сумка/i.test(p.kind)) {
     if (carried.length === 3) {
       scenes.push({
-        title: 'Что уезжает вместе с постом',
+        title: 'Что реально едет на выезд',
         body:
-          'Машинка, круги и составы — это три разные группы расходников, и на выезде они обычно едут вместе. Позиция собирает их в одном месте, поэтому подготовка к работе не начинается с поиска подложки по багажнику.',
+          'Выездная работа — это машинка, набор кругов под стадии и составы. Сумка рассчитана на такой комплект: 18" берут под компактный набор, 20" — когда с собой едут запасные круги и вторая паста. Комплект на кадре — пример сборки, а не содержимое поставки.',
         diagram: {
           kind: 'mount',
           items: [
-            { src: carried[0].image, label: carried[0].model, note: carried[0].kind },
-            { src: carried[1].image, label: 'Круги', note: 'Полировальные круги каталога' },
-            { src: carried[2].image, label: 'Составы', note: 'Линейка V-Range' },
+            { src: carried[0].image, label: 'Машинка', note: 'С подложкой в сборе' },
+            { src: carried[1].image, label: 'Круги', note: 'Комплект под стадии обработки' },
+            { src: carried[2].image, label: 'Составы', note: 'Рабочие пасты на смену' },
           ],
         },
       })
     }
+    if (p.variants.length >= 2) {
+      scenes.push({
+        title: 'Два размера — два сценария',
+        body:
+          'Разница между исполнениями не в отделке, а в том, сколько оснастки помещается: компактный набор на одну машинку против полного комплекта с запасом кругов и составов.',
+        diagram: {
+          kind: 'sizes',
+          items: p.variants.map((v) => ({
+            label: v.label.replace(/^сумка\s*/i, ''),
+            note: /20/.test(v.label) ? 'Полный комплект с запасом' : 'Компактный набор на выезд',
+            mm: firstNumber(v.label) ?? 0,
+          })),
+        },
+      })
+    }
+  }
+
+  if (/держател/i.test(p.kind)) {
+    scenes.push({
+      title: 'Машинка не лежит на кузове',
+      body:
+        'Полировальная машинка, положенная на крыло или бампер, — это риск и для лака, и для самой машинки: круг собирает пыль с пола, кабель попадает под колёса, корпус царапает панель. Держатель даёт инструменту постоянное место в шаге от рабочей зоны.',
+      metric: specValue(p, 'Крепление') ? { value: specValue(p, 'Крепление')!, caption: 'Крепление' } : undefined,
+    })
   }
 
   /*

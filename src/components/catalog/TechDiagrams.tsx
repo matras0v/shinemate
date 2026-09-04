@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
@@ -760,9 +760,19 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
  * «cut 8/10» — таких данных у вендора нет; есть только порядок градаций
  * T10…T160, и именно он показывается.
  */
-export function CutMeter({ grades, active }: { grades: number[]; active: number }) {
-  const i = Math.max(grades.indexOf(active), 0)
-  const pct = grades.length > 1 ? (i / (grades.length - 1)) * 100 : 0
+export type GradeStop = { value: number; color?: string; label?: string }
+
+/**
+ * Шкала градаций: от мягкого финиша к тяжёлому резу. Цвета точек —
+ * РЕАЛЬНЫЕ цвета кругов из характеристик позиции («T40, оранжевый»), а не
+ * декоративный градиент; там, где цвет в данных не указан (микрофибра),
+ * точка остаётся нейтральной. Позиция маркера рисуется сразу, без
+ * «доезда» по появлению во вьюпорте: если IntersectionObserver не
+ * сработает, шкала не должна врать про градацию круга.
+ */
+export function CutMeter({ grades, active }: { grades: GradeStop[]; active: number }) {
+  const i = Math.max(grades.findIndex((g) => g.value === active), 0)
+  const activeStop = grades[i]
 
   return (
     <div className="w-full">
@@ -770,35 +780,59 @@ export function CutMeter({ grades, active }: { grades: number[]; active: number 
         <span>Мягче · чище глянец</span>
         <span>Жёстче · больше съём</span>
       </div>
-      {/*
-        Маркер рисуется сразу в нужной позиции, без «доезда» по появлению
-        во вьюпорте: если IntersectionObserver не сработает (фон вкладки,
-        нестандартный браузер), шкала не должна остаться на нуле и врать
-        про градацию круга.
-      */}
-      <div className="relative mt-5 h-[3px] w-full rounded-full bg-gradient-to-r from-graphite/15 via-graphite/30 to-graphite">
-        <span
-          aria-hidden
-          className="absolute -top-[7px] h-[17px] w-[17px] rounded-full border-[3px] border-porcelain bg-ember transition-[left] duration-500 ease-premium"
-          style={{ left: `calc(${pct}% - 8px)` }}
-        />
+
+      <div className="relative mt-6 h-[3px] w-full rounded-full bg-gradient-to-r from-graphite/15 via-graphite/30 to-graphite">
+        {/* Точки серии в реальных цветах — по позиции своей градации */}
+        {grades.map((g, gi) => {
+          const left = grades.length > 1 ? (gi / (grades.length - 1)) * 100 : 0
+          const on = g.value === active
+          return (
+            <span
+              key={g.value}
+              aria-hidden
+              className={`absolute rounded-full border-porcelain transition-all duration-500 ease-premium ${
+                on ? 'z-10 h-[19px] w-[19px] border-[3px]' : 'h-[11px] w-[11px] border-2'
+              }`}
+              style={{
+                left: `calc(${left}% - ${on ? 9.5 : 5.5}px)`,
+                top: on ? -8 : -4,
+                background: g.color ?? (on ? EMBER : '#8A9296'),
+                boxShadow: on ? `0 0 0 3px rgba(254,139,12,0.28)` : undefined,
+              }}
+            />
+          )
+        })}
       </div>
-      <ol className="mt-6 flex flex-wrap gap-2">
+
+      <ol className="mt-7 flex flex-wrap gap-2">
         {grades.map((g) => (
           <li
-            key={g}
-            aria-current={g === active ? 'true' : undefined}
-            className={`rounded-full border px-3.5 py-1.5 font-mono text-[0.75rem] tabular-nums ${
-              g === active ? 'border-graphite bg-graphite text-porcelain' : 'border-graphite/[0.16] text-slate'
+            key={g.value}
+            aria-current={g.value === active ? 'true' : undefined}
+            className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[0.75rem] tabular-nums ${
+              g.value === active ? 'border-graphite bg-graphite text-porcelain' : 'border-graphite/[0.16] text-slate'
             }`}
           >
-            T{g}
+            {g.color && (
+              <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: g.color }} />
+            )}
+            T{g.value}
           </li>
         ))}
       </ol>
+
+      {activeStop?.label && (
+        <p className="mt-4 text-[0.8125rem] leading-relaxed text-slate">
+          Открытая позиция — <span className="text-graphite">{activeStop.label}</span>. Соседние градации отличаются жёсткостью, а не посадкой:
+          круг меняется на той же подложке.
+        </p>
+      )}
     </div>
   )
 }
+
+/* Позиция маркера считается по индексу, поэтому шкала одинаково работает
+   и для 5 градаций серии, и для полного набора каталога. */
 
 /* ───────────────────────── Сравнение хода эксцентрика ───────────────────────── */
 
@@ -877,52 +911,341 @@ export function SizeScale({ items }: { items: { label: string; note: string; mm:
   )
 }
 
+/* ───────────────────────── Машинка как система: сборка по скроллу ───────────────────────── */
+
+export type ExplodedData = {
+  /** Реальные кадры каталога — машинка, её штатная подложка и совместимый круг. */
+  machineImage: string
+  machineLabel: string
+  plateImage?: string
+  plateLabel?: string
+  padImage?: string
+  padLabel?: string
+  /** Узлы рабочего тракта — общими терминами, без выдуманного разреза. */
+  nodes: { label: string; note: string }[]
+  /** Тип движения рабочей поверхности — определяет анимацию в финале сцены. */
+  motion: 'rotary' | 'orbit'
+  /** Подпись движения: реальный ход эксцентрика или диапазон оборотов из прайса. */
+  motionNote?: string
+}
+
+/**
+ * Главная сцена страницы машинки: инструмент собирается в систему по мере
+ * скролла. Сначала подсвечивается рабочий тракт (управление → двигатель →
+ * привод → рабочий узел), затем к машинке снизу подходит её штатная
+ * подложка, затем на подложку садится круг, и в финале рабочая
+ * поверхность начинает двигаться так, как двигается именно этот тип
+ * машинки: ротор — вокруг одной оси, эксцентрик — вращение плюс орбита.
+ *
+ * ЧТО ЗДЕСЬ ЧЕСТНО, А ЧТО НЕТ. Фотографии — настоящие кадры каталога
+ * (машинка, подложка, круг). Узлы тракта названы общими для любой
+ * полировальной машинки словами: точной компоновки редуктора и обмотки
+ * у ShineMate в открытом доступе нет, и «разрез EP830» здесь не рисуется
+ * ни в каком виде. Движение в финале — принцип привода, а не симуляция.
+ *
+ * ДОСТУПНОСТЬ. Весь текст сцены присутствует в DOM всегда: скролл меняет
+ * только подсветку и положение, но не прячет информацию. При
+ * prefers-reduced-motion сцена превращается в обычный статичный блок —
+ * без sticky, без трансформаций, все узлы показаны сразу.
+ */
+export function MachineExploded(data: ExplodedData) {
+  const reduced = useReducedMotion()
+  const track = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: track, offset: ['start start', 'end end'] })
+  const [step, setStep] = useState(0)
+
+  const n = data.nodes.length
+  /*
+   * Первая половина прокрутки разбирается по узлам тракта, вторая —
+   * на сборку подложки и круга. Индекс шага считается один раз здесь,
+   * а не в каждом узле: так подсветка списка и положение оснастки
+   * всегда согласованы между собой.
+   */
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    const next = Math.min(n - 1, Math.floor(v * (n + 0.35)))
+    setStep((prev) => (prev === next ? prev : next))
+  })
+
+  const plateY = useTransform(scrollYProgress, [0.34, 0.6], [120, 0])
+  const plateOpacity = useTransform(scrollYProgress, [0.32, 0.52], [0, 1])
+  const padY = useTransform(scrollYProgress, [0.58, 0.84], [150, 0])
+  const padOpacity = useTransform(scrollYProgress, [0.56, 0.76], [0, 1])
+  const machineY = useTransform(scrollYProgress, [0, 0.6], [0, -18])
+  const runOpacity = useTransform(scrollYProgress, [0.82, 0.95], [0, 1])
+
+  /* Статичная раскладка: то же содержание, без sticky и без скролл-трансформаций. */
+  if (reduced) {
+    return (
+      <div className="grid gap-8 lg:grid-cols-[1fr_minmax(0,20rem)] lg:items-center">
+        <div className="flex flex-col items-center gap-2 rounded-[1.75rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] p-8">
+          <img src={data.machineImage} alt={data.machineLabel} className="h-40 w-auto object-contain" />
+          {data.plateImage && <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-20 w-auto object-contain" />}
+          {data.padImage && <img src={data.padImage} alt={data.padLabel ?? ''} className="h-20 w-auto object-contain" />}
+        </div>
+        <ol className="space-y-4">
+          {data.nodes.map((node, i) => (
+            <li key={node.label} className="border-l-2 border-ember/40 pl-4">
+              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</p>
+              <p className="mt-1 text-[0.9375rem] tracking-tight text-graphite">{node.label}</p>
+              <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{node.note}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )
+  }
+
+  return (
+    <div ref={track} className="relative" style={{ height: `${Math.min(300, 110 + n * 30)}vh` }}>
+      {/*
+        Высота липкого блока равна экрану, а содержимое РАСТЯГИВАЕТСЯ на всю
+        эту высоту (items-stretch + h-full у кадра). Иначе, когда блок
+        открепляется в конце трека, снизу остаётся пустой экран — ровно та
+        «дыра», которой на премиальной странице быть не должно.
+      */}
+      {/* pt-24 — запас под фиксированный хедер: без него верх сцены уходит под шапку. */}
+      <div className="sticky top-0 flex h-[100svh] items-center pb-10 pt-24 lg:pb-12 lg:pt-28">
+        <div className="grid h-full w-full gap-6 lg:grid-cols-[1fr_minmax(0,19rem)] lg:items-stretch lg:gap-12">
+          {/* Сборка: машинка → подложка → круг, соединённые технической линией */}
+          <div className="relative flex h-full min-h-[20rem] flex-col items-center justify-center overflow-hidden rounded-[1.75rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] px-6 py-8">
+            {/* Технический фон — чертёжная сетка, как на остальных схемах */}
+            <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full text-graphite/[0.07]">
+              <Grid id="exploded-grid" step={32} />
+              <rect width="100%" height="100%" fill="url(#exploded-grid)" />
+            </svg>
+
+            <motion.img
+              src={data.machineImage}
+              alt={data.machineLabel}
+              style={{ y: machineY }}
+              className="relative z-30 max-h-[46%] w-auto max-w-full flex-shrink-0 object-contain drop-shadow-[0_22px_34px_rgba(26,28,30,0.15)]"
+            />
+
+            {(data.plateImage || data.padImage) && (
+              <div className="relative z-20 mt-7 flex items-start justify-center gap-8 sm:gap-14">
+                {/* Технический стык: линия от машинки к оснастке */}
+                <span aria-hidden className="absolute -top-7 left-1/2 h-7 w-px -translate-x-1/2 bg-ember/45" />
+                <span aria-hidden className="absolute -top-1 left-[calc(50%-3.5rem)] hidden h-px w-28 bg-ember/25 sm:block sm:left-[calc(50%-4.75rem)] sm:w-[9.5rem]" />
+                {data.plateImage && (
+                  <motion.figure style={{ y: plateY, opacity: plateOpacity }} className="flex w-24 flex-col items-center gap-2.5 sm:w-32">
+                    <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_20px_rgba(26,28,30,0.11)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
+                      <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-[74%] w-[74%] object-contain" />
+                    </span>
+                    <figcaption className="text-center font-mono text-[0.625rem] uppercase leading-tight tracking-[0.14em] text-titanium">
+                      Подложка
+                    </figcaption>
+                  </motion.figure>
+                )}
+                {data.padImage && (
+                  <motion.figure style={{ y: padY, opacity: padOpacity }} className="flex w-24 flex-col items-center gap-2.5 sm:w-32">
+                    <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_20px_rgba(26,28,30,0.11)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
+                      <img
+                        src={data.padImage}
+                        alt={data.padLabel ?? ''}
+                        className={`h-[74%] w-[74%] object-contain ${data.motion === 'rotary' ? 'sm-spin-slow' : 'sm-orbit-pad'}`}
+                      />
+                    </span>
+                    <figcaption className="text-center font-mono text-[0.625rem] uppercase leading-tight tracking-[0.14em] text-titanium">
+                      Круг
+                    </figcaption>
+                  </motion.figure>
+                )}
+              </div>
+            )}
+
+            {/* Подпись движения появляется только когда система собрана */}
+            {data.motionNote && (
+              <motion.p
+                style={{ opacity: runOpacity }}
+                className="relative z-20 mt-7 rounded-full bg-porcelain/90 px-4 py-1.5 text-center font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
+              >
+                {data.motion === 'rotary' ? 'Вращение · ' : 'Вращение + орбита · '}
+                {data.motionNote}
+              </motion.p>
+            )}
+          </div>
+
+          {/* Рабочий тракт: активный узел подсвечен, остальные читаются всегда */}
+          <ol className="space-y-3">
+            {data.nodes.map((node, i) => {
+              const on = i <= step
+              return (
+                <li
+                  key={node.label}
+                  aria-current={i === step ? 'step' : undefined}
+                  className={`border-l-2 pl-4 transition-colors duration-500 ${on ? 'border-ember' : 'border-graphite/15'}`}
+                >
+                  <p className={`font-mono text-[0.625rem] uppercase tracking-[0.16em] transition-colors duration-500 ${on ? 'text-ember' : 'text-titanium'}`}>
+                    {String(i + 1).padStart(2, '0')}
+                  </p>
+                  <p className={`mt-1 text-[0.9375rem] tracking-tight transition-colors duration-500 ${on ? 'text-graphite' : 'text-slate'}`}>
+                    {node.label}
+                  </p>
+                  <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{node.note}</p>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ───────────────────────── Устройство круга: слои ───────────────────────── */
 
 export type LayerItem = { label: string; note: string }
 
+export type PadFace = 'diamond' | 'flat' | 'nap' | 'fiber'
+
 /**
- * Слои круга контролируемо расходятся при попадании в область видимости —
- * один раз, на 20–35px, без «взрыва» и отскока. Это ПРИНЦИП конструкции
- * (рабочая поверхность → тело круга → крепление Velcro), а не чертёж
- * конкретной модели: точных толщин слоёв в прайсе нет, и утверждать их
- * нельзя (у референсных фото клиента одна и та же позиция размечена то
- * 24, то 25 мм — то есть даже там это не точный источник).
+ * Рабочая поверхность в разрезе — у каждого материала своя. Это не один
+ * SVG, покрашенный в разные цвета: у рельефного круга гранёный профиль,
+ * у плоского — ровная кромка, у шерсти — ворс, у микрофибры — короткие
+ * волокна. Форма берётся из того, что видно на реальных кадрах товара и
+ * прямо написано в его названии/характеристиках.
  */
-export function PadConstruction({ items }: { items: LayerItem[] }) {
+function FaceProfile({ face, color }: { face: PadFace; color: string }) {
+  if (face === 'diamond') {
+    // Волнистая рельефная кромка — «алмазная грань» серии Black Diamond.
+    // Волны считаются по ширине, а не набиваются вручную: раньше хвост
+    // справа оставался плоским, и рельеф читался как брак фигуры.
+    const waves = 9
+    const w = 162 / waves
+    const crest = Array.from({ length: waves }, () => `q ${w / 2} -13 ${w} 0`).join(' ')
+    return <path d={`M 18 34 ${crest} L 180 46 L 18 46 Z`} fill={color} />
+  }
+  if (face === 'nap') {
+    // Высокий ворс шерсти: пучки разной длины поверх основы.
+    return (
+      <g>
+        <rect x="18" y="36" width="162" height="10" fill={color} />
+        {Array.from({ length: 27 }, (_, i) => 20 + i * 6).map((x, i) => (
+          <path key={x} d={`M ${x} 36 q 2 -${11 + (i % 3) * 5} 5 -${13 + (i % 3) * 5}`} stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+        ))}
+      </g>
+    )
+  }
+  if (face === 'fiber') {
+    // Микрофибра: короткий плотный ворс одинаковой длины.
+    return (
+      <g>
+        <rect x="18" y="34" width="162" height="12" fill={color} />
+        {Array.from({ length: 41 }, (_, i) => 19 + i * 4).map((x) => (
+          <line key={x} x1={x} y1="34" x2={x} y2="25" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+        ))}
+      </g>
+    )
+  }
+  // Flat-face: ровная рабочая плоскость.
+  return <rect x="18" y="28" width="162" height="18" rx="2" fill={color} />
+}
+
+/**
+ * Круг в разрезе: рабочая поверхность → тело → крепление Velcro, плюс
+ * реальные размеры из прайса — толщина и центральное отверстие, если они
+ * у позиции указаны. Слои расходятся один раз при появлении в кадре,
+ * подписи стоят рядом со своим слоем.
+ *
+ * Что здесь честно: форма рабочей кромки соответствует типу круга
+ * (рельеф / плоскость / ворс / микрофибра), размерная линия показывает
+ * ТУ цифру толщины, которая указана в характеристиках позиции. Толщины
+ * отдельных слоёв внутри круга нигде не заявляются — таких данных нет.
+ */
+export function PadConstruction({
+  items,
+  face = 'flat',
+  color = '#8A9296',
+  thickness,
+  hole,
+}: {
+  items: LayerItem[]
+  face?: PadFace
+  color?: string
+  /** Реальная толщина из характеристик, например «25 мм». */
+  thickness?: string
+  /** Реальное центральное отверстие, например «22 мм у 6" и 7"». */
+  hole?: string
+}) {
   const reduced = useReducedMotion()
+  const layerY = [0, 54, 96]
+  const restY = [0, 30, 54]
+
   return (
-    <div className="grid items-center gap-8 sm:grid-cols-[minmax(0,13rem)_1fr]">
-      <svg viewBox="0 0 220 190" className="mx-auto h-40 w-40 sm:h-48 sm:w-48" role="img" aria-label="Слои круга сверху вниз: рабочая поверхность, тело круга, крепление">
-        <Grid id="pad-layers-grid" step={22} />
-        <rect width="220" height="190" fill="url(#pad-layers-grid)" className="text-graphite/[0.08]" />
-        {items.map((item, i) => {
-          const restY = 40 + i * 30
-          const openY = 30 + i * 46
-          return (
-            <motion.g
-              key={item.label}
-              initial={reduced ? { opacity: 1, y: openY } : { opacity: 0, y: restY }}
-              whileInView={{ opacity: 1, y: openY }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.1 + i * 0.14 }}
-            >
-              <ellipse cx="110" cy="0" rx="84" ry="13" fill={i === 0 ? EMBER : '#1A1C1E'} fillOpacity={i === 0 ? 0.85 : 0.16 + i * 0.1} />
-              <ellipse cx="110" cy="0" rx="84" ry="13" fill="none" stroke="#1A1C1E" strokeOpacity="0.18" strokeWidth="1" />
-              <text x="110" y="3.5" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill={i === 0 ? '#1A1C1E' : '#1A1C1E'} fillOpacity="0.6">
-                {String(i + 1).padStart(2, '0')}
-              </text>
-            </motion.g>
-          )
-        })}
-      </svg>
+    <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-14">
+      <div className="rounded-[1.5rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E3EAEC_100%)] p-6 sm:p-8">
+        <svg
+          viewBox="0 0 260 190"
+          className="w-full"
+          role="img"
+          aria-label={`Круг в разрезе: рабочая поверхность, тело круга, крепление Velcro${thickness ? `, толщина ${thickness}` : ''}`}
+        >
+          <Grid id="pad-profile-grid" step={26} />
+          <rect width="260" height="190" fill="url(#pad-profile-grid)" className="text-graphite/[0.09]" />
+
+        {/* 01 — рабочая поверхность */}
+        <motion.g
+          initial={reduced ? { opacity: 1, y: layerY[0] } : { opacity: 0, y: restY[0] }}
+          whileInView={{ opacity: 1, y: layerY[0] }}
+          viewport={{ once: true, amount: 0.45 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.05 }}
+        >
+          <FaceProfile face={face} color={color} />
+        </motion.g>
+
+        {/* 02 — тело круга */}
+        <motion.g
+          initial={reduced ? { opacity: 1, y: layerY[1] } : { opacity: 0, y: restY[1] }}
+          whileInView={{ opacity: 1, y: layerY[1] }}
+          viewport={{ once: true, amount: 0.45 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.19 }}
+        >
+          <rect x="18" y="20" width="162" height="30" rx="4" fill={color} fillOpacity="0.55" />
+          <rect x="18" y="20" width="162" height="30" rx="4" fill="none" stroke="#1A1C1E" strokeOpacity="0.16" strokeWidth="1" />
+          {hole && <rect x="90" y="20" width="18" height="30" fill="#F4F7F7" stroke="#1A1C1E" strokeOpacity="0.14" strokeWidth="1" />}
+        </motion.g>
+
+        {/* 03 — крепление Velcro: короткие крючки по всей плоскости */}
+        <motion.g
+          initial={reduced ? { opacity: 1, y: layerY[2] } : { opacity: 0, y: restY[2] }}
+          whileInView={{ opacity: 1, y: layerY[2] }}
+          viewport={{ once: true, amount: 0.45 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.33 }}
+        >
+          <rect x="18" y="24" width="162" height="9" rx="2" fill="#1A1C1E" fillOpacity="0.72" />
+          {Array.from({ length: 32 }, (_, i) => 21 + i * 5).map((x) => (
+            <line key={x} x1={x} y1="33" x2={x} y2="38" stroke="#1A1C1E" strokeOpacity="0.42" strokeWidth="1.5" strokeLinecap="round" />
+          ))}
+        </motion.g>
+
+        {/* Размерная линия толщины — только когда цифра действительно есть */}
+        {thickness && (
+          <motion.g
+            initial={reduced ? { opacity: 1 } : { opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.45 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <g stroke="#1A1C1E" strokeOpacity="0.42" strokeWidth="1.1">
+              <line x1="196" y1="20" x2="196" y2="146" />
+              <line x1="190" y1="20" x2="202" y2="20" />
+              <line x1="190" y1="146" x2="202" y2="146" />
+            </g>
+            <text x="208" y="87" fontSize="12" fontFamily="ui-monospace, monospace" fill="#1A1C1E" fillOpacity="0.62">
+              {thickness}
+            </text>
+          </motion.g>
+        )}
+        </svg>
+      </div>
+
       <ol className="space-y-4">
         {items.map((item, i) => (
           <motion.li
             key={item.label}
             initial={reduced ? undefined : { opacity: 0, x: 12 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
+            viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: 0.2 + i * 0.14 }}
             className="border-l-2 border-ember/40 pl-4"
           >
@@ -931,6 +1254,12 @@ export function PadConstruction({ items }: { items: LayerItem[] }) {
             <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{item.note}</p>
           </motion.li>
         ))}
+        {hole && (
+          <li className="border-l-2 border-graphite/15 pl-4">
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Центральное отверстие</p>
+            <p className="mt-1 text-[0.875rem] leading-relaxed text-slate">{hole} — под штифт подложки, круг садится по центру без смещения.</p>
+          </li>
+        )}
       </ol>
     </div>
   )
@@ -971,6 +1300,66 @@ const MATERIALS: { key: MaterialKey; label: string; trait: string; body: string;
   },
 ]
 
+/**
+ * Макро-структура материала. Три разных рисунка, а не один перекрашенный:
+ * поролон — открытые поры, микрофибра — плотный короткий ворс, шерсть —
+ * длинные пряди. Это условная графика структуры, а не микрофотография.
+ */
+function MaterialTexture({ kind }: { kind: MaterialKey }) {
+  const ink = '#1A1C1E'
+  if (kind === 'foam') {
+    const cells: { x: number; y: number; r: number }[] = []
+    for (let row = 0; row < 4; row += 1) {
+      for (let col = 0; col < 9; col += 1) {
+        cells.push({ x: 10 + col * 20 + (row % 2) * 9, y: 12 + row * 17, r: 5.5 + ((row + col) % 3) * 1.6 })
+      }
+    }
+    return (
+      <svg viewBox="0 0 190 78" className="h-14 w-full" role="img" aria-label="Структура поролона: открытые поры">
+        {cells.map((c, i) => (
+          <circle key={i} cx={c.x} cy={c.y} r={c.r} fill="none" stroke={ink} strokeOpacity="0.3" strokeWidth="1.3" />
+        ))}
+      </svg>
+    )
+  }
+  if (kind === 'microfiber') {
+    return (
+      <svg viewBox="0 0 190 78" className="h-14 w-full" role="img" aria-label="Структура микрофибры: плотный короткий ворс">
+        <line x1="6" y1="62" x2="184" y2="62" stroke={ink} strokeOpacity="0.28" strokeWidth="1.4" />
+        {Array.from({ length: 46 }, (_, i) => 7 + i * 4).map((x, i) => (
+          <line
+            key={x}
+            x1={x}
+            y1="62"
+            x2={x + (i % 3) - 1}
+            y2={24 + (i % 4) * 4}
+            stroke={ink}
+            strokeOpacity="0.32"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        ))}
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 190 78" className="h-14 w-full" role="img" aria-label="Структура шерсти: длинные пряди ворса">
+      <line x1="6" y1="66" x2="184" y2="66" stroke={ink} strokeOpacity="0.28" strokeWidth="1.4" />
+      {Array.from({ length: 19 }, (_, i) => 8 + i * 9.6).map((x, i) => (
+        <path
+          key={x}
+          d={`M ${x} 66 q ${i % 2 === 0 ? 7 : -7} -20 ${i % 3 === 0 ? 3 : -2} -${34 + (i % 3) * 8}`}
+          stroke={ink}
+          strokeOpacity="0.3"
+          strokeWidth="2"
+          strokeLinecap="round"
+          fill="none"
+        />
+      ))}
+    </svg>
+  )
+}
+
 export function MaterialCompare({ active }: { active: MaterialKey }) {
   const reduced = useReducedMotion()
   return (
@@ -984,10 +1373,13 @@ export function MaterialCompare({ active }: { active: MaterialKey }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.1 }}
-            className={`rounded-2xl border p-5 ${
+            className={`flex flex-col rounded-2xl border p-5 ${
               isActive ? 'border-ember/50 bg-porcelain shadow-[0_0_0_1px_rgba(254,139,12,0.12)]' : 'border-graphite/[0.1] bg-hazeSurface'
             }`}
           >
+            <div className={`-mx-1 mb-4 overflow-hidden rounded-xl px-1 ${isActive ? 'text-graphite' : 'text-titanium'}`}>
+              <MaterialTexture kind={m.key} />
+            </div>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[0.9375rem] font-medium tracking-tight text-graphite">{m.label}</p>
               {isActive && (
@@ -998,11 +1390,74 @@ export function MaterialCompare({ active }: { active: MaterialKey }) {
             </div>
             <p className="mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">{m.trait}</p>
             <p className="mt-3 text-[0.8125rem] leading-relaxed text-slate">{m.body}</p>
-            <p className="mt-3 border-t border-graphite/[0.1] pt-3 text-[0.75rem] text-titanium">{m.use}</p>
+            <p className="mt-auto border-t border-graphite/[0.1] pt-3 text-[0.75rem] text-titanium">{m.use}</p>
           </motion.li>
         )
       })}
     </ul>
+  )
+}
+
+/* ───────────────────────── Роли внутри линейки ───────────────────────── */
+
+export type RoleItem = {
+  href: string
+  image: string
+  model: string
+  /** Реальная характеристика «Тип» из прайса: тяжёлый рез / финиш и т. д. */
+  role: string
+  /** Реальная характеристика «Совместимость» из прайса. */
+  compat?: string
+  stage?: string
+  active: boolean
+}
+
+/**
+ * У каждого состава V-Range своя роль, и это НЕ четыре одинаковые карточки
+ * с разным названием: и «Тип», и «Совместимость» здесь — реальные
+ * характеристики позиции из прайса. Активный состав подсвечен, остальные
+ * кликабельны.
+ */
+export function RoleLine({ items }: { items: RoleItem[] }) {
+  const reduced = useReducedMotion()
+  return (
+    <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {items.map((item, i) => (
+        <motion.li
+          key={item.model}
+          initial={reduced ? undefined : { opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.35 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.09 }}
+        >
+          <a
+            href={item.href}
+            aria-current={item.active ? 'true' : undefined}
+            className={`flex h-full flex-col rounded-2xl border p-5 transition-colors duration-300 ${
+              item.active
+                ? 'border-ember/50 bg-porcelain shadow-[0_0_0_1px_rgba(254,139,12,0.12)]'
+                : 'border-graphite/[0.1] bg-hazeSurface hover:border-graphite/25'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-porcelain ring-1 ring-graphite/[0.07]">
+                <img src={item.image} alt="" loading="lazy" decoding="async" className="h-[78%] w-[78%] object-contain" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[0.9375rem] tracking-tight text-graphite">{item.model}</p>
+                {item.stage && <p className="mt-0.5 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">{item.stage}</p>}
+              </div>
+            </div>
+            <p className={`mt-4 text-[0.875rem] leading-snug ${item.active ? 'text-graphite' : 'text-slate'}`}>{item.role}</p>
+            {item.compat && (
+              <p className="mt-auto border-t border-graphite/[0.1] pt-3 text-[0.75rem] leading-relaxed text-titanium">
+                Круги: {item.compat}
+              </p>
+            )}
+          </a>
+        </motion.li>
+      ))}
+    </ol>
   )
 }
 
@@ -1032,6 +1487,19 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
   const reduced = useReducedMotion()
   const dotDelay = (i: number) => 0.55 + i * 0.16
 
+  /*
+   * Дефект уходит НЕ сам по себе и не «магическим reveal»: риски
+   * ослабевают ровно по мере прокрутки блока — человек буквально
+   * протягивает процесс сам. Прогресс считается по положению блока в
+   * кадре, поэтому обратный скролл возвращает дефект: это объяснение
+   * процесса, а не разовый трюк.
+   */
+  const wrap = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: wrap, offset: ['start 0.85', 'end 0.35'] })
+  const defectOpacity = useTransform(scrollYProgress, [0.15, 0.85], [0.62, 0.1])
+  const defectWidth = useTransform(scrollYProgress, [0.15, 0.85], [2.4, 0.7])
+  const glossOpacity = useTransform(scrollYProgress, [0.35, 0.9], [0.06, 0.3])
+
   const card = (i: number) =>
     reduced
       ? {}
@@ -1043,19 +1511,24 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
         }
 
   return (
-    <div className="grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-3">
+    <div ref={wrap} className="grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-3">
       {/* 1. Дефект — условная схема, подписана как принцип, не фото */}
       <motion.div {...card(0)} className="rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-6">
         <svg viewBox="0 0 200 120" role="img" aria-label="Условная схема поверхности с дефектами" className="h-24 w-full text-graphite/70">
           <rect width="200" height="120" rx="14" fill="#1A1C1E" fillOpacity="0.06" />
+          {/* Ровный блик проступает по мере того, как риска слабеет */}
+          <motion.ellipse cx="70" cy="44" rx="70" ry="26" fill="#1A1C1E" style={reduced ? { opacity: 0.16 } : { opacity: glossOpacity }} />
           {[32, 58, 84].map((y, i) => (
-            <path
+            <motion.path
               key={y}
               d={`M 18 ${y} Q 60 ${y - 14 + (i % 2) * 10}, 100 ${y} T 182 ${y}`}
               fill="none"
               stroke="currentColor"
-              strokeOpacity="0.55"
-              strokeWidth="2"
+              style={
+                reduced
+                  ? { opacity: 0.55, strokeWidth: 2 }
+                  : { opacity: defectOpacity, strokeWidth: defectWidth }
+              }
               strokeLinecap="round"
             />
           ))}

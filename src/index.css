@@ -214,6 +214,53 @@
   animation: sm-orbit-x 1.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
+/*
+ * Собранный рабочий узел в сцене «машинка как система». Ротор: круг
+ * вращается вокруг собственной оси. Эксцентрик: то же вращение плюс
+ * смещение центра по орбите — два разных движения одновременно, как это
+ * и происходит у DA-машинки. Обе анимации медленные: это объяснение
+ * принципа, а не имитация рабочих оборотов.
+ */
+@keyframes sm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sm-orbit-xy {
+  0% {
+    transform: translate(var(--orb, 5px), 0);
+  }
+  25% {
+    transform: translate(0, var(--orb, 5px));
+  }
+  50% {
+    transform: translate(calc(-1 * var(--orb, 5px)), 0);
+  }
+  75% {
+    transform: translate(0, calc(-1 * var(--orb, 5px)));
+  }
+  100% {
+    transform: translate(var(--orb, 5px), 0);
+  }
+}
+
+.sm-spin-slow {
+  animation: sm-spin 3.6s linear infinite;
+}
+
+/*
+ * Два движения на одном элементе без вложенных обёрток: orbit ведёт
+ * центр по окружности, spin крутит сам круг. Composition через
+ * animation-composition, чтобы transform-ы не перетирали друг друга.
+ */
+.sm-orbit-pad {
+  animation:
+    sm-orbit-xy 2.4s linear infinite,
+    sm-spin 3.6s linear infinite;
+  animation-composition: add;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
