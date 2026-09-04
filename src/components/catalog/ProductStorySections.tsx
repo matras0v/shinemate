@@ -21,6 +21,7 @@ import {
   SpeedDial,
   StrokeScale,
   VelcroWear,
+  GritSeparator,
 } from './TechDiagrams'
 import type {
   ComparisonTable,
@@ -256,6 +257,8 @@ function Diagram({
       return <RoleLine items={diagram.items} />
     case 'velcro':
       return <VelcroWear />
+    case 'separator':
+      return <GritSeparator />
     case 'exploded':
       return (
         <MachineExploded
@@ -299,6 +302,7 @@ const BARE_DIAGRAMS: SceneDiagram['kind'][] = [
   'exploded',
   'roles',
   'velcro',
+  'separator',
 ]
 
 /*

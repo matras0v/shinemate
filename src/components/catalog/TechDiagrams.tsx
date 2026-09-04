@@ -985,6 +985,83 @@ export function SizeScale({ items, unit = 'мм' }: { items: SizeItem[]; unit?: 
   )
 }
 
+/* ───────────────────────── Сепаратор: грязь остаётся внизу ───────────────────────── */
+
+/**
+ * Условный разрез ведра: губка работает в верхнем слое, песок проходит
+ * сквозь решётку и остаётся под ней. Частицы опускаются один раз при
+ * появлении блока — это объяснение принципа, а не симуляция и не разрез
+ * конкретного изделия. Никаких «задерживает N% грязи»: таких данных нет.
+ */
+export function GritSeparator() {
+  const reduced = useReducedMotion()
+  const grains = [
+    { x: 78, delay: 0 },
+    { x: 104, delay: 0.12 },
+    { x: 130, delay: 0.24 },
+    { x: 156, delay: 0.08 },
+    { x: 182, delay: 0.3 },
+    { x: 118, delay: 0.4 },
+    { x: 146, delay: 0.5 },
+  ]
+  return (
+    <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,24rem)_1fr] lg:gap-14">
+      <div className="rounded-[1.5rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E3EAEC_100%)] p-6 sm:p-8">
+        <svg viewBox="0 0 260 230" className="w-full" role="img" aria-label="Условный разрез ведра: сепаратор задерживает песок на дне">
+          <path d="M 52 26 L 208 26 L 192 206 L 68 206 Z" fill="#1A1C1E" fillOpacity="0.05" stroke="#1A1C1E" strokeOpacity="0.28" strokeWidth="2" />
+          <path d="M 56 52 L 204 52 L 191 200 L 69 200 Z" fill="#2D5FA6" fillOpacity="0.1" />
+          <line x1="56" y1="52" x2="204" y2="52" stroke="#2D5FA6" strokeOpacity="0.4" strokeWidth="2" />
+
+          <rect x="96" y="62" width="66" height="26" rx="7" fill="#1A1C1E" fillOpacity="0.16" />
+          <text x="129" y="79" textAnchor="middle" fontSize="10" fontFamily="ui-monospace, monospace" fill="#1A1C1E" fillOpacity="0.55">
+            ГУБКА
+          </text>
+
+          <g stroke={EMBER} strokeWidth="2.4" strokeLinecap="round">
+            <line x1="74" y1="152" x2="186" y2="152" />
+            {Array.from({ length: 9 }, (_, i) => 80 + i * 13).map((x) => (
+              <line key={x} x1={x} y1="146" x2={x} y2="158" strokeOpacity="0.5" />
+            ))}
+          </g>
+          <text x="192" y="140" fontSize="10" fontFamily="ui-monospace, monospace" fill="#1A1C1E" fillOpacity="0.5" textAnchor="end">
+            СЕПАРАТОР
+          </text>
+
+          {grains.map((g, i) => (
+            <motion.circle
+              key={i}
+              cx={g.x}
+              r={3 + (i % 3)}
+              fill="#1A1C1E"
+              fillOpacity="0.42"
+              initial={reduced ? { cy: 182 } : { cy: 96, opacity: 0 }}
+              whileInView={reduced ? {} : { cy: 176 + (i % 3) * 6, opacity: 1 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 1.1, delay: 0.3 + g.delay, ease: [0.4, 0, 0.2, 1] as const }}
+            />
+          ))}
+          <path d="M 70 200 Q 130 186 190 200 L 190 202 L 70 202 Z" fill="#1A1C1E" fillOpacity="0.22" />
+        </svg>
+      </div>
+
+      <ol className="space-y-4">
+        {[
+          { n: '01', t: 'Губка работает в верхнем слое', d: 'Забирает воду оттуда, где грязи уже нет' },
+          { n: '02', t: 'Решётка пропускает песок вниз', d: 'Частицы проходят сквозь неё и остаются под решёткой' },
+          { n: '03', t: 'Осадок не поднимается обратно', d: 'Следующий заход губки не выносит грязь на кузов' },
+        ].map((x) => (
+          <li key={x.n} className="border-l-2 border-ember/40 pl-4">
+            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">{x.n}</p>
+            <p className="mt-1 text-[0.9375rem] leading-snug tracking-tight text-graphite">{x.t}</p>
+            <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{x.d}</p>
+          </li>
+        ))}
+        <li className="pl-4 text-[0.75rem] leading-relaxed text-titanium">Схема принципа, а не разрез конкретного изделия.</li>
+      </ol>
+    </div>
+  )
+}
+
 /* ───────────────────────── Липучка: новая против изношенной ───────────────────────── */
 
 /**
@@ -1126,6 +1203,15 @@ export function MachineExploded(data: ExplodedData) {
   const padOpacity = useTransform(scrollYProgress, [0.56, 0.76], [0, 1])
   const machineY = useTransform(scrollYProgress, [0, 0.6], [0, -18])
   const runOpacity = useTransform(scrollYProgress, [0.82, 0.95], [0, 1])
+  /* Ось монтажа прорисовывается перед тем, как по ней приходит оснастка. */
+  const axisScale = useTransform(scrollYProgress, [0.26, 0.42], [0, 1])
+  /*
+   * Короткий «щелчок» посадки: деталь чуть переразмеривается в момент
+   * стыковки и садится на место. Без него подложка просто подъезжала и
+   * останавливалась — стыковка не читалась.
+   */
+  const plateScale = useTransform(scrollYProgress, [0.48, 0.56, 0.62], [1, 1.06, 1])
+  const padScale = useTransform(scrollYProgress, [0.72, 0.8, 0.86], [1, 1.06, 1])
 
   /* Статичная раскладка: то же содержание, без sticky и без скролл-трансформаций. */
   if (reduced || !desktop) {
@@ -1191,9 +1277,14 @@ export function MachineExploded(data: ExplodedData) {
       {/* pt-24 — запас под фиксированный хедер: без него верх сцены уходит под шапку. */}
       <div className="sticky top-0 flex h-[100svh] items-center pb-10 pt-24 lg:pb-12 lg:pt-28">
         <div className="grid h-full w-full gap-6 lg:grid-cols-[1fr_minmax(0,19rem)] lg:items-stretch lg:gap-12">
-          {/* Сборка: машинка → подложка → круг, соединённые технической линией */}
+          {/*
+            Сборка идёт по ОДНОЙ ОСИ: машинка сверху, под ней вертикальная
+            ось монтажа, по которой снизу поднимаются подложка и круг и
+            встают в один стек. Раньше подложка и круг стояли двумя
+            кружками рядом — это читалось как две иконки под фотографией,
+            а не как сборка инструмента.
+          */}
           <div className="relative flex h-full min-h-[20rem] flex-col items-center justify-center overflow-hidden rounded-[1.75rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] px-6 py-8">
-            {/* Технический фон — чертёжная сетка, как на остальных схемах */}
             <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full text-graphite/[0.07]">
               <Grid id="exploded-grid" step={32} />
               <rect width="100%" height="100%" fill="url(#exploded-grid)" />
@@ -1203,45 +1294,53 @@ export function MachineExploded(data: ExplodedData) {
               src={data.machineImage}
               alt={data.machineLabel}
               style={{ y: machineY }}
-              className="relative z-30 max-h-[46%] w-auto max-w-full flex-shrink-0 object-contain drop-shadow-[0_22px_34px_rgba(26,28,30,0.15)]"
+              className="relative z-30 max-h-[40%] w-auto max-w-full flex-shrink-0 object-contain drop-shadow-[0_22px_34px_rgba(26,28,30,0.15)]"
             />
 
-            {(data.plateImage || data.padImage) && (
-              <div className="relative z-20 mt-7 flex items-start justify-center gap-8 sm:gap-14">
-                {/* Технический стык: линия от машинки к оснастке */}
-                <span aria-hidden className="absolute -top-7 left-1/2 h-7 w-px -translate-x-1/2 bg-ember/45" />
-                <span aria-hidden className="absolute -top-1 left-[calc(50%-3.5rem)] hidden h-px w-28 bg-ember/25 sm:block sm:left-[calc(50%-4.75rem)] sm:w-[9.5rem]" />
-                {data.plateImage && (
-                  <motion.figure style={{ y: plateY, opacity: plateOpacity }} className="flex w-24 flex-col items-center gap-2.5 sm:w-32">
-                    <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_20px_rgba(26,28,30,0.11)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
-                      <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-[74%] w-[74%] object-contain" />
-                    </span>
-                    <figcaption className="text-center font-mono text-[0.6875rem] uppercase leading-tight tracking-[0.14em] text-titanium">
-                      Подложка
-                    </figcaption>
-                  </motion.figure>
-                )}
-                {data.padImage && (
-                  <motion.figure style={{ y: padY, opacity: padOpacity }} className="flex w-24 flex-col items-center gap-2.5 sm:w-32">
-                    <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_20px_rgba(26,28,30,0.11)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
-                      <img
-                        src={data.padImage}
-                        alt={data.padLabel ?? ''}
-                        className={`h-[74%] w-[74%] object-contain ${data.motion === 'rotary' ? 'sm-spin-slow' : 'sm-orbit-pad'}`}
-                      />
-                    </span>
-                    <figcaption className="text-center font-mono text-[0.6875rem] uppercase leading-tight tracking-[0.14em] text-titanium">
-                      Круг
-                    </figcaption>
-                  </motion.figure>
-                )}
-              </div>
-            )}
+            {/* Ось монтажа: по ней оснастка и приходит к шпинделю */}
+            <motion.span
+              aria-hidden
+              style={{ scaleY: axisScale }}
+              className="relative z-10 mt-1 h-10 w-px origin-top bg-[linear-gradient(180deg,rgba(254,139,12,0.6),rgba(254,139,12,0.15))]"
+            />
 
-            {/* Подпись движения появляется только когда система собрана */}
+            {/* Стек оснастки: подложка, под ней круг — по одной оси */}
+            <div className="relative z-20 flex flex-col items-center">
+              {data.plateImage && (
+                <motion.figure
+                  style={{ y: plateY, opacity: plateOpacity, scale: plateScale }}
+                  className="flex flex-col items-center"
+                >
+                  <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_10px_22px_rgba(26,28,30,0.12)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
+                    <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-[76%] w-[76%] object-contain" />
+                  </span>
+                  <figcaption className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+                    Подложка
+                  </figcaption>
+                </motion.figure>
+              )}
+              {data.padImage && (
+                <motion.figure
+                  style={{ y: padY, opacity: padOpacity, scale: padScale }}
+                  className="-mt-3 flex flex-col items-center"
+                >
+                  <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_10px_22px_rgba(26,28,30,0.12)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
+                    <img
+                      src={data.padImage}
+                      alt={data.padLabel ?? ''}
+                      className={`h-[76%] w-[76%] object-contain ${data.motion === 'rotary' ? 'sm-spin-slow' : 'sm-orbit-pad'}`}
+                    />
+                  </span>
+                  <figcaption className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+                    Круг
+                  </figcaption>
+                </motion.figure>
+              )}
+            </div>
+
             <motion.p
               style={{ opacity: runOpacity }}
-              className="relative z-20 mt-7 rounded-full bg-porcelain/90 px-4 py-1.5 text-center font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
+              className="relative z-20 mt-6 rounded-full bg-porcelain/90 px-4 py-1.5 text-center font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
             >
               {data.motion === 'rotary' ? 'Вращение' : 'Вращение + орбита'}
               {data.motionNote ? ` · ${data.motionNote}` : ''}
@@ -1773,120 +1872,165 @@ export type DefectProcessData = {
  */
 export function DefectProcess({ defects, padLabel, padImage, compoundLabel, compoundImage, resultNote }: DefectProcessData) {
   const reduced = useReducedMotion()
-  const dotDelay = (i: number) => 0.55 + i * 0.16
+  const desktop = useMediaQuery(DESKTOP_SCENE_QUERY)
 
   /*
-   * Дефект уходит НЕ сам по себе и не «магическим reveal»: риски
-   * ослабевают ровно по мере прокрутки блока — человек буквально
-   * протягивает процесс сам. Прогресс считается по положению блока в
-   * кадре, поэтому обратный скролл возвращает дефект: это объяснение
-   * процесса, а не разовый трюк.
+   * Главная сцена страницы состава: панель исправляется РУКАМИ человека,
+   * который её прокручивает. Слева поверхность с рисками, справа — рабочая
+   * пара «состав + круг», которая по ходу прокрутки проходит по панели;
+   * риски слабеют, блик выравнивается, и в конце остаётся ровное
+   * отражение.
+   *
+   * ЧЕСТНОСТЬ. Панель — намеренно условная графика, а не фотография: пары
+   * «до/после» именно для этого состава у нас нет, и подделывать её
+   * фотореалистично значило бы выдать схему за реальный кейс. Кадры
+   * состава и круга — настоящие, из каталога. Дефекты — из официальной
+   * таблицы применения, а не придуманы под картинку.
    */
-  const wrap = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({ target: wrap, offset: ['start 0.85', 'end 0.35'] })
-  const defectOpacity = useTransform(scrollYProgress, [0.15, 0.85], [0.62, 0.1])
-  const defectWidth = useTransform(scrollYProgress, [0.15, 0.85], [2.4, 0.7])
-  const glossOpacity = useTransform(scrollYProgress, [0.35, 0.9], [0.06, 0.3])
+  const track = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: track,
+    offset: desktop ? ['start start', 'end end'] : ['start 0.9', 'end 0.4'],
+  })
 
-  const card = (i: number) =>
-    reduced
-      ? {}
-      : {
-          initial: { opacity: 0, y: 18 },
-          whileInView: { opacity: 1, y: 0 },
-          viewport: { once: true, amount: 0.4 },
-          transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.12 },
-        }
+  const defectOpacity = useTransform(scrollYProgress, [0.1, 0.8], [0.55, 0.05])
+  const defectWidth = useTransform(scrollYProgress, [0.1, 0.8], [2.6, 0.6])
+  const glossOpacity = useTransform(scrollYProgress, [0.25, 0.9], [0.06, 0.32])
+  const glossScale = useTransform(scrollYProgress, [0.25, 0.95], [0.82, 1])
+  /* Рабочая пара проходит по панели слева направо — это и есть «проход». */
+  const headX = useTransform(scrollYProgress, [0.08, 0.86], ['4%', '78%'])
+  const headOpacity = useTransform(scrollYProgress, [0.02, 0.12, 0.9, 0.98], [0, 1, 1, 0])
+  const resultOpacity = useTransform(scrollYProgress, [0.55, 0.78], [0, 1])
 
-  return (
-    <div ref={wrap} className="grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-3">
-      {/* 1. Дефект — условная схема, подписана как принцип, не фото */}
-      <motion.div {...card(0)} className="rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-6">
-        <svg viewBox="0 0 200 120" role="img" aria-label="Условная схема поверхности с дефектами" className="h-24 w-full text-graphite/70">
-          <rect width="200" height="120" rx="14" fill="#1A1C1E" fillOpacity="0.06" />
-          {/* Ровный блик проступает по мере того, как риска слабеет */}
-          <motion.ellipse cx="70" cy="44" rx="70" ry="26" fill="#1A1C1E" style={reduced ? { opacity: 0.16 } : { opacity: glossOpacity }} />
-          {[32, 58, 84].map((y, i) => (
-            <motion.path
-              key={y}
-              d={`M 18 ${y} Q 60 ${y - 14 + (i % 2) * 10}, 100 ${y} T 182 ${y}`}
-              fill="none"
-              stroke="currentColor"
-              style={
-                reduced
-                  ? { opacity: 0.55, strokeWidth: 2 }
-                  : { opacity: defectOpacity, strokeWidth: defectWidth }
-              }
-              strokeLinecap="round"
-            />
-          ))}
-        </svg>
-        <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Дефект</p>
-        <ul className="mt-2 space-y-1">
+  /** Панель лака: риски слабеют, ровный блик проступает. */
+  const panel = (
+    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.5rem] bg-[linear-gradient(150deg,#23262A_0%,#15171A_55%,#1E2226_100%)] sm:aspect-[16/9]">
+      <svg viewBox="0 0 400 225" className="absolute inset-0 h-full w-full" role="img" aria-label="Условная схема: риски на лаке выводятся и остаётся ровное отражение">
+        {/*
+          Блик — мягкий градиент, а не сплошная заливка: плоское белое
+          пятно читалось как серый прямоугольник поверх панели, а не как
+          отражение на лаке.
+        */}
+        <defs>
+          <radialGradient id="gloss-a" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+            <stop offset="55%" stopColor="#FFFFFF" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <motion.ellipse
+          cx="150"
+          cy="72"
+          rx="160"
+          ry="58"
+          fill="url(#gloss-a)"
+          style={reduced ? { opacity: 0.26 } : { opacity: glossOpacity, scale: glossScale }}
+        />
+        <motion.ellipse
+          cx="290"
+          cy="164"
+          rx="115"
+          ry="38"
+          fill="url(#gloss-a)"
+          style={reduced ? { opacity: 0.14 } : { opacity: glossOpacity, scale: glossScale }}
+        />
+        {/* Риски — те, что выводит именно эта стадия */}
+        {[52, 84, 116, 148, 180].map((y, i) => (
+          <motion.path
+            key={y}
+            d={`M 24 ${y} Q 110 ${y - 16 + (i % 2) * 12}, 200 ${y} T 376 ${y}`}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeLinecap="round"
+            style={reduced ? { opacity: 0.4, strokeWidth: 2 } : { opacity: defectOpacity, strokeWidth: defectWidth }}
+          />
+        ))}
+      </svg>
+
+      {/* Рабочая пара идёт по панели */}
+      <motion.div
+        style={reduced ? { left: '42%', opacity: 1 } : { left: headX, opacity: headOpacity }}
+        className="absolute top-1/2 hidden -translate-y-1/2 sm:block"
+      >
+        <span className="relative flex h-24 w-24 items-center justify-center rounded-full bg-porcelain shadow-[0_12px_30px_rgba(0,0,0,0.35)] lg:h-28 lg:w-28">
+          <img
+            src={padImage}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className={`h-[78%] w-[78%] object-contain ${reduced ? '' : 'sm-spin-slow'}`}
+          />
+        </span>
+      </motion.div>
+
+      {/* Итог стадии подписывается только когда проход закончен */}
+      <motion.p
+        style={reduced ? { opacity: 1 } : { opacity: resultOpacity }}
+        className="absolute bottom-4 left-4 right-4 rounded-full bg-porcelain px-4 py-2 text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-graphite shadow-[0_8px_20px_rgba(0,0,0,0.28)] sm:bottom-6 sm:left-auto sm:right-6 sm:w-auto sm:text-left"
+      >
+        {resultNote}
+      </motion.p>
+
+      <span className="absolute left-4 top-4 rounded-full bg-graphite/70 px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-porcelain/80">
+        Схема процесса
+      </span>
+    </div>
+  )
+
+  /** Что именно выводится и чем — рядом с панелью, а не отдельной карточкой. */
+  const legend = (
+    <div className="flex flex-col justify-center gap-7">
+      <div>
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Что выводится</p>
+        <ul className="mt-3 space-y-2">
           {defects.map((d) => (
-            <li key={d} className="text-[0.875rem] leading-snug text-graphite">
+            <li key={d} className="flex gap-3 text-[0.9375rem] leading-snug text-graphite">
+              <span aria-hidden className="mt-2.5 h-px w-4 shrink-0 bg-ember" />
               {d}
             </li>
           ))}
         </ul>
-      </motion.div>
-
-      <div aria-hidden className="hidden items-center justify-center text-graphite/25 lg:flex">
-        <ArrowGlyph />
       </div>
 
-      {/* 2. Абразив — реальные кадры пасты и круга, точки состава появляются по очереди */}
-      <motion.div {...card(1)} className="rounded-2xl border border-graphite/[0.1] bg-porcelain p-6">
-        <div className="relative flex h-24 items-center justify-center gap-3">
-          <img src={compoundImage} alt="" loading="lazy" decoding="async" className="h-full w-auto object-contain" />
-          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[radial-gradient(120%_100%_at_50%_0%,#F4F7F8_0%,#E2EAEC_60%,#D2DDDF_100%)]">
-            <img src={padImage} alt="" loading="lazy" decoding="async" className="h-[80%] w-[80%] object-contain" />
-            {/*
-              Несколько точек состава, нанесённых на круг — коротким
-              появлением по очереди, один раз. Это не жидкостная
-              симуляция, просто честная графическая подсказка «состав
-              наносится точками», как и написано в тексте сцены.
-            */}
-            {!reduced &&
-              [
-                { x: '38%', y: '32%' },
-                { x: '58%', y: '48%' },
-                { x: '46%', y: '64%' },
-              ].map((p, i) => (
-                <motion.span
-                  key={i}
-                  aria-hidden
-                  className="absolute h-1.5 w-1.5 rounded-full bg-ember"
-                  style={{ left: p.x, top: p.y }}
-                  initial={{ opacity: 0, scale: 0.4 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true, amount: 0.6 }}
-                  transition={{ duration: 0.3, delay: dotDelay(i) }}
-                />
-              ))}
-          </div>
+      <div className="border-t border-graphite/[0.12] pt-6">
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Чем</p>
+        <div className="mt-4 flex items-center gap-4">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-porcelain ring-1 ring-graphite/[0.08]">
+            <img src={compoundImage} alt="" loading="lazy" decoding="async" className="h-[80%] w-[80%] object-contain" />
+          </span>
+          <span aria-hidden className="text-graphite/30">
+            <ArrowGlyph />
+          </span>
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[radial-gradient(120%_100%_at_50%_0%,#F4F7F8_0%,#E2EAEC_60%,#D2DDDF_100%)]">
+            <img src={padImage} alt="" loading="lazy" decoding="async" className="h-[78%] w-[78%] object-contain" />
+          </span>
         </div>
-        <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Абразив</p>
-        <p className="mt-2 text-[0.875rem] leading-snug text-graphite">
-          {compoundLabel} + {padLabel}
+        <p className="mt-4 max-w-[42ch] text-[0.9375rem] leading-relaxed text-slate">
+          {compoundLabel} работает в паре с кругом {padLabel}: состав задаёт абразив, круг — жёсткость и площадь
+          контакта.
         </p>
-      </motion.div>
-
-      <div aria-hidden className="hidden items-center justify-center text-graphite/25 lg:flex">
-        <ArrowGlyph />
       </div>
+    </div>
+  )
 
-      {/* 3. Результат — условный блик, подпись из тех же данных, что и таблица применения */}
-      <motion.div {...card(2)} className="rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-6">
-        <svg viewBox="0 0 200 120" role="img" aria-label="Условная схема ровного глянцевого отражения" className="h-24 w-full">
-          <rect width="200" height="120" rx="14" fill="#1A1C1E" />
-          <ellipse cx="66" cy="46" rx="76" ry="34" fill="#FFFFFF" opacity="0.24" />
-          <ellipse cx="128" cy="76" rx="54" ry="20" fill="#FFFFFF" opacity="0.13" />
-          <rect width="200" height="120" rx="14" fill="none" stroke={EMBER} strokeOpacity="0.4" strokeWidth="1.5" />
-        </svg>
-        <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Результат</p>
-        <p className="mt-2 text-[0.875rem] leading-snug text-graphite">{resultNote}</p>
-      </motion.div>
+  /* Ниже 1024px sticky-сцена не помещается — та же история идёт стопкой. */
+  if (reduced || !desktop) {
+    return (
+      <div ref={track} className="grid gap-8">
+        {panel}
+        {legend}
+      </div>
+    )
+  }
+
+  return (
+    <div ref={track} className="relative" style={{ height: '230vh' }}>
+      <div className="sticky top-0 flex h-[100svh] items-center pb-12 pt-24 lg:pt-28">
+        <div className="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-14">
+          {panel}
+          {legend}
+        </div>
+      </div>
     </div>
   )
 }
