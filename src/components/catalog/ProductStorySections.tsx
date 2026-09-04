@@ -22,6 +22,7 @@ import {
   StrokeScale,
   VelcroWear,
   GritSeparator,
+  HolderScene,
 } from './TechDiagrams'
 import type {
   ComparisonTable,
@@ -259,6 +260,8 @@ function Diagram({
       return <VelcroWear />
     case 'separator':
       return <GritSeparator />
+    case 'holder':
+      return <HolderScene machineImage={diagram.machineImage} holderImage={diagram.holderImage} />
     case 'exploded':
       return (
         <MachineExploded
@@ -303,6 +306,7 @@ const BARE_DIAGRAMS: SceneDiagram['kind'][] = [
   'roles',
   'velcro',
   'separator',
+  'holder',
 ]
 
 /*

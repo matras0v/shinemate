@@ -1110,6 +1110,92 @@ export function GritSeparator() {
   )
 }
 
+/* ───────────────────────── Держатель: у машинки своё место ───────────────────────── */
+
+/**
+ * Куда машинка возвращается между проходами.
+ *
+ * Слева — как это выглядит без держателя: инструмент лежит на панели
+ * кузова, кабель на полу, круг собирает пыль. Справа — машинка на своём
+ * месте: при появлении блока она один раз «приезжает» в держатель.
+ * Кадры настоящие: и машинка, и держатель — позиции каталога.
+ */
+export function HolderScene({ machineImage, holderImage }: { machineImage: string; holderImage?: string }) {
+  const reduced = useReducedMotion()
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {/* Без держателя */}
+      <div className="relative overflow-hidden rounded-2xl border border-graphite/[0.12] bg-hazeSurface p-6">
+        <div className="relative flex h-40 items-end justify-center sm:h-48">
+          {/*
+            Условная панель кузова: тёмный лак с бликом, а не чёрное
+            пятно. Машинка лежит НА ней, поэтому её нижний край заходит
+            на панель, а не висит над ним.
+          */}
+          <span
+            aria-hidden
+            className="absolute bottom-6 h-20 w-[92%] rounded-t-[46%] bg-[linear-gradient(180deg,#31363B_0%,#1B1E22_60%,#101214_100%)]"
+          />
+          <span aria-hidden className="absolute bottom-[4.5rem] h-6 w-[62%] rounded-[50%] bg-white/[0.09] blur-[6px]" />
+          <img
+            src={machineImage}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="relative z-10 mb-10 h-24 w-auto rotate-[-7deg] object-contain drop-shadow-[0_14px_18px_rgba(0,0,0,0.45)] sm:h-28"
+          />
+        </div>
+        <p className="mt-4 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Без держателя</p>
+        <p className="mt-2 text-[0.875rem] leading-relaxed text-slate">
+          Машинка лежит на кузове или на полу: круг собирает пыль, кабель попадает под ноги, корпус царапает панель.
+        </p>
+      </div>
+
+      {/* С держателем */}
+      <div className="relative overflow-hidden rounded-2xl border border-ember/40 bg-porcelain p-6">
+        <div className="relative flex h-40 items-center justify-center sm:h-48">
+          {/* Перфопанель — фон рабочего места */}
+          <svg aria-hidden className="absolute inset-0 h-full w-full text-graphite/[0.12]">
+            <defs>
+              <pattern id="pegboard" width="18" height="18" patternUnits="userSpaceOnUse">
+                <circle cx="9" cy="9" r="2" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#pegboard)" />
+          </svg>
+
+          {holderImage && (
+            <img
+              src={holderImage}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="relative z-10 h-32 w-auto object-contain sm:h-40"
+            />
+          )}
+          {/* Машинка один раз приезжает на своё место */}
+          <motion.img
+            src={machineImage}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            initial={reduced ? { x: 0, opacity: 1 } : { x: 90, opacity: 0 }}
+            whileInView={{ x: 0, opacity: 1 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const, delay: 0.25 }}
+            className="relative z-20 -ml-8 h-24 w-auto object-contain drop-shadow-[0_12px_20px_rgba(26,28,30,0.2)] sm:h-28"
+          />
+        </div>
+        <p className="mt-4 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-ember">С держателем</p>
+        <p className="mt-2 text-[0.875rem] leading-relaxed text-slate">
+          У инструмента постоянное место в шаге от рабочей зоны: машинка висит, кабель не на полу, круг не в пыли.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 /* ───────────────────────── Липучка: новая против изношенной ───────────────────────── */
 
 /**
