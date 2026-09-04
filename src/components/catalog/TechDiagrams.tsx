@@ -877,6 +877,135 @@ export function SizeScale({ items }: { items: { label: string; note: string; mm:
   )
 }
 
+/* ───────────────────────── Устройство круга: слои ───────────────────────── */
+
+export type LayerItem = { label: string; note: string }
+
+/**
+ * Слои круга контролируемо расходятся при попадании в область видимости —
+ * один раз, на 20–35px, без «взрыва» и отскока. Это ПРИНЦИП конструкции
+ * (рабочая поверхность → тело круга → крепление Velcro), а не чертёж
+ * конкретной модели: точных толщин слоёв в прайсе нет, и утверждать их
+ * нельзя (у референсных фото клиента одна и та же позиция размечена то
+ * 24, то 25 мм — то есть даже там это не точный источник).
+ */
+export function PadConstruction({ items }: { items: LayerItem[] }) {
+  const reduced = useReducedMotion()
+  return (
+    <div className="grid items-center gap-8 sm:grid-cols-[minmax(0,13rem)_1fr]">
+      <svg viewBox="0 0 220 190" className="mx-auto h-40 w-40 sm:h-48 sm:w-48" role="img" aria-label="Слои круга сверху вниз: рабочая поверхность, тело круга, крепление">
+        <Grid id="pad-layers-grid" step={22} />
+        <rect width="220" height="190" fill="url(#pad-layers-grid)" className="text-graphite/[0.08]" />
+        {items.map((item, i) => {
+          const restY = 40 + i * 30
+          const openY = 30 + i * 46
+          return (
+            <motion.g
+              key={item.label}
+              initial={reduced ? { opacity: 1, y: openY } : { opacity: 0, y: restY }}
+              whileInView={{ opacity: 1, y: openY }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.1 + i * 0.14 }}
+            >
+              <ellipse cx="110" cy="0" rx="84" ry="13" fill={i === 0 ? EMBER : '#1A1C1E'} fillOpacity={i === 0 ? 0.85 : 0.16 + i * 0.1} />
+              <ellipse cx="110" cy="0" rx="84" ry="13" fill="none" stroke="#1A1C1E" strokeOpacity="0.18" strokeWidth="1" />
+              <text x="110" y="3.5" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill={i === 0 ? '#1A1C1E' : '#1A1C1E'} fillOpacity="0.6">
+                {String(i + 1).padStart(2, '0')}
+              </text>
+            </motion.g>
+          )
+        })}
+      </svg>
+      <ol className="space-y-4">
+        {items.map((item, i) => (
+          <motion.li
+            key={item.label}
+            initial={reduced ? undefined : { opacity: 0, x: 12 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: 0.2 + i * 0.14 }}
+            className="border-l-2 border-ember/40 pl-4"
+          >
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</p>
+            <p className="mt-1 text-[0.9375rem] leading-snug tracking-tight text-graphite">{item.label}</p>
+            <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{item.note}</p>
+          </motion.li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+/* ───────────────────────── Три материала рядом ───────────────────────── */
+
+type MaterialKey = 'foam' | 'microfiber' | 'wool'
+
+/**
+ * Статичное сравнение, одинаковое на каждой странице круга — меняется
+ * только то, какая карточка активна (материал этого товара). Формулировки
+ * — те же, что уже используются в материал-специфичных сценах истории:
+ * никаких новых цифр реза здесь не появляется, только относительное
+ * поведение (агрессивнее / чище / для какой стадии).
+ */
+const MATERIALS: { key: MaterialKey; label: string; trait: string; body: string; use: string }[] = [
+  {
+    key: 'foam',
+    label: 'Поролон',
+    trait: 'Универсальный',
+    body: 'Жёсткость определяет задачу: от тяжёлого реза до чистого финиша — вся линейка держится на одном материале, меняется только градация.',
+    use: 'Все стадии, по градации',
+  },
+  {
+    key: 'microfiber',
+    label: 'Микрофибра',
+    trait: 'Рез шерсти, чистота поролона',
+    body: 'Снимает почти как шерсть, но оставляет заметно более чистую поверхность — часто закрывает коррекцию и финиш меньшим числом проходов.',
+    use: 'Коррекция и финиш',
+  },
+  {
+    key: 'wool',
+    label: 'Шерсть',
+    trait: 'Максимальный рез',
+    body: 'Ворс снимает лак агрессивнее поролона и меньше держит тепло в пятне контакта — стандарт для тяжёлой коррекции.',
+    use: 'Тяжёлая коррекция',
+  },
+]
+
+export function MaterialCompare({ active }: { active: MaterialKey }) {
+  const reduced = useReducedMotion()
+  return (
+    <ul className="grid gap-4 sm:grid-cols-3">
+      {MATERIALS.map((m, i) => {
+        const isActive = m.key === active
+        return (
+          <motion.li
+            key={m.key}
+            initial={reduced ? undefined : { opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.1 }}
+            className={`rounded-2xl border p-5 ${
+              isActive ? 'border-ember/50 bg-porcelain shadow-[0_0_0_1px_rgba(254,139,12,0.12)]' : 'border-graphite/[0.1] bg-hazeSurface'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[0.9375rem] font-medium tracking-tight text-graphite">{m.label}</p>
+              {isActive && (
+                <span className="rounded-full bg-ember/15 px-2 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-ember">
+                  Этот круг
+                </span>
+              )}
+            </div>
+            <p className="mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">{m.trait}</p>
+            <p className="mt-3 text-[0.8125rem] leading-relaxed text-slate">{m.body}</p>
+            <p className="mt-3 border-t border-graphite/[0.1] pt-3 text-[0.75rem] text-titanium">{m.use}</p>
+          </motion.li>
+        )
+      })}
+    </ul>
+  )
+}
+
 /* ───────────────────────── Дефект → абразив → результат ───────────────────────── */
 
 export type DefectProcessData = {
@@ -997,6 +1126,50 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
         <p className="mt-5 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Результат</p>
         <p className="mt-2 text-[0.875rem] leading-snug text-graphite">{resultNote}</p>
       </motion.div>
+    </div>
+  )
+}
+
+/* ───────────────────────── Путь энергии: управление → рабочая поверхность ───────────────────────── */
+
+export type AssemblyItem = { label: string; note: string }
+
+/**
+ * Цепочка узлов от управления к рабочей поверхности — общими для всей
+ * категории терминами (управление, привод, рабочий блок, крепление), а
+ * не разрезом конкретного мотора: точной компоновки редуктора у вендора
+ * в открытом доступе нет, и рисовать «внутреннее устройство EP830» было
+ * бы подделкой. Карточки появляются по очереди слева направо — единожды,
+ * без повторов при обратном скролле.
+ */
+export function AssemblyChain({ items }: { items: AssemblyItem[] }) {
+  const reduced = useReducedMotion()
+  const card = (i: number) =>
+    reduced
+      ? {}
+      : {
+          initial: { opacity: 0, y: 16 },
+          whileInView: { opacity: 1, y: 0 },
+          viewport: { once: true, amount: 0.4 },
+          transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.14 },
+        }
+
+  return (
+    <div className="grid items-stretch gap-3 lg:grid-flow-col lg:auto-cols-fr">
+      {items.map((item, i) => (
+        <div key={item.label} className="contents">
+          <motion.div {...card(i)} className="flex flex-col rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-5">
+            <span className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</span>
+            <p className="mt-2 text-[0.9375rem] tracking-tight text-graphite">{item.label}</p>
+            <p className="mt-2 text-[0.8125rem] leading-relaxed text-slate">{item.note}</p>
+          </motion.div>
+          {i < items.length - 1 && (
+            <div aria-hidden className="flex items-center justify-center text-graphite/25 lg:rotate-0 max-lg:rotate-90 max-lg:py-0.5">
+              <ArrowGlyph />
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

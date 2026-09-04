@@ -3,11 +3,14 @@ import { ArrowRight, Check } from 'lucide-react'
 
 import { formatPrice, minPrice, type Product } from '../../data/catalog'
 import {
+  AssemblyChain,
   BatteryFlow,
   CutMeter,
   DefectProcess,
+  MaterialCompare,
   MountStack,
   OrbitPrinciple,
+  PadConstruction,
   PowerBar,
   RotaryPrinciple,
   SeriesRow,
@@ -232,6 +235,12 @@ function Diagram({
       return <VariantPicker items={diagram.items} activeSku={activeSku} onSelect={onSelectSku} />
     case 'series':
       return <SeriesRow items={diagram.items} from={diagram.from} to={diagram.to} />
+    case 'layers':
+      return <PadConstruction items={diagram.items} />
+    case 'materials':
+      return <MaterialCompare active={diagram.active} />
+    case 'assembly':
+      return <AssemblyChain items={diagram.items} />
     case 'process':
       return (
         <DefectProcess
@@ -247,7 +256,7 @@ function Diagram({
 }
 
 /** Схемам, которые сами по себе — крупный объект, рамка не нужна. */
-const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series', 'variants', 'process']
+const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series', 'variants', 'process', 'layers', 'materials', 'assembly']
 
 /*
  * Схема принципа привода — это «технологический» акцент страницы, и он

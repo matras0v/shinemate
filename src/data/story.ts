@@ -98,6 +98,24 @@ export type SceneDiagram =
   | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
   | { kind: 'sizes'; items: { label: string; note: string; mm: number }[] }
   /*
+   * Из чего собран круг — общий принцип конструкции (рабочая поверхность
+   * → тело круга → крепление Velcro), а не разрез конкретной модели:
+   * точной раскладки слоёв и толщин каждого слоя в прайсе нет.
+   */
+  | { kind: 'layers'; items: { label: string; note: string }[] }
+  /*
+   * Три материала кругов рядом: статичное сравнение, переиспользуемое на
+   * каждой странице круга — меняется только то, какая карточка активна.
+   */
+  | { kind: 'materials'; active: 'foam' | 'microfiber' | 'wool' }
+  /*
+   * Путь энергии от управления к рабочей поверхности — общими для всей
+   * категории узлами (управление, привод, рабочий блок, крепление), а не
+   * разрезом конкретного мотора: точной компоновки редуктора у вендора
+   * в открытом доступе нет.
+   */
+  | { kind: 'assembly'; items: { label: string; note: string }[] }
+  /*
    * Дефект → абразив → результат. Только для составов, только с реальными
    * дефектами стадии из официальной таблицы применения — никаких
    * придуманных повреждений и никакой фотореалистичной подделки «было/стало».
@@ -402,6 +420,35 @@ function machineScenes(p: Product): StoryScene[] {
     })
   }
 
+  /*
+   * 01.5. Путь энергии от управления к рабочей поверхности — «сигнатурный»
+   * момент страницы машинки. Узлы названы общими для любой полировальной
+   * машинки терминами (управление, привод, рабочий блок, крепление):
+   * точной раскладки редуктора и обмотки у ShineMate в открытом доступе
+   * нет, и рисовать «разрез EP830» значило бы выдать схему за факт.
+   */
+  const orbital = isOrbitalLike(p) || (isSanderLike(p) && !!orbit)
+  if (orbital || isRotaryLike(p)) {
+    const workUnit = orbital
+      ? { label: 'Орбитальный узел', note: 'Задаёт орбитальную траекторию рабочей поверхности' }
+      : { label: 'Шпиндель', note: 'Ось вращения совпадает с осью круга' }
+    const items: { label: string; note: string }[] = [
+      ...(p.category === 'cordless'
+        ? [{ label: 'Аккумулятор', note: 'Источник питания, общий для всей платформы' }]
+        : []),
+      { label: 'Управление', note: 'Держит выбранные обороты под нажимом и нагрузкой' },
+      { label: 'Привод', note: 'Передаёт вращение от двигателя к рабочему узлу' },
+      workUnit,
+      { label: 'Подложка и круг', note: 'Превращают траекторию рабочего узла в работу по лаку' },
+    ]
+    scenes.push({
+      title: 'От управления к рабочей поверхности',
+      body:
+        'Каждый узел решает свою задачу: управление держит режим, привод передаёт вращение, рабочий блок задаёт траекторию, а подложка с кругом превращают её в работу по лакокрасочному покрытию.',
+      diagram: { kind: 'assembly', items },
+    })
+  }
+
   // 02. Мощность — номинал против пика.
   const pw = parsePower(power)
   if (pw) {
@@ -692,6 +739,58 @@ function padPurpose(p: Product): ProductStory['purpose'] {
   }
 }
 
+/**
+ * «Как устроен рабочий круг» — общий принцип конструкции hook-and-loop
+ * круга (рабочая поверхность → тело → крепление Velcro), верный для всей
+ * категории. Мы намеренно не рисуем толщину слоёв и не разбираем
+ * конкретную модель: в прайсе нет данных по внутренней раскладке, а на
+ * фото-референсах клиента одна и та же позиция подписана то 24, то
+ * 25 мм — то есть это не источник, которому можно доверять цифру.
+ */
+function padConstructionScene(p: Product): StoryScene | null {
+  if (/гибкий вал|конус/i.test(p.kind)) return null
+  const material = /шерст/i.test(p.kind) ? 'шерсть' : /микрофибр/i.test(p.kind) ? 'микрофибра' : 'поролон'
+  const faceNote =
+    material === 'шерсть'
+      ? 'Ворс определяет характер контакта с ЛКП и скорость съёма'
+      : material === 'микрофибра'
+        ? 'Плетение определяет характер контакта с ЛКП и чистоту финиша'
+        : 'Жёсткость поролона определяет характер контакта с ЛКП'
+  return {
+    title: 'Как устроен рабочий круг',
+    body:
+      'Круг — это не один сплошной материал, а несколько слоёв с разной задачей: у каждого своя роль в передаче давления от машинки к лакокрасочному покрытию.',
+    diagram: {
+      kind: 'layers',
+      items: [
+        { label: 'Рабочая поверхность', note: faceNote },
+        { label: `Тело круга — ${material}`, note: 'Держит форму и амортизирует нажим машинки' },
+        { label: 'Крепление Velcro', note: 'Фиксирует круг на подложке, позволяет менять его без инструмента' },
+      ],
+    },
+  }
+}
+
+/**
+ * Три материала кругов рядом — статичное сравнение без придуманных
+ * цифр реза: относительное поведение (агрессивнее/чище/для какой
+ * стадии) взято из тех же формулировок, что уже используются в
+ * материал-специфичных сценах выше по этой же функции.
+ */
+function padMaterialScene(p: Product): StoryScene | null {
+  if (/гибкий вал|конус/i.test(p.kind)) return null
+  const active: 'foam' | 'microfiber' | 'wool' = /шерст/i.test(p.kind)
+    ? 'wool'
+    : /микрофибр/i.test(p.kind)
+      ? 'microfiber'
+      : 'foam'
+  return {
+    title: 'Материал меняет характер работы',
+    body: 'Один и тот же диаметр круга ведёт себя по-разному в зависимости от материала рабочей поверхности — это то, что определяет выбор между поролоном, микрофиброй и шерстью.',
+    diagram: { kind: 'materials', active },
+  }
+}
+
 function padScenes(p: Product): StoryScene[] {
   const scenes: StoryScene[] = []
   const grade = padGrade(p)
@@ -773,6 +872,12 @@ function padScenes(p: Product): StoryScene[] {
       image: p.image,
     })
   }
+
+  const construction = padConstructionScene(p)
+  if (construction) scenes.push(construction)
+
+  const compare = padMaterialScene(p)
+  if (compare) scenes.push(compare)
 
   if (grade !== null) {
     // Шкала строится по РЕАЛЬНОМУ составу каталога: все градации, которые
@@ -856,22 +961,31 @@ function padRig(p: Product): { machine?: Product; plate?: Product } {
   return { machine: bySlug('ex620'), plate: bySlug('plates-da') }
 }
 
+/** Стадия круга → реальный состав этой же стадии (обратная связь к COMPOUND_STAGE). */
+const STAGE_COMPOUND_SLUG: Record<number, string> = {
+  1: 'v80-heavy-cut',
+  2: 'v40-medium-polish',
+  3: 'v20-final-finish',
+}
+
 function padMountScene(p: Product): StoryScene | null {
   if (/гибкий вал|конус/i.test(p.kind)) return null
   const { machine, plate } = padRig(p)
   if (!machine || !plate) return null
+  const stage = padStageIndex(p)
+  const compound = stage !== null ? bySlug(STAGE_COMPOUND_SLUG[stage]) : undefined
+  const items = [
+    { src: machine.image, label: machine.model, note: specValue(machine, 'Резьба') ? `Резьба ${specValue(machine, 'Резьба')}` : machine.kind },
+    { src: plate.image, label: 'Подложка', note: specValue(plate, 'Диаметры') ?? plate.kind },
+    { src: p.image, label: p.model, note: specValue(p, 'Диаметры') ?? p.kind },
+    ...(compound ? [{ src: compound.image, label: compound.model, note: 'Работает в паре с кругом этой стадии' }] : []),
+  ]
   return {
-    title: 'Как круг попадает на машинку',
-    body:
-      'Круг не ставится на машинку напрямую: между ними подложка. Её диаметр подбирают под круг, а резьбу — под машинку, поэтому один и тот же круг работает и на роторной, и на эксцентриковой при правильной подложке.',
-    diagram: {
-      kind: 'mount',
-      items: [
-        { src: machine.image, label: machine.model, note: specValue(machine, 'Резьба') ? `Резьба ${specValue(machine, 'Резьба')}` : machine.kind },
-        { src: plate.image, label: 'Подложка', note: specValue(plate, 'Диаметры') ?? plate.kind },
-        { src: p.image, label: p.model, note: specValue(p, 'Диаметры') ?? p.kind },
-      ],
-    },
+    title: compound ? 'Круг не работает в отрыве от системы' : 'Как круг попадает на машинку',
+    body: compound
+      ? 'Круг не ставится на машинку напрямую: между ними подложка, а результат даёт только связка с составом своей стадии — по отдельности ни круг, ни паста предсказуемого съёма не дают.'
+      : 'Круг не ставится на машинку напрямую: между ними подложка. Её диаметр подбирают под круг, а резьбу — под машинку, поэтому один и тот же круг работает и на роторной, и на эксцентриковой при правильной подложке.',
+    diagram: { kind: 'mount', items },
   }
 }
 
