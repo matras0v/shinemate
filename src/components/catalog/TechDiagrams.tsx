@@ -883,32 +883,177 @@ export function StrokeScale({
 
 /* ───────────────────────── Размерный ряд ───────────────────────── */
 
+export type SizeItem = {
+  label: string
+  note: string
+  mm: number
+  /** Реальный кадр этого исполнения — размер показывается товаром, а не кружком. */
+  image?: string
+  active?: boolean
+}
+
 /**
- * Исполнения позиции в реальном масштабе: диаметр круга на схеме
- * пропорционален диаметру из прайса. Цифры — из variants, ничего не
- * округляется «на глаз».
+ * Размерный ряд НАСТОЯЩИМИ кадрами позиции в едином масштабе.
+ *
+ * Раньше здесь стояли пустые круги разного диаметра: формально «шкала»,
+ * фактически заглушка, из которой нельзя понять ни что это за товар, ни
+ * зачем ему разные размеры. Теперь каждое исполнение показано своим
+ * кадром, пропорция между кадрами берётся из реальных миллиметров
+ * прайса, а под рядом идёт размерная линия с теми же цифрами.
+ *
+ * Масштаб намеренно сжат (0.44…1 вместо 0…1): 30 мм рядом со 148 мм
+ * превращались бы в точку, и ряд снова читался бы как декорация.
  */
-export function SizeScale({ items }: { items: { label: string; note: string; mm: number }[] }) {
+export function SizeScale({ items, unit = 'мм' }: { items: SizeItem[]; unit?: string }) {
+  const reduced = useReducedMotion()
   const valid = items.filter((i) => i.mm > 0)
   const list = valid.length >= 2 ? valid : items
   const max = Math.max(...list.map((i) => i.mm || 1))
+  const min = Math.min(...list.map((i) => i.mm || max))
+  /*
+   * Пропорция — ЧЕСТНАЯ: отношение размеров, а не растянутая на весь
+   * диапазон шкала. Растяжение врало бы на близких размерах: 18" и 20"
+   * отличаются на десятую часть, а «нормализованная» шкала показывала
+   * бы их как 0.44 и 1.0. Нижняя граница нужна только для того, чтобы
+   * 30 мм рядом со 148 мм не превращались в точку.
+   */
+  const FLOOR = 0.42
+  const clamped = min / max < FLOOR
+  const scaleOf = (mm: number) => (!mm ? FLOOR : Math.max(mm / max, FLOOR))
+
   return (
-    <ul className="flex w-full flex-wrap items-end gap-x-8 gap-y-8">
-      {list.map((item) => {
-        const size = 36 + ((item.mm || max * 0.4) / max) * 92
-        return (
-          <li key={item.label + item.note} className="flex flex-col items-center gap-3">
-            <span
-              aria-hidden
-              className="block rounded-full border border-graphite/25 bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#E7EDEE_100%)]"
-              style={{ width: size, height: size }}
-            />
-            <span className="font-mono text-[0.8125rem] tabular-nums text-graphite">{item.label}</span>
-            <span className="max-w-[12rem] text-center text-[0.75rem] leading-snug text-titanium">{item.note}</span>
-          </li>
-        )
-      })}
-    </ul>
+    <div className="w-full">
+      <ul className="flex w-full flex-wrap items-end justify-start gap-x-6 gap-y-10 sm:gap-x-10">
+        {list.map((item, i) => {
+          const k = scaleOf(item.mm)
+          return (
+            <motion.li
+              key={item.label + item.note}
+              initial={reduced ? undefined : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.08 }}
+              className="flex w-[8rem] flex-col items-center gap-3 sm:w-[10rem]"
+            >
+              <div className="flex h-[9rem] w-full items-end justify-center sm:h-[11rem]">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="w-auto max-w-full object-contain drop-shadow-[0_10px_18px_rgba(26,28,30,0.12)]"
+                    style={{ height: `${Math.round(k * 100)}%` }}
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="block rounded-full border border-graphite/25 bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#E7EDEE_100%)]"
+                    style={{ width: `${Math.round(k * 88)}%`, aspectRatio: '1 / 1' }}
+                  />
+                )}
+              </div>
+
+              {/* Размерная линия под кадром — как на чертеже, а не просто подпись */}
+              <div className="flex w-full flex-col items-center">
+                <span aria-hidden className="flex w-full items-center opacity-60">
+                  <span className="h-2 w-px bg-graphite/45" />
+                  <span className="h-px flex-1 bg-graphite/25" />
+                  <span className="h-2 w-px bg-graphite/45" />
+                </span>
+                <span
+                  className={`mt-2 font-mono text-[0.8125rem] tabular-nums ${
+                    item.active ? 'text-ember' : 'text-graphite'
+                  }`}
+                >
+                  {item.label}
+                </span>
+                <span className="mt-1 text-center text-[0.75rem] leading-snug text-titanium">{item.note}</span>
+              </div>
+            </motion.li>
+          )
+        })}
+      </ul>
+      {valid.length >= 2 && (
+        <p className="mt-8 border-t border-graphite/[0.12] pt-4 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
+          {clamped
+            ? `Диапазон от ${min} до ${max} ${unit} · самые мелкие показаны крупнее, чтобы оставаться читаемыми`
+            : `Пропорции соответствуют реальным размерам · от ${min} до ${max} ${unit}`}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* ───────────────────────── Липучка: новая против изношенной ───────────────────────── */
+
+/**
+ * Почему крепление подложки — расходник.
+ *
+ * Слева крючки стоят вертикально и плотно, справа примяты и забиты
+ * пылью. Это ПРИНЦИП износа, а не фотография конкретной подложки и не
+ * заявление о ресурсе: ни того, ни другого в данных нет, поэтому ни
+ * «через N часов», ни «через N кругов» здесь не появляется.
+ */
+export function VelcroWear() {
+  const reduced = useReducedMotion()
+
+  const hooks = (worn: boolean) =>
+    Array.from({ length: 26 }, (_, i) => {
+      const x = 14 + i * 7
+      if (!worn) return { x, d: `M ${x} 74 L ${x} 40 q 0 -8 7 -8` }
+      // Изношенные: разной длины, завалены в стороны, часть почти легла.
+      const lean = (i % 3) - 1
+      const h = 74 - (16 + (i % 4) * 5)
+      return { x, d: `M ${x} 74 L ${x + lean * 5} ${h} q ${lean * 4} -3 ${lean * 7} -1` }
+    })
+
+  const panel = (worn: boolean) => (
+    <div
+      className={`relative overflow-hidden rounded-2xl border p-6 ${
+        worn ? 'border-graphite/[0.12] bg-hazeSurface' : 'border-ember/40 bg-porcelain'
+      }`}
+    >
+      <svg viewBox="0 0 200 92" className="h-24 w-full" role="img" aria-label={worn ? 'Изношенное крепление: крючки примяты' : 'Новое крепление: крючки стоят плотно'}>
+        {/* Основание ленты */}
+        <rect x="8" y="74" width="184" height="10" rx="3" fill="#1A1C1E" fillOpacity={worn ? 0.5 : 0.72} />
+        {hooks(worn).map((h, i) => (
+          <motion.path
+            key={h.x}
+            d={h.d}
+            fill="none"
+            stroke="#1A1C1E"
+            strokeOpacity={worn ? 0.34 : 0.6}
+            strokeWidth="2"
+            strokeLinecap="round"
+            initial={reduced ? undefined : { opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.35, delay: (worn ? 0.35 : 0.05) + i * 0.012 }}
+          />
+        ))}
+        {/* Забившая ворс пыль — только у изношенного */}
+        {worn &&
+          [30, 62, 96, 128, 158].map((x, i) => (
+            <circle key={x} cx={x} cy={62 - (i % 2) * 6} r="3.2" fill="#1A1C1E" fillOpacity="0.14" />
+          ))}
+      </svg>
+      <p className={`mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] ${worn ? 'text-titanium' : 'text-ember'}`}>
+        {worn ? 'Изношенное крепление' : 'Новое крепление'}
+      </p>
+      <p className="mt-2 text-[0.875rem] leading-relaxed text-slate">
+        {worn
+          ? 'Ворс примят и забит пылью — круг держится хуже и начинает смещаться под нагрузкой.'
+          : 'Ворс стоит плотно и держит круг по всей плоскости — пятно контакта не смещается.'}
+      </p>
+    </div>
+  )
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      {panel(false)}
+      {panel(true)}
+    </div>
   )
 }
 
@@ -1319,13 +1464,22 @@ type MaterialKey = 'foam' | 'microfiber' | 'wool'
  * никаких новых цифр реза здесь не появляется, только относительное
  * поведение (агрессивнее / чище / для какой стадии).
  */
-const MATERIALS: { key: MaterialKey; label: string; trait: string; body: string; use: string }[] = [
+const MATERIALS: {
+  key: MaterialKey
+  label: string
+  trait: string
+  body: string
+  use: string
+  /** Как материал ведёт себя в пятне контакта — без выдуманных цифр. */
+  contact: string
+}[] = [
   {
     key: 'foam',
     label: 'Поролон',
     trait: 'Универсальный',
     body: 'Жёсткость определяет задачу: от тяжёлого реза до чистого финиша — вся линейка держится на одном материале, меняется только градация.',
     use: 'Все стадии, по градации',
+    contact: 'Сплошное пятно, сжимается под нажимом',
   },
   {
     key: 'microfiber',
@@ -1333,6 +1487,7 @@ const MATERIALS: { key: MaterialKey; label: string; trait: string; body: string;
     trait: 'Рез шерсти, чистота поролона',
     body: 'Снимает почти как шерсть, но оставляет заметно более чистую поверхность — часто закрывает коррекцию и финиш меньшим числом проходов.',
     use: 'Коррекция и финиш',
+    contact: 'Плотное короткое волокно, ровный след',
   },
   {
     key: 'wool',
@@ -1340,6 +1495,7 @@ const MATERIALS: { key: MaterialKey; label: string; trait: string; body: string;
     trait: 'Максимальный рез',
     body: 'Ворс снимает лак агрессивнее поролона и меньше держит тепло в пятне контакта — стандарт для тяжёлой коррекции.',
     use: 'Тяжёлая коррекция',
+    contact: 'Длинный ворс, работает кончиками прядей',
   },
 ]
 
@@ -1348,8 +1504,9 @@ const MATERIALS: { key: MaterialKey; label: string; trait: string; body: string;
  * поролон — открытые поры, микрофибра — плотный короткий ворс, шерсть —
  * длинные пряди. Это условная графика структуры, а не микрофотография.
  */
-function MaterialTexture({ kind }: { kind: MaterialKey }) {
+function MaterialTexture({ kind, large }: { kind: MaterialKey; large?: boolean }) {
   const ink = '#1A1C1E'
+  const box = large ? 'h-32 w-full sm:h-40' : 'h-14 w-full'
   if (kind === 'foam') {
     const cells: { x: number; y: number; r: number }[] = []
     for (let row = 0; row < 4; row += 1) {
@@ -1358,7 +1515,7 @@ function MaterialTexture({ kind }: { kind: MaterialKey }) {
       }
     }
     return (
-      <svg viewBox="0 0 190 78" className="h-14 w-full" role="img" aria-label="Структура поролона: открытые поры">
+      <svg viewBox="0 0 190 78" className={box} role="img" aria-label="Структура поролона: открытые поры">
         {cells.map((c, i) => (
           <circle key={i} cx={c.x} cy={c.y} r={c.r} fill="none" stroke={ink} strokeOpacity="0.3" strokeWidth="1.3" />
         ))}
@@ -1367,7 +1524,7 @@ function MaterialTexture({ kind }: { kind: MaterialKey }) {
   }
   if (kind === 'microfiber') {
     return (
-      <svg viewBox="0 0 190 78" className="h-14 w-full" role="img" aria-label="Структура микрофибры: плотный короткий ворс">
+      <svg viewBox="0 0 190 78" className={box} role="img" aria-label="Структура микрофибры: плотный короткий ворс">
         <line x1="6" y1="62" x2="184" y2="62" stroke={ink} strokeOpacity="0.28" strokeWidth="1.4" />
         {Array.from({ length: 46 }, (_, i) => 7 + i * 4).map((x, i) => (
           <line
@@ -1386,7 +1543,7 @@ function MaterialTexture({ kind }: { kind: MaterialKey }) {
     )
   }
   return (
-    <svg viewBox="0 0 190 78" className="h-14 w-full" role="img" aria-label="Структура шерсти: длинные пряди ворса">
+    <svg viewBox="0 0 190 78" className={box} role="img" aria-label="Структура шерсти: длинные пряди ворса">
       <line x1="6" y1="66" x2="184" y2="66" stroke={ink} strokeOpacity="0.28" strokeWidth="1.4" />
       {Array.from({ length: 19 }, (_, i) => 8 + i * 9.6).map((x, i) => (
         <path
@@ -1403,41 +1560,120 @@ function MaterialTexture({ kind }: { kind: MaterialKey }) {
   )
 }
 
-export function MaterialCompare({ active }: { active: MaterialKey }) {
+/** Реальные кадры кругов каждого материала — из каталога, не иллюстрации. */
+export type MaterialSample = { key: MaterialKey; image: string; model: string; href: string }
+
+/**
+ * Материал круга как ИНТЕРАКТИВНЫЙ разбор, а не три текстовые карточки.
+ *
+ * Слева — крупная макро-структура выбранного материала (у каждого своя:
+ * открытые поры поролона, плотное короткое волокно микрофибры, длинные
+ * пряди шерсти) плюс реальный кадр круга этого материала из каталога.
+ * Справа — что это меняет в работе. Переключатель материалов работает
+ * руками; материал открытого товара выбран по умолчанию и помечен.
+ *
+ * Структуры условные: это графика принципа, а не микрофотография. Ни
+ * одной новой цифры реза здесь не появляется — только относительное
+ * поведение, уже сказанное в тексте товара.
+ */
+export function MaterialCompare({ active, samples = [] }: { active: MaterialKey; samples?: MaterialSample[] }) {
   const reduced = useReducedMotion()
+  const [picked, setPicked] = useState<MaterialKey>(active)
+  useEffect(() => setPicked(active), [active])
+  const current = MATERIALS.find((m) => m.key === picked) ?? MATERIALS[0]
+  const sample = samples.find((s) => s.key === picked)
+
   return (
-    <ul className="grid gap-4 sm:grid-cols-3">
-      {MATERIALS.map((m, i) => {
-        const isActive = m.key === active
-        return (
-          <motion.li
-            key={m.key}
-            initial={reduced ? undefined : { opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.1 }}
-            className={`flex flex-col rounded-2xl border p-5 ${
-              isActive ? 'border-ember/50 bg-porcelain shadow-[0_0_0_1px_rgba(254,139,12,0.12)]' : 'border-graphite/[0.1] bg-hazeSurface'
-            }`}
+    <div>
+      {/* Переключатель материалов */}
+      <ul className="flex flex-wrap gap-2">
+        {MATERIALS.map((m) => {
+          const on = m.key === picked
+          return (
+            <li key={m.key}>
+              <button
+                type="button"
+                onClick={() => setPicked(m.key)}
+                aria-pressed={on}
+                className={`rounded-full border px-4 py-2 text-[0.875rem] transition-colors duration-300 ease-premium ${
+                  on
+                    ? 'border-graphite bg-graphite text-porcelain'
+                    : 'border-graphite/20 text-slate hover:border-graphite/45 hover:text-graphite'
+                }`}
+              >
+                {m.label}
+                {m.key === active && <span className="ml-2 text-ember">•</span>}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10">
+        {/* Крупная макро-структура выбранного материала + реальный круг */}
+        <div className="relative overflow-hidden rounded-[1.5rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E3EAEC_100%)] p-6 sm:p-8">
+          <motion.div
+            key={picked}
+            initial={reduced ? undefined : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] as const }}
+            className="flex flex-col gap-6 sm:flex-row sm:items-center"
           >
-            <div className={`-mx-1 mb-4 overflow-hidden rounded-xl px-1 ${isActive ? 'text-graphite' : 'text-titanium'}`}>
-              <MaterialTexture kind={m.key} />
+            <div className="min-w-0 flex-1 text-graphite">
+              <MaterialTexture kind={picked} large />
             </div>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[0.9375rem] font-medium tracking-tight text-graphite">{m.label}</p>
-              {isActive && (
-                <span className="rounded-full bg-ember/15 px-2 py-0.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-ember">
-                  Этот круг
+            {sample && (
+              <a
+                href={sample.href}
+                className="group flex w-full shrink-0 flex-col items-center gap-2 sm:w-40"
+                aria-label={`Открыть ${sample.model}`}
+              >
+                <span className="flex h-28 w-28 items-center justify-center rounded-full bg-porcelain shadow-[0_10px_24px_rgba(26,28,30,0.12)] ring-1 ring-graphite/[0.07] sm:h-32 sm:w-32">
+                  <img
+                    src={sample.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-[76%] w-[76%] object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.05]"
+                  />
                 </span>
-              )}
+                <span className="text-center text-[0.8125rem] leading-snug text-slate transition-colors duration-300 group-hover:text-graphite">
+                  {sample.model}
+                </span>
+              </a>
+            )}
+          </motion.div>
+          <p className="mt-6 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
+            Структура — условная графика принципа
+          </p>
+        </div>
+
+        {/* Что это меняет в работе */}
+        <motion.div
+          key={`${picked}-text`}
+          initial={reduced ? undefined : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.05, ease: [0.16, 1, 0.3, 1] as const }}
+          className="flex flex-col justify-center"
+        >
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-ember">{current.trait}</p>
+          <p className="mt-3 text-[clamp(1.25rem,1.05rem+0.7vw,1.75rem)] leading-[1.15] tracking-tight text-graphite">
+            {current.label}
+          </p>
+          <p className="mt-4 max-w-[46ch] text-[1rem] leading-relaxed text-ash">{current.body}</p>
+          <dl className="mt-7 space-y-3 border-t border-graphite/[0.12] pt-5">
+            <div className="flex items-baseline justify-between gap-6">
+              <dt className="text-[0.875rem] text-slate">Где работает</dt>
+              <dd className="text-right text-[0.9375rem] tracking-tight text-graphite">{current.use}</dd>
             </div>
-            <p className="mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">{m.trait}</p>
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-slate">{m.body}</p>
-            <p className="mt-auto border-t border-graphite/[0.1] pt-3 text-[0.75rem] text-titanium">{m.use}</p>
-          </motion.li>
-        )
-      })}
-    </ul>
+            <div className="flex items-baseline justify-between gap-6">
+              <dt className="text-[0.875rem] text-slate">Контакт с лаком</dt>
+              <dd className="text-right text-[0.9375rem] tracking-tight text-graphite">{current.contact}</dd>
+            </div>
+          </dl>
+        </motion.div>
+      </div>
+    </div>
   )
 }
 

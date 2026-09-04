@@ -20,6 +20,7 @@ import {
   SizeScale,
   SpeedDial,
   StrokeScale,
+  VelcroWear,
 } from './TechDiagrams'
 import type {
   ComparisonTable,
@@ -232,7 +233,7 @@ function Diagram({
     case 'stroke':
       return <StrokeScale items={diagram.items} activeModel={diagram.activeModel} />
     case 'sizes':
-      return <SizeScale items={diagram.items} />
+      return <SizeScale items={diagram.items} unit={diagram.unit} />
     case 'variants':
       return <VariantPicker items={diagram.items} activeSku={activeSku} onSelect={onSelectSku} />
     case 'series':
@@ -248,11 +249,13 @@ function Diagram({
         />
       )
     case 'materials':
-      return <MaterialCompare active={diagram.active} />
+      return <MaterialCompare active={diagram.active} samples={diagram.samples} />
     case 'assembly':
       return <AssemblyChain items={diagram.items} />
     case 'roles':
       return <RoleLine items={diagram.items} />
+    case 'velcro':
+      return <VelcroWear />
     case 'exploded':
       return (
         <MachineExploded
@@ -295,6 +298,7 @@ const BARE_DIAGRAMS: SceneDiagram['kind'][] = [
   'assembly',
   'exploded',
   'roles',
+  'velcro',
 ]
 
 /*

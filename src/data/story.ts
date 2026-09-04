@@ -97,7 +97,18 @@ export type SceneDiagram =
   /* Цвет точки — реальный цвет круга из его характеристик, а не палитра. */
   | { kind: 'cut'; grades: { value: number; color?: string; label?: string }[]; active: number }
   | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
-  | { kind: 'sizes'; items: { label: string; note: string; mm: number }[] }
+  /* Размерный ряд реальными кадрами исполнений, а не пустыми кружками. */
+  | {
+      kind: 'sizes'
+      items: { label: string; note: string; mm: number; image?: string; active?: boolean }[]
+      unit?: string
+    }
+  /*
+   * Липучка новая против изношенной. Это НЕ фотография конкретной
+   * подложки и не заявление о сроке службы: ни того, ни другого у нас
+   * нет. Показывается принцип — почему крепление считают расходником.
+   */
+  | { kind: 'velcro' }
   /*
    * Из чего собран круг — общий принцип конструкции (рабочая поверхность
    * → тело круга → крепление Velcro), а не разрез конкретной модели:
@@ -119,7 +130,12 @@ export type SceneDiagram =
    * Три материала кругов рядом: статичное сравнение, переиспользуемое на
    * каждой странице круга — меняется только то, какая карточка активна.
    */
-  | { kind: 'materials'; active: 'foam' | 'microfiber' | 'wool' }
+  | {
+      kind: 'materials'
+      active: 'foam' | 'microfiber' | 'wool'
+      /** Реальные круги каждого материала из каталога — со ссылками. */
+      samples?: { key: 'foam' | 'microfiber' | 'wool'; image: string; model: string; href: string }[]
+    }
   /*
    * Путь энергии от управления к рабочей поверхности — общими для всей
    * категории узлами (управление, привод, рабочий блок, крепление), а не
@@ -276,6 +292,29 @@ const firstNumber = (value?: string) => {
   if (!value) return null
   const m = value.replace(/\s/g, '').match(/(\d+(?:[.,]\d+)?)/)
   return m ? Number(m[1].replace(',', '.')) : null
+}
+
+/**
+ * Размерная подпись исполнения для размерного ряда.
+ *
+ * Метки в прайсе выглядят как «3" (74 мм), 5/16"-24, 40 г — для EX603».
+ * Если положить всю строку и в подпись, и в примечание, под кадром
+ * дважды печатается один и тот же текст, а масштаб считается по первому
+ * числу — то есть по дюймам вместо миллиметров. Здесь строка честно
+ * разбирается: короткая подпись, остаток в примечание, реальные мм для
+ * пропорции ряда.
+ */
+function sizeFromLabel(label: string): { label: string; note: string; mm: number } {
+  const mmMatch = label.match(/(\d+(?:[.,]\d+)?)\s*мм/)
+  const inchMatch = label.match(/(\d+(?:[.,]\d+)?)\s*"/)
+  const mm = mmMatch ? Number(mmMatch[1].replace(',', '.')) : (firstNumber(label) ?? 0)
+  const head =
+    inchMatch && mmMatch ? `${inchMatch[1]}" · ${mmMatch[1]} мм` : label.split(',')[0].trim()
+  const rest = label
+    .replace(/^[^,]*,\s*/, '')
+    .replace(/^\s*—\s*/, '')
+    .trim()
+  return { label: head, note: rest === label ? '' : rest, mm }
 }
 
 /** Градация круга (T10…T160) из модели товара. */
@@ -895,10 +934,27 @@ function padMaterialScene(p: Product): StoryScene | null {
     : /микрофибр/i.test(p.kind)
       ? 'microfiber'
       : 'foam'
+  /*
+   * Кадры для каждого материала берутся из каталога, а не рисуются: в
+   * разборе материала человек должен видеть реальный круг, который можно
+   * открыть и купить.
+   */
+  const sampleOf = (key: 'foam' | 'microfiber' | 'wool', slug: string) => {
+    const item = bySlug(slug)
+    return item
+      ? { key, image: item.image, model: item.model, href: `catalog/${item.category}/${item.slug}` }
+      : null
+  }
+  const samples = [
+    sampleOf('foam', /black diamond/i.test(p.model) ? 'foam-diamond-t40' : 'foam-flat-t40'),
+    sampleOf('microfiber', 'microfiber-t100'),
+    sampleOf('wool', 'wool-high-nap'),
+  ].filter((x): x is NonNullable<typeof x> => x !== null)
+
   return {
     title: 'Материал меняет характер работы',
     body: 'Один и тот же диаметр круга ведёт себя по-разному в зависимости от материала рабочей поверхности — это то, что определяет выбор между поролоном, микрофиброй и шерстью.',
-    diagram: { kind: 'materials', active },
+    diagram: { kind: 'materials', active, samples },
   }
 }
 
@@ -1468,11 +1524,16 @@ function powerScenes(p: Product): StoryScene[] {
         : 'Ёмкость — это время до подзарядки, а не мощность машинки. Чем она выше, тем дольше блок держит смену без паузы.',
       diagram: {
         kind: 'sizes',
-        items: p.variants.map((x) => ({
-          label: x.axis1 ?? x.label,
-          note: x.label,
-          mm: firstNumber(x.label) ?? 0,
-        })),
+        unit: charger ? 'мест' : 'А·ч',
+        items: p.variants.map((x) => {
+          const n = firstNumber(x.label.split(',').pop()) ?? firstNumber(x.label) ?? 0
+          return {
+            label: x.label.split(',').pop()?.trim() ?? x.label,
+            note: x.label.split(',')[0].trim(),
+            mm: n,
+            image: x.image ?? p.image,
+          }
+        }),
       },
     })
   }
@@ -1677,34 +1738,17 @@ function plateScenes(p: Product): StoryScene[] {
   }
 
   /*
-   * Из чего состоит сама подложка. Слои названы теми деталями, которые
-   * есть в характеристиках позиции (резьба, липучка) — про внутренний
-   * демпфер и его жёсткость данных нет, и заявлять их нельзя.
+   * Липучка — единственная часть подложки, которая расходуется. Раньше
+   * тут стоял абстрактный разрез из трёх серых полос: он не объяснял
+   * ничего. Теперь показывается сам износ крепления — новое против
+   * изношенного, без заявлений о ресурсе (данных о нём нет).
    */
   scenes.push({
-    title: sanding ? 'Из чего состоит подложка' : 'Липучка — расходник, а не вечная деталь',
+    title: 'Липучка — расходник, а не вечная деталь',
     body: sanding
-      ? 'Подложка собрана из посадочной части, тела и рабочей плоскости с липучкой. Липучка изнашивается быстрее самой машинки, поэтому подложка в прайсе идёт отдельной позицией и меняется без сервиса.'
-      : 'Подложка собрана из посадочной части, тела и рабочей плоскости с липучкой. Именно липучка изнашивается первой — круг начинает «ползти» под нагрузкой. Поэтому подложка идёт отдельной позицией и меняется без обращения в сервис.',
-    diagram: {
-      kind: 'layers',
-      face: 'flat',
-      color: '#8A9296',
-      items: [
-        {
-          label: thread ? `Посадка — резьба ${thread}` : 'Посадочная часть',
-          note: 'Соединяется со шпинделем машинки: тип резьбы задаёт совместимость',
-        },
-        {
-          label: 'Тело подложки',
-          note: diameters ? `Задаёт рабочую плоскость. Диаметры: ${diameters}` : 'Задаёт рабочую плоскость и передаёт нажим равномерно',
-        },
-        {
-          label: mount ? `Рабочая плоскость — ${mount.toLowerCase()}` : 'Рабочая плоскость с липучкой',
-          note: sanding ? 'Удерживает абразивный диск и изнашивается первой' : 'Удерживает круг и изнашивается первой',
-        },
-      ],
-    },
+      ? 'Крепление подложки изнашивается быстрее самой машинки: ворс приминается, забивается пылью и хуже держит абразивный диск. Поэтому подложка идёт в прайсе отдельной позицией и меняется без обращения в сервис.'
+      : 'Крепление подложки изнашивается быстрее самой машинки: ворс приминается, забивается пылью и хуже держит круг — тот начинает «ползти» под нагрузкой. Поэтому подложка идёт отдельной позицией и меняется без сервиса.',
+    diagram: { kind: 'velcro' },
   })
 
   // Реальные исполнения как размерный ряд: цифры прямо из прайса.
@@ -1717,7 +1761,15 @@ function plateScenes(p: Product): StoryScene[] {
       metric: diameters ? { value: diameters, caption: 'Диаметры' } : undefined,
       diagram: {
         kind: 'sizes',
-        items: p.variants.map((v) => ({ label: v.axis1 ?? v.label, note: v.label, mm: firstNumber(v.label) ?? 0 })),
+        /*
+         * Кадр исполнения, а если вендор его не снимал — общий кадр
+         * позиции. Пустых кружков здесь больше нет: человек должен
+         * видеть, ЧТО именно меняется в размере.
+         */
+        items: p.variants.map((v) => {
+          const size = sizeFromLabel(v.label)
+          return { ...size, image: v.image ?? p.image }
+        }),
       },
     })
   }
@@ -1842,10 +1894,16 @@ function accessoryScenes(p: Product): StoryScene[] {
           'Разница между исполнениями не в отделке, а в том, сколько оснастки помещается: компактный набор на одну машинку против полного комплекта с запасом кругов и составов.',
         diagram: {
           kind: 'sizes',
+          unit: '"',
+          /*
+           * Кадр самой сумки в двух масштабах, а не два пустых круга:
+           * круги к сумке отношения не имеют и ничего не объясняли.
+           */
           items: p.variants.map((v) => ({
             label: v.label.replace(/^сумка\s*/i, ''),
             note: /20/.test(v.label) ? 'Полный комплект с запасом' : 'Компактный набор на выезд',
             mm: firstNumber(v.label) ?? 0,
+            image: v.image ?? p.image,
           })),
         },
       })

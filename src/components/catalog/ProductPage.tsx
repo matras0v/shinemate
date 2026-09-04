@@ -6,9 +6,11 @@ import {
   categoryTitle,
   formatPrice,
   getRelatedProducts,
+  isProductGroup,
   minPrice,
   priceNote,
   relatedNote,
+  resolveProductView,
   type Product,
   type Variant,
 } from '../../data/catalog'
@@ -79,6 +81,22 @@ export function ProductPage({ product }: Props) {
   const selectedVariant: Variant | undefined =
     product.variants.find((v) => v.sku === selectedSku) ?? product.variants[0]
 
+  /*
+   * ВСЯ страница ниже читает не карточку, а ВЫБРАННОЕ исполнение.
+   *
+   * В карточке «Мойка и подготовка» лежат ведро, сепаратор и микрофибра —
+   * это разные предметы. Пока страница рендерилась из полей карточки, при
+   * выборе микрофибры на экране оставался «Объём ведра 20 л» и описание
+   * сепаратора. Теперь переключатель меняет заголовок, подзаголовок,
+   * описание, характеристики, тёмную полосу и сцены целиком.
+   */
+  const view = useMemo(
+    () => resolveProductView(product, selectedVariant),
+    [product, selectedVariant],
+  )
+  /* Разные предметы в одной карточке выбираются как товар, а не как размер. */
+  const group = isProductGroup(product)
+
   const showAxisChips = product.variants.length > 1 && product.variants.every((v) => v.axis1)
   const axis1Options = showAxisChips ? Array.from(new Set(product.variants.map((v) => v.axis1!))) : []
   const axis2Options = showAxisChips
@@ -110,7 +128,7 @@ export function ProductPage({ product }: Props) {
    * кадр обратно. Ровно этот баг клиент поймал на «Подложках для
    * роторных машинок»: вторая миниатюра нажималась, но кадр откатывался.
    */
-  const story = useMemo(() => buildStory(product), [product])
+  const story = useMemo(() => buildStory(view), [view])
 
   /*
    * Галерея показывает только РЕАЛЬНЫЕ кадры позиции: фото товара плюс
@@ -149,13 +167,13 @@ export function ProductPage({ product }: Props) {
    * паст; если такого идентификатора нет — знака нет вовсе.
    */
   const watermark = useMemo(() => {
-    const grade = product.model.match(/\bT(\d{2,3})\b/)
+    const grade = view.model.match(/\bT(\d{2,3})\b/)
     if (grade) return `T${grade[1]}`
-    const vRange = product.model.match(/\bV\d{2}\b/)
+    const vRange = view.model.match(/\bV\d{2}\b/)
     if (vRange) return vRange[0]
-    const article = product.model.match(/\b[A-Z]{2,4}[- ]?\d{1,4}[A-Z]?(\sG\d)?\b/)
+    const article = view.model.match(/\b[A-Z]{2,4}[- ]?\d{1,4}[A-Z]?(\sG\d)?\b/)
     return article ? article[0].replace(/\s+/g, ' ').trim() : null
-  }, [product.model])
+  }, [view.model])
 
   const shotIndex = Math.min(shot, Math.max(story.gallery.length - 1, 0))
   const heroImage = story.gallery[shotIndex] ?? selectedVariant?.image ?? product.image
@@ -216,7 +234,7 @@ export function ProductPage({ product }: Props) {
               {categoryTitle(product.category)}
             </a>
             <ChevronRight size={13} className="shrink-0 text-graphite/25" />
-            <span className="text-graphite">{product.model}</span>
+            <span className="text-graphite">{view.model}</span>
           </nav>
         </div>
 
@@ -261,7 +279,7 @@ export function ProductPage({ product }: Props) {
                   src={src}
                   alt={
                     i === shotIndex
-                      ? `ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`
+                      ? `ShineMate ${view.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`
                       : ''
                   }
                   aria-hidden={i !== shotIndex}
@@ -332,16 +350,51 @@ export function ProductPage({ product }: Props) {
               {categoryTitle(product.category)}
             </p>
             <h1 className="h1-sm mt-4">
-              {product.model}
+              {view.model}
             </h1>
             <p className="mt-3 text-[1.0625rem] text-slate">
-              {product.kind}
+              {view.kind}
             </p>
             <p
               className="mt-6 max-w-[52ch] text-[1.0625rem] leading-relaxed text-ash"
             >
-              {product.lead}
+              {view.lead}
             </p>
+
+            {/*
+              Когда в карточке лежат РАЗНЫЕ предметы (ведро, сепаратор,
+              микрофибра), выбор стоит прямо в первом экране и подписан
+              как выбор товара, а не как «размер». Иначе человек читает
+              описание сепаратора, а на кадре видит салфетки.
+            */}
+            {group && product.variants.length > 1 && (
+              <div className="mt-7">
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
+                  В этой карточке
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {product.variants.map((variant) => {
+                    const on = variant.sku === selectedVariant?.sku
+                    return (
+                      <li key={variant.sku}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSku(variant.sku)}
+                          aria-pressed={on}
+                          className={`rounded-full border px-4 py-2 text-[0.875rem] transition-colors duration-300 ease-premium ${
+                            on
+                              ? 'border-graphite bg-graphite text-porcelain'
+                              : 'border-graphite/20 text-slate hover:border-graphite/45 hover:text-graphite'
+                          }`}
+                        >
+                          {variant.label.charAt(0).toUpperCase() + variant.label.slice(1)}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
 
             {/*
               Три главных параметра прямо на первом экране: клиент
@@ -383,7 +436,7 @@ export function ProductPage({ product }: Props) {
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => requestProduct(product, selectedVariant)}
+                onClick={() => requestProduct(view, selectedVariant)}
                 className="inline-flex items-center rounded-full bg-graphite px-8 py-4 text-[0.9375rem] text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
               >
                 Запросить прайс
@@ -401,7 +454,7 @@ export function ProductPage({ product }: Props) {
       </div>
 
       {/* ─── 02. КЛЮЧЕВЫЕ ЦИФРЫ ──────────────────────────────────────── */}
-      <SpecHighlights items={story.highlights} kicker={`${product.model} · ключевые параметры`} />
+      <SpecHighlights items={story.highlights} kicker={`${view.model} · ключевые параметры`} />
 
       {/* ─── 03. ТОВАР В РАБОТЕ (официальный кадр ShineMate) ──────────── */}
       {story.photos[0] && <PhotoScene photo={story.photos[0]} variant="right" />}
@@ -412,7 +465,7 @@ export function ProductPage({ product }: Props) {
       {/* ─── 05. СЦЕНЫ ПО РЕАЛЬНЫМ ХАРАКТЕРИСТИКАМ ────────────────────── */}
       <StoryScenes
         scenes={story.scenes}
-        product={product}
+        product={view}
         photo={story.photos[0]}
         activeSku={selectedVariant?.sku}
         onSelectSku={setSelectedSku}
@@ -442,7 +495,7 @@ export function ProductPage({ product }: Props) {
             <p className="eyebrow">Характеристики</p>
             <h2 className="h2 mt-6 max-w-[14ch]">Полные данные по позиции</h2>
             <dl className="mt-10 divide-y divide-graphite/[0.1] border-t border-graphite/[0.12]">
-              {product.specs.map((spec) => (
+              {view.specs.map((spec) => (
                 <div key={spec.label} className="flex items-baseline justify-between gap-6 py-4">
                   <dt className="text-[0.9375rem] text-slate">{spec.label}</dt>
                   <dd className="text-right font-mono text-[0.9375rem] tracking-tight">{spec.value}</dd>
@@ -450,11 +503,11 @@ export function ProductPage({ product }: Props) {
               ))}
             </dl>
 
-            {product.includes && product.includes.length > 0 && (
+            {view.includes && view.includes.length > 0 && (
               <div className="mt-12">
                 <p className="eyebrow">Комплектация</p>
                 <ul className="mt-5 space-y-3 border-t border-graphite/[0.12] pt-6">
-                  {product.includes.map((item) => (
+                  {view.includes.map((item) => (
                     <li key={item} className="flex gap-3 text-[0.9375rem] leading-relaxed text-ash">
                       <Check size={15} className="mt-1 shrink-0 text-ember" />
                       {item}
@@ -467,10 +520,10 @@ export function ProductPage({ product }: Props) {
 
           <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
             <p className="eyebrow">
-              {product.variants.length > 1 ? 'Исполнения и РРЦ' : 'Артикул и РРЦ'}
+              {product.variants.length < 2 ? 'Артикул и РРЦ' : group ? 'Позиции в карточке' : 'Исполнения и РРЦ'}
             </p>
             <h2 className="h2 mt-6 max-w-[14ch]">
-              {product.variants.length > 1 ? 'Что выбрать' : 'Позиция в прайсе'}
+              {product.variants.length < 2 ? 'Позиция в прайсе' : group ? 'Что это за товар' : 'Что выбрать'}
             </h2>
 
             <div className="mt-10">
@@ -684,7 +737,7 @@ export function ProductPage({ product }: Props) {
             src={heroImage}
             width={selectedVariant?.imageWidth ?? product.imageWidth}
             height={selectedVariant?.imageHeight ?? product.imageHeight}
-            alt={`ShineMate ${product.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}
+            alt={`ShineMate ${view.model}${selectedVariant?.axis1 ? ` — ${selectedVariant.axis1}` : ''}`}
             className="relative max-h-[85vh] max-w-[92vw] object-contain"
           />
           <button
