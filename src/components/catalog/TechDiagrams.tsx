@@ -761,7 +761,16 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
  * «cut 8/10» — таких данных у вендора нет; есть только порядок градаций
  * T10…T160, и именно он показывается.
  */
-export type GradeStop = { value: number; color?: string; label?: string }
+export type GradeStop = {
+  value: number
+  color?: string
+  label?: string
+  /** Реальная позиция каталога с этой градацией — чип ведёт на неё. */
+  href?: string
+  image?: string
+  /** Задача этой градации — из типа круга в прайсе. */
+  task?: string
+}
 
 /**
  * Шкала градаций: от мягкого финиша к тяжёлому резу. Цвета точек —
@@ -805,28 +814,67 @@ export function CutMeter({ grades, active }: { grades: GradeStop[]; active: numb
         })}
       </div>
 
+      {/*
+        Чипы градаций — рабочие ссылки на реальные позиции каталога, а не
+        подписи под шкалой: раньше шкала выглядела кликабельной, но ничего
+        не делала. Градация без своей позиции остаётся неактивной подписью
+        и не притворяется ссылкой.
+      */}
       <ol className="mt-7 flex flex-wrap gap-2">
-        {grades.map((g) => (
-          <li
-            key={g.value}
-            aria-current={g.value === active ? 'true' : undefined}
-            className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[0.75rem] tabular-nums ${
-              g.value === active ? 'border-graphite bg-graphite text-porcelain' : 'border-graphite/[0.16] text-slate'
-            }`}
-          >
-            {g.color && (
-              <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: g.color }} />
-            )}
-            T{g.value}
-          </li>
-        ))}
+        {grades.map((g) => {
+          const on = g.value === active
+          const chip = (
+            <>
+              {g.color && (
+                <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: g.color }} />
+              )}
+              T{g.value}
+            </>
+          )
+          const base =
+            'flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[0.75rem] tabular-nums transition-colors duration-300 ease-premium'
+          if (on || !g.href) {
+            return (
+              <li
+                key={g.value}
+                aria-current={on ? 'true' : undefined}
+                className={`${base} ${on ? 'border-graphite bg-graphite text-porcelain' : 'border-graphite/[0.16] text-titanium'}`}
+              >
+                {chip}
+              </li>
+            )
+          }
+          return (
+            <li key={g.value}>
+              <a
+                href={g.href}
+                title={g.task ? `T${g.value} — ${g.task}` : `T${g.value}`}
+                className={`${base} border-graphite/[0.16] text-slate hover:border-graphite/45 hover:text-graphite`}
+              >
+                {chip}
+              </a>
+            </li>
+          )
+        })}
       </ol>
 
-      {activeStop?.label && (
-        <p className="mt-4 text-[0.8125rem] leading-relaxed text-slate">
-          Открытая позиция — <span className="text-graphite">{activeStop.label}</span>. Соседние градации отличаются жёсткостью, а не посадкой:
-          круг меняется на той же подложке.
-        </p>
+      {activeStop && (
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-graphite/[0.12] pt-5">
+          {activeStop.image && (
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-porcelain ring-1 ring-graphite/[0.08]">
+              <img src={activeStop.image} alt="" loading="lazy" decoding="async" className="h-[76%] w-[76%] object-contain" />
+            </span>
+          )}
+          <p className="max-w-[52ch] text-[0.875rem] leading-relaxed text-slate">
+            {activeStop.label && (
+              <>
+                Открытая позиция — <span className="text-graphite">{activeStop.label}</span>.{' '}
+              </>
+            )}
+            {activeStop.task && <>Задача этой градации: {activeStop.task.toLowerCase()}. </>}
+            Соседние градации отличаются жёсткостью, а не посадкой: круг меняется на той же подложке.
+          </p>
+        </div>
       )}
     </div>
   )

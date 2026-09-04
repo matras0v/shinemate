@@ -95,7 +95,11 @@ export type SceneDiagram =
   | { kind: 'mount'; items: { src: string; label: string; note: string }[] }
   | { kind: 'battery'; platform: string; capacity?: string }
   /* Цвет точки — реальный цвет круга из его характеристик, а не палитра. */
-  | { kind: 'cut'; grades: { value: number; color?: string; label?: string }[]; active: number }
+  | {
+      kind: 'cut'
+      grades: { value: number; color?: string; label?: string; href?: string; image?: string; task?: string }[]
+      active: number
+    }
   | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
   /* Размерный ряд реальными кадрами исполнений, а не пустыми кружками. */
   | {
@@ -506,8 +510,14 @@ function machineScenes(p: Product): StoryScene[] {
    * точной раскладки редуктора и обмотки у ShineMate в открытом доступе
    * нет, и рисовать «разрез EP830» значило бы выдать схему за факт.
    */
-  const orbital = isOrbitalLike(p) || (isSanderLike(p) && !!orbit)
-  if (orbital || isRotaryLike(p)) {
+  /*
+   * У шлифовальных машинок ход эксцентрика в прайсе записан просто как
+   * «Ход» — из-за этого они не попадали в сцену сборки вовсе и
+   * оставались единственной категорией машинок без своей главной сцены.
+   */
+  const sanderStroke = specValue(p, 'Ход')
+  const orbital = isOrbitalLike(p) || (isSanderLike(p) && !!(orbit ?? sanderStroke))
+  if (orbital || isRotaryLike(p) || isSanderLike(p)) {
     const workUnit = orbital
       ? { label: 'Рабочий узел — эксцентрик', note: 'Смещает ось круга и задаёт орбитальную траекторию' }
       : { label: 'Рабочий узел — шпиндель', note: 'Ось вращения совпадает с осью круга' }
@@ -519,13 +529,26 @@ function machineScenes(p: Product): StoryScene[] {
       { label: 'Двигатель', note: /бесщёточн|brushless/i.test(p.kind + p.lead) ? 'Бесщёточный: нет щёток как расходника, ровнее момент под нагрузкой' : 'Источник вращения рабочего тракта' },
       { label: 'Привод', note: 'Передаёт вращение от двигателя к рабочему узлу' },
       workUnit,
-      { label: 'Подложка', note: 'Соединяет инструмент с кругом: резьба под машинку, диаметр под круг' },
-      { label: 'Круг', note: 'Единственное, что касается лака — характер работы задаёт он' },
+      {
+        label: 'Подложка',
+        note: isSanderLike(p)
+          ? 'Соединяет инструмент с абразивным диском: диаметр задаёт размер диска'
+          : 'Соединяет инструмент с кругом: резьба под машинку, диаметр под круг',
+      },
+      ...(isSanderLike(p)
+        ? [{ label: 'Абразивный диск', note: 'Единственное, что касается поверхности — зерно задаёт съём' }]
+        : [{ label: 'Круг', note: 'Единственное, что касается лака — характер работы задаёт он' }]),
     ]
 
     /* Оснастка берётся РЕАЛЬНАЯ: подложка своего типа машинки и круг, совместимый с ней. */
     const plate = plateForMachine(p)
-    const pad = orbital ? bySlug('foam-diamond-t40') : bySlug('wool-high-nap')
+    /*
+     * У шлифовальной машинки на подложке стоит абразивный диск, а не
+     * полировальный круг: дисков в прайсе нет, поэтому её стек честно
+     * заканчивается подложкой, а не подставленным поролоном.
+     */
+    const sander = isSanderLike(p)
+    const pad = sander ? undefined : orbital ? bySlug('foam-diamond-t40') : bySlug('wool-high-nap')
 
     scenes.push({
       title: 'Машинка собирается в систему',
@@ -542,7 +565,11 @@ function machineScenes(p: Product): StoryScene[] {
         nodes,
         motion: orbital ? 'orbit' : 'rotary',
         // Только реальная цифра из прайса; нет цифры — подпись остаётся короткой.
-        motionNote: orbital ? (orbit ? `ход ${orbit}` : undefined) : speed ?? undefined,
+        motionNote: orbital
+          ? (orbit ?? sanderStroke)
+            ? `ход ${orbit ?? sanderStroke}`
+            : undefined
+          : speed ?? undefined,
       },
     })
   }
@@ -1070,7 +1097,12 @@ function padScenes(p: Product): StoryScene[] {
       .map(([value, item]) => ({
         value,
         color: padColor(item)?.hex,
-        label: value === grade ? p.model : undefined,
+        label: value === grade ? p.model : item.model,
+        /* Чип ведёт на реальную позицию этой градации — если она не текущая. */
+        href: item.slug === p.slug ? undefined : `catalog/${item.category}/${item.slug}`,
+        image: item.image,
+        /* Задача берётся из типа круга в прайсе: «Поролоновый круг, лёгкий рез». */
+        task: item.kind.replace(/^[^,]*,\s*/, ''),
       }))
     scenes.push({
       title: 'Что означает градация',
@@ -2581,7 +2613,9 @@ function machinePhoto(p: Product): StoryPhoto | null {
     return photo(
       p.slug,
       'В работе',
-      'Подготовка поверхности до полировки',
+      /* Не повторяем заголовок блока «Назначение» — иначе на странице
+         дважды подряд стоит одна и та же строка. */
+      'Снимает то, что полировкой уже не убрать',
       `Шлифование идёт до коррекции: снимается перелив, корка и грубые дефекты, после чего след от диска выводится пастой и кругом своей градации.${
         orbit ? ` Ход — ${orbit}.` : ''
       }`,

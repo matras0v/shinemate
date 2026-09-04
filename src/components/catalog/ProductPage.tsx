@@ -441,9 +441,24 @@ export function ProductPage({ product }: Props) {
               >
                 Запросить прайс
               </button>
+              {/*
+                «Подобрать систему» ведёт к связке ИМЕННО этого товара
+                (машинка → подложка → круг → состав) на этой же странице.
+                Раньше кнопка уходила на оптовую форму и по дороге теряла
+                товар — то есть выглядела как действие, а работала как
+                уход со страницы. Если связки у позиции нет, кнопка честно
+                открывает форму с уже подставленным товаром.
+              */}
               <button
                 type="button"
-                onClick={requestWholesale}
+                onClick={() => {
+                  const target = document.getElementById('system-chain')
+                  if (target) {
+                    target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+                    return
+                  }
+                  requestProduct(view, selectedVariant)
+                }}
                 className="inline-flex items-center rounded-full border border-graphite/20 px-8 py-4 text-[0.9375rem] text-graphite transition-colors duration-500 ease-premium hover:border-graphite/50 hover:bg-graphite/[0.04]"
               >
                 Подобрать систему

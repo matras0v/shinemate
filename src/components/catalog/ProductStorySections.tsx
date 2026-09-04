@@ -819,7 +819,9 @@ export function ScaleSection({
 export function SystemChainSection({ chain }: { chain: SystemChain }) {
   const reduced = useReducedMotion()
   return (
-    <section className="scene relative bg-porcelain py-20 md:py-28">
+    /* id — цель кнопки «Подобрать систему» в hero: она ведёт к реальной
+       связке для ЭТОГО товара, а не уводит с товара на общую форму. */
+    <section id="system-chain" className="scene relative scroll-mt-24 bg-porcelain py-20 md:py-28">
       <div className="shell-wide">
         <motion.div {...revealProps(reduced, stagger(0, 0.08))}>
           <motion.p variants={rise} className="eyebrow">
