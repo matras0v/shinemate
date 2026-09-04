@@ -1110,6 +1110,105 @@ export function GritSeparator() {
   )
 }
 
+/* ───────────────────────── Щётки против бесщёточного ───────────────────────── */
+
+/**
+ * Почему «без щёток» — это про обслуживание, а не про маркетинг.
+ *
+ * Слева щёточный принцип: угольные щётки прижаты к вращающемуся
+ * коллектору, точка контакта помечена как место износа. Справа
+ * бесщёточный: этой пары трения просто нет.
+ *
+ * ЧТО ЗДЕСЬ ЧЕСТНО. Это общий принцип двух типов коллекторных и
+ * бесколлекторных двигателей, а НЕ разрез двигателя ShineMate: ни числа
+ * полюсов, ни геометрии, ни электроники мы не знаем и не показываем.
+ * Никаких «на 30% дольше» — таких данных нет.
+ */
+export function BrushlessConcept() {
+  const reduced = useReducedMotion()
+
+  const panel = (brushed: boolean) => (
+    <div
+      className={`rounded-2xl border p-6 ${
+        brushed ? 'border-graphite/[0.12] bg-hazeSurface' : 'border-ember/40 bg-porcelain'
+      }`}
+    >
+      <svg viewBox="0 0 220 150" className="mx-auto w-full max-w-[19rem]" role="img" aria-label={brushed ? 'Щёточный принцип: щётки прижаты к коллектору' : 'Бесщёточный принцип: пары трения нет'}>
+        {/* Корпус двигателя — условный контур */}
+        <rect x="18" y="26" width="184" height="98" rx="16" fill="#1A1C1E" fillOpacity="0.05" stroke="#1A1C1E" strokeOpacity="0.2" strokeWidth="1.6" />
+
+        {/* Ротор */}
+        <g className={reduced ? undefined : 'sm-spin-slow'} style={{ transformOrigin: '110px 75px' }}>
+          <circle cx="110" cy="75" r="34" fill="#1A1C1E" fillOpacity="0.12" />
+          <circle cx="110" cy="75" r="34" fill="none" stroke="#1A1C1E" strokeOpacity="0.35" strokeWidth="1.6" />
+          <line x1="110" y1="75" x2="110" y2="45" stroke={EMBER} strokeWidth="3" strokeLinecap="round" />
+          <line x1="110" y1="75" x2="136" y2="90" stroke="#1A1C1E" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round" />
+          <line x1="110" y1="75" x2="84" y2="90" stroke="#1A1C1E" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round" />
+        </g>
+        <circle cx="110" cy="75" r="7" fill="#1A1C1E" fillOpacity="0.55" />
+
+        {brushed ? (
+          <>
+            {/* Щётки прижаты к коллектору — та самая пара трения */}
+            <rect x="56" y="66" width="18" height="18" rx="3" fill="#1A1C1E" fillOpacity="0.6" />
+            <rect x="146" y="66" width="18" height="18" rx="3" fill="#1A1C1E" fillOpacity="0.6" />
+            <line x1="74" y1="75" x2="78" y2="75" stroke={EMBER} strokeWidth="3" strokeLinecap="round" />
+            <line x1="142" y1="75" x2="146" y2="75" stroke={EMBER} strokeWidth="3" strokeLinecap="round" />
+            {/* Метка износа */}
+            <circle cx="76" cy="75" r="11" fill="none" stroke={EMBER} strokeWidth="1.4" strokeDasharray="3 4" />
+            <circle cx="144" cy="75" r="11" fill="none" stroke={EMBER} strokeWidth="1.4" strokeDasharray="3 4" />
+            <text x="110" y="140" textAnchor="middle" fontSize="10" fontFamily="ui-monospace, monospace" fill="#1A1C1E" fillOpacity="0.55">
+              ТОЧКИ ИЗНОСА
+            </text>
+          </>
+        ) : (
+          <>
+            {/* Обмотки по кругу — контакта нет */}
+            {[0, 60, 120, 180, 240, 300].map((deg) => {
+              const r = (deg * Math.PI) / 180
+              return (
+                <rect
+                  key={deg}
+                  x={110 + Math.cos(r) * 48 - 6}
+                  y={75 + Math.sin(r) * 48 - 6}
+                  width="12"
+                  height="12"
+                  rx="3"
+                  fill="#1A1C1E"
+                  fillOpacity="0.22"
+                />
+              )
+            })}
+            <text x="110" y="140" textAnchor="middle" fontSize="10" fontFamily="ui-monospace, monospace" fill="#1A1C1E" fillOpacity="0.55">
+              ПАРЫ ТРЕНИЯ НЕТ
+            </text>
+          </>
+        )}
+      </svg>
+      <p className={`mt-4 font-mono text-[0.6875rem] uppercase tracking-[0.16em] ${brushed ? 'text-titanium' : 'text-ember'}`}>
+        {brushed ? 'Щёточный двигатель' : 'Бесщёточный двигатель'}
+      </p>
+      <p className="mt-2 text-[0.875rem] leading-relaxed text-slate">
+        {brushed
+          ? 'Щётки прижаты к вращающейся части: это расходник, который стирается и требует замены по регламенту.'
+          : 'Щёток нет — нет и расходника, который надо менять. Обслуживание сводится к чистке инструмента.'}
+      </p>
+    </div>
+  )
+
+  return (
+    <div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {panel(true)}
+        {panel(false)}
+      </div>
+      <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
+        Схема принципа двух типов двигателей, а не разрез конкретной модели
+      </p>
+    </div>
+  )
+}
+
 /* ───────────────────────── Держатель: у машинки своё место ───────────────────────── */
 
 /**

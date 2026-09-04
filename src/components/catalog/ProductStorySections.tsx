@@ -23,6 +23,7 @@ import {
   VelcroWear,
   GritSeparator,
   HolderScene,
+  BrushlessConcept,
 } from './TechDiagrams'
 import type {
   ComparisonTable,
@@ -262,6 +263,8 @@ function Diagram({
       return <GritSeparator />
     case 'holder':
       return <HolderScene machineImage={diagram.machineImage} holderImage={diagram.holderImage} />
+    case 'brushless':
+      return <BrushlessConcept />
     case 'exploded':
       return (
         <MachineExploded
@@ -307,6 +310,7 @@ const BARE_DIAGRAMS: SceneDiagram['kind'][] = [
   'velcro',
   'separator',
   'holder',
+  'brushless',
 ]
 
 /*
