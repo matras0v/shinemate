@@ -61,32 +61,45 @@ const STEPS: Step[] = (() => {
   return items
 })()
 
-/** Условная графика для двух последних звеньев — они не товары. */
+/**
+ * Условная графика для двух последних звеньев — это не товары, а стадии.
+ * Обе нарисованы как одна и та же тёмная лаковая панель: сначала с
+ * рисками и мутным бликом, затем с ровным отражением. Схематично
+ * НАМЕРЕННО: настоящей пары «до/после» именно для этой связки у нас нет,
+ * и подделывать её фотореалистично значило бы выдать схему за кейс.
+ */
 function StepGlyph({ index }: { index: number }) {
-  if (index === 4) {
-    return (
-      <svg viewBox="0 0 80 80" className="h-[62%] w-[62%] text-graphite" role="img" aria-label="Условная схема поверхности с дефектами">
-        <rect x="6" y="18" width="68" height="44" rx="8" fill="currentColor" fillOpacity="0.08" />
-        {[30, 42, 54].map((y, i) => (
-          <path
-            key={y}
-            d={`M 14 ${y} Q 30 ${y - 7 + (i % 2) * 5}, 46 ${y} T 66 ${y}`}
-            fill="none"
-            stroke="currentColor"
-            strokeOpacity="0.42"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          />
-        ))}
-      </svg>
-    )
-  }
+  const defect = index === 4
   return (
-    <svg viewBox="0 0 80 80" className="h-[62%] w-[62%]" role="img" aria-label="Условная схема ровного отражения">
-      <rect x="6" y="18" width="68" height="44" rx="8" fill="#1A1C1E" />
-      <ellipse cx="30" cy="33" rx="24" ry="10" fill="#FFFFFF" opacity="0.26" />
-      <ellipse cx="52" cy="48" rx="17" ry="6" fill="#FFFFFF" opacity="0.14" />
-      <rect x="6" y="18" width="68" height="44" rx="8" fill="none" stroke="#FE8B0C" strokeOpacity="0.45" strokeWidth="1.4" />
+    <svg
+      viewBox="0 0 100 76"
+      className="h-[86%] w-[86%]"
+      role="img"
+      aria-label={defect ? 'Условная схема покрытия с дефектами' : 'Условная схема ровного отражения после обработки'}
+    >
+      <rect x="4" y="6" width="92" height="64" rx="10" fill="#1A1C1E" />
+      {defect ? (
+        <>
+          <ellipse cx="38" cy="26" rx="30" ry="12" fill="#FFFFFF" opacity="0.1" />
+          {[24, 36, 48, 58].map((y, i) => (
+            <path
+              key={y}
+              d={`M 14 ${y} Q 34 ${y - 6 + (i % 2) * 4}, 54 ${y} T 88 ${y}`}
+              fill="none"
+              stroke="#FFFFFF"
+              strokeOpacity="0.32"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          ))}
+        </>
+      ) : (
+        <>
+          <ellipse cx="36" cy="27" rx="34" ry="13" fill="#FFFFFF" opacity="0.3" />
+          <ellipse cx="64" cy="50" rx="24" ry="8" fill="#FFFFFF" opacity="0.16" />
+          <rect x="4" y="6" width="92" height="64" rx="10" fill="none" stroke="#FE8B0C" strokeOpacity="0.5" strokeWidth="1.5" />
+        </>
+      )}
     </svg>
   )
 }
