@@ -1087,14 +1087,19 @@ function padScenes(p: Product): StoryScene[] {
      * градацию занимает — «T40, оранжевый» действительно оранжевый.
      */
     const byGrade = new Map<number, Product>()
+    /*
+     * Приоритет позиции на каждой градации: сначала СВОЯ серия (на
+     * странице Black Diamond шкала должна вести в Black Diamond, а не в
+     * Flat-face), затем свой материал (на микрофибре шкала не красится в
+     * цвета поролона), и только потом любой круг этой градации.
+     */
+    const rank = (item: Product) =>
+      productFamily(item) === productFamily(p) ? 2 : item.kind === p.kind ? 1 : 0
     for (const item of productsByCategory('pads')) {
       const g = padGrade(item)
       if (g === null) continue
-      // Приоритет у того круга, который совпадает по материалу с открытым:
-      // на странице микрофибры шкала не должна краситься в цвета поролона.
       const existing = byGrade.get(g)
-      const sameKind = item.kind === p.kind
-      if (!existing || (sameKind && existing.kind !== p.kind)) byGrade.set(g, item)
+      if (!existing || rank(item) > rank(existing)) byGrade.set(g, item)
     }
     const grades = [...byGrade.entries()]
       .sort((a, b) => a[0] - b[0])
