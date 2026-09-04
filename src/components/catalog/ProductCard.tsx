@@ -90,7 +90,7 @@ export function ProductCard({ product, index }: Props) {
             видна — titanium технически проходит контраст, но на мелком
             моноширинном тексте субъективно читается тускло. graphite/80
             + чуть более жирное начертание решает это радикальнее. */}
-        <p className="font-mono text-[0.625rem] font-medium uppercase leading-relaxed tracking-[0.14em] text-ash">
+        <p className="font-mono text-[0.6875rem] font-medium uppercase leading-relaxed tracking-[0.14em] text-ash">
           {product.kind}
         </p>
 
@@ -108,7 +108,7 @@ export function ProductCard({ product, index }: Props) {
             V-Range или 5 градаций круга), а не одна.
           */}
           {multi && (
-            <span className="absolute right-0 top-0 rounded-full border border-graphite/15 bg-porcelain px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-ash">
+            <span className="absolute right-0 top-0 rounded-full border border-graphite/15 bg-porcelain px-2.5 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-ash">
               {variantsLabel(product.variants.length)}
             </span>
           )}
@@ -151,7 +151,7 @@ export function ProductCard({ product, index }: Props) {
 
         <div className="mt-5 flex items-end justify-between gap-4 border-t border-graphite/[0.12] pt-4">
           <div className="min-w-0">
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
               {multi ? `РРЦ от · ${variantsLabel(product.variants.length)}` : 'РРЦ'}
             </p>
             <p className="mt-1.5 truncate text-[1.25rem] tracking-tight">{formatPriceOrInquire(price)}</p>

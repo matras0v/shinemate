@@ -103,7 +103,7 @@ export function Contact({ onOpenConsent, standalone }: Props) {
                 className="h-14 w-14 shrink-0 object-contain"
               />
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   Вы интересовались
                 </p>
                 <p className="mt-0.5 truncate text-[0.9375rem] tracking-tight">{product.model}</p>

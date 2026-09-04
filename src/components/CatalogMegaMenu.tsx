@@ -44,7 +44,7 @@ export function CatalogMegaMenuContent({ onNavigate }: Props) {
       <div className="space-y-7">
         {categoryGroups.map((group) => (
           <div key={group.title}>
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.18em] text-titanium">
+            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-titanium">
               {group.title}
             </p>
             <ul className="mt-3 space-y-0.5">

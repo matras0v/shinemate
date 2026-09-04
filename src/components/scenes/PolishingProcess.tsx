@@ -76,7 +76,7 @@ export function PolishingProcess() {
             >
               <motion.p
                 variants={rise}
-                className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium"
+                className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
               >
                 {stage.index}
               </motion.p>
@@ -91,7 +91,7 @@ export function PolishingProcess() {
               </motion.p>
 
               <motion.div variants={rise} className="mt-7 border-t border-graphite/[0.12] pt-5">
-                <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   Что убирает
                 </p>
                 <ul className="mt-3 space-y-1.5">
@@ -104,7 +104,7 @@ export function PolishingProcess() {
               </motion.div>
 
               <motion.div variants={rise} className="mt-6 border-t border-graphite/[0.12] pt-5">
-                <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   Паста
                 </p>
                 <p className="mt-2.5 text-[0.875rem] leading-relaxed text-graphite">
@@ -115,7 +115,7 @@ export function PolishingProcess() {
               <div className="flex-1" />
 
               <motion.div variants={rise} className="mt-6 border-t border-graphite/[0.12] pt-5">
-                <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   Круг
                 </p>
                 <dl className="mt-2.5 space-y-2">

@@ -237,17 +237,17 @@ export function ReflectionReveal() {
           */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/80 via-ink/25 to-transparent md:h-32" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 md:p-8">
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.22em] text-porcelain [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]">
+            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-porcelain [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]">
               До обработки
             </span>
             <span
-              className={`rounded-full border border-porcelain/25 bg-ink/35 px-4 py-2 text-center font-mono text-[0.625rem] uppercase tracking-[0.2em] text-porcelain/80 backdrop-blur-md transition-opacity duration-700 ease-premium ${
+              className={`rounded-full border border-porcelain/25 bg-ink/35 px-4 py-2 text-center font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-porcelain/80 backdrop-blur-md transition-opacity duration-700 ease-premium ${
                 touched ? 'opacity-0' : 'opacity-100'
               }`}
             >
               {showSlider ? 'Потяните границу' : 'Проведите по поверхности'}
             </span>
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.22em] text-porcelain [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]">
+            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-porcelain [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]">
               После полировки
             </span>
           </div>

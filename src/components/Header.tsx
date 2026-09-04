@@ -289,7 +289,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
 
                       {categoryGroups.map((group) => (
                         <div key={group.title}>
-                          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">
+                          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
                             {group.title}
                           </p>
                           <ul className="mt-2 space-y-1.5">

@@ -355,7 +355,7 @@ export function ProductPage({ product }: Props) {
               >
                 {story.highlights.slice(0, 3).map((item) => (
                   <div key={item.label}>
-                    <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                    <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                       {item.label}
                     </dt>
                     <dd className="mt-2 text-[1.0625rem] leading-snug tracking-tight text-graphite">
@@ -372,7 +372,7 @@ export function ProductPage({ product }: Props) {
               <p className="text-[clamp(2rem,1.6rem+1.2vw,2.75rem)] leading-none tracking-tight">
                 {selectedVariant ? formatPrice(selectedVariant.rrp) : '—'}
               </p>
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                 {priceNote}
               </p>
               <p className="w-full font-mono text-[0.8125rem] tracking-tight text-slate">
@@ -477,7 +477,7 @@ export function ProductPage({ product }: Props) {
               {showAxisChips ? (
                 <div className="space-y-6">
                   <div>
-                    <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-titanium">
+                    <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-titanium">
                       {product.axisLabel ?? 'Градация'}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -500,7 +500,7 @@ export function ProductPage({ product }: Props) {
                   </div>
                   {axis2Options.length > 0 && (
                     <div>
-                      <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-titanium">
+                      <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-titanium">
                         Размер
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">

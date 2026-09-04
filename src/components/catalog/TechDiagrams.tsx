@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { motion, useInView, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 
+import { DESKTOP_SCENE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
 /**
@@ -489,7 +490,7 @@ export function MountStack({ items }: { items: MountItem[] }) {
               aria-hidden
               className="absolute bottom-[14%] left-1/2 h-[9%] w-[46%] -translate-x-1/2 rounded-[50%] bg-graphite/20 blur-xl"
             />
-            <span className="absolute left-3 top-2.5 font-mono text-[0.625rem] tracking-[0.16em] text-titanium">
+            <span className="absolute left-3 top-2.5 font-mono text-[0.6875rem] tracking-[0.16em] text-titanium">
               {String(i + 1).padStart(2, '0')}
             </span>
             <img
@@ -950,6 +951,14 @@ export type ExplodedData = {
  */
 export function MachineExploded(data: ExplodedData) {
   const reduced = useReducedMotion()
+  /*
+   * Sticky-сцена на всю высоту экрана имеет смысл только там, где она
+   * действительно помещается. На телефоне тот же блок (кадр + шесть узлов
+   * тракта) выше экрана, вылезал за пределы липкого контейнера и налезал
+   * на соседние секции. Ниже 1024px показываем ту же историю обычной
+   * вертикальной раскладкой — весь текст и вся оснастка на месте.
+   */
+  const desktop = useMediaQuery(DESKTOP_SCENE_QUERY)
   const track = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: track, offset: ['start start', 'end end'] })
   const [step, setStep] = useState(0)
@@ -974,18 +983,49 @@ export function MachineExploded(data: ExplodedData) {
   const runOpacity = useTransform(scrollYProgress, [0.82, 0.95], [0, 1])
 
   /* Статичная раскладка: то же содержание, без sticky и без скролл-трансформаций. */
-  if (reduced) {
+  if (reduced || !desktop) {
     return (
       <div className="grid gap-8 lg:grid-cols-[1fr_minmax(0,20rem)] lg:items-center">
-        <div className="flex flex-col items-center gap-2 rounded-[1.75rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] p-8">
-          <img src={data.machineImage} alt={data.machineLabel} className="h-40 w-auto object-contain" />
-          {data.plateImage && <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-20 w-auto object-contain" />}
-          {data.padImage && <img src={data.padImage} alt={data.padLabel ?? ''} className="h-20 w-auto object-contain" />}
+        <div className="relative flex flex-col items-center overflow-hidden rounded-[1.75rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] px-5 py-8">
+          <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full text-graphite/[0.07]">
+            <Grid id="exploded-grid-static" step={30} />
+            <rect width="100%" height="100%" fill="url(#exploded-grid-static)" />
+          </svg>
+          <img
+            src={data.machineImage}
+            alt={data.machineLabel}
+            className="relative z-10 h-32 w-auto max-w-full object-contain drop-shadow-[0_16px_26px_rgba(26,28,30,0.14)] sm:h-40"
+          />
+          {(data.plateImage || data.padImage) && (
+            <div className="relative z-10 mt-6 flex items-start justify-center gap-8">
+              <span aria-hidden className="absolute -top-6 left-1/2 h-6 w-px -translate-x-1/2 bg-ember/45" />
+              {data.plateImage && (
+                <figure className="flex w-24 flex-col items-center gap-2">
+                  <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_18px_rgba(26,28,30,0.1)] ring-1 ring-graphite/[0.08]">
+                    <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-[74%] w-[74%] object-contain" />
+                  </span>
+                  <figcaption className="text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">Подложка</figcaption>
+                </figure>
+              )}
+              {data.padImage && (
+                <figure className="flex w-24 flex-col items-center gap-2">
+                  <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_18px_rgba(26,28,30,0.1)] ring-1 ring-graphite/[0.08]">
+                    <img src={data.padImage} alt={data.padLabel ?? ''} className="h-[74%] w-[74%] object-contain" />
+                  </span>
+                  <figcaption className="text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">Круг</figcaption>
+                </figure>
+              )}
+            </div>
+          )}
+          <p className="relative z-10 mt-6 rounded-full bg-porcelain/90 px-4 py-1.5 text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+            {data.motion === 'rotary' ? 'Вращение' : 'Вращение + орбита'}
+            {data.motionNote ? ` · ${data.motionNote}` : ''}
+          </p>
         </div>
         <ol className="space-y-4">
           {data.nodes.map((node, i) => (
             <li key={node.label} className="border-l-2 border-ember/40 pl-4">
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</p>
+              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</p>
               <p className="mt-1 text-[0.9375rem] tracking-tight text-graphite">{node.label}</p>
               <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{node.note}</p>
             </li>
@@ -1031,7 +1071,7 @@ export function MachineExploded(data: ExplodedData) {
                     <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_20px_rgba(26,28,30,0.11)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
                       <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-[74%] w-[74%] object-contain" />
                     </span>
-                    <figcaption className="text-center font-mono text-[0.625rem] uppercase leading-tight tracking-[0.14em] text-titanium">
+                    <figcaption className="text-center font-mono text-[0.6875rem] uppercase leading-tight tracking-[0.14em] text-titanium">
                       Подложка
                     </figcaption>
                   </motion.figure>
@@ -1045,7 +1085,7 @@ export function MachineExploded(data: ExplodedData) {
                         className={`h-[74%] w-[74%] object-contain ${data.motion === 'rotary' ? 'sm-spin-slow' : 'sm-orbit-pad'}`}
                       />
                     </span>
-                    <figcaption className="text-center font-mono text-[0.625rem] uppercase leading-tight tracking-[0.14em] text-titanium">
+                    <figcaption className="text-center font-mono text-[0.6875rem] uppercase leading-tight tracking-[0.14em] text-titanium">
                       Круг
                     </figcaption>
                   </motion.figure>
@@ -1054,19 +1094,22 @@ export function MachineExploded(data: ExplodedData) {
             )}
 
             {/* Подпись движения появляется только когда система собрана */}
-            {data.motionNote && (
-              <motion.p
-                style={{ opacity: runOpacity }}
-                className="relative z-20 mt-7 rounded-full bg-porcelain/90 px-4 py-1.5 text-center font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
-              >
-                {data.motion === 'rotary' ? 'Вращение · ' : 'Вращение + орбита · '}
-                {data.motionNote}
-              </motion.p>
-            )}
+            <motion.p
+              style={{ opacity: runOpacity }}
+              className="relative z-20 mt-7 rounded-full bg-porcelain/90 px-4 py-1.5 text-center font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
+            >
+              {data.motion === 'rotary' ? 'Вращение' : 'Вращение + орбита'}
+              {data.motionNote ? ` · ${data.motionNote}` : ''}
+            </motion.p>
           </div>
 
-          {/* Рабочий тракт: активный узел подсвечен, остальные читаются всегда */}
-          <ol className="space-y-3">
+          {/*
+            Рабочий тракт: активный узел подсвечен, остальные читаются всегда.
+            self-center — чтобы длинный список (у аккумуляторных моделей семь
+            узлов) центрировался по высоте кадра, а не растягивался и не
+            уезжал верхним пунктом под фиксированный хедер.
+          */}
+          <ol className="space-y-3 self-center">
             {data.nodes.map((node, i) => {
               const on = i <= step
               return (
@@ -1075,7 +1118,7 @@ export function MachineExploded(data: ExplodedData) {
                   aria-current={i === step ? 'step' : undefined}
                   className={`border-l-2 pl-4 transition-colors duration-500 ${on ? 'border-ember' : 'border-graphite/15'}`}
                 >
-                  <p className={`font-mono text-[0.625rem] uppercase tracking-[0.16em] transition-colors duration-500 ${on ? 'text-ember' : 'text-titanium'}`}>
+                  <p className={`font-mono text-[0.6875rem] uppercase tracking-[0.16em] transition-colors duration-500 ${on ? 'text-ember' : 'text-titanium'}`}>
                     {String(i + 1).padStart(2, '0')}
                   </p>
                   <p className={`mt-1 text-[0.9375rem] tracking-tight transition-colors duration-500 ${on ? 'text-graphite' : 'text-slate'}`}>
@@ -1249,14 +1292,14 @@ export function PadConstruction({
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: 0.2 + i * 0.14 }}
             className="border-l-2 border-ember/40 pl-4"
           >
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</p>
+            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</p>
             <p className="mt-1 text-[0.9375rem] leading-snug tracking-tight text-graphite">{item.label}</p>
             <p className="mt-1 text-[0.8125rem] leading-relaxed text-slate">{item.note}</p>
           </motion.li>
         ))}
         {hole && (
           <li className="border-l-2 border-graphite/15 pl-4">
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Центральное отверстие</p>
+            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Центральное отверстие</p>
             <p className="mt-1 text-[0.875rem] leading-relaxed text-slate">{hole} — под штифт подложки, круг садится по центру без смещения.</p>
           </li>
         )}
@@ -1383,7 +1426,7 @@ export function MaterialCompare({ active }: { active: MaterialKey }) {
             <div className="flex items-center justify-between gap-2">
               <p className="text-[0.9375rem] font-medium tracking-tight text-graphite">{m.label}</p>
               {isActive && (
-                <span className="rounded-full bg-ember/15 px-2 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-ember">
+                <span className="rounded-full bg-ember/15 px-2 py-0.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-ember">
                   Этот круг
                 </span>
               )}
@@ -1443,9 +1486,18 @@ export function RoleLine({ items }: { items: RoleItem[] }) {
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-porcelain ring-1 ring-graphite/[0.07]">
                 <img src={item.image} alt="" loading="lazy" decoding="async" className="h-[78%] w-[78%] object-contain" />
               </span>
+              {/*
+                Подпись стадии занимает две строки у одних составов и одну у
+                других — фиксируем высоту, иначе карточки в ряду разъезжаются
+                по вертикали и ряд выглядит собранным на глаз.
+              */}
               <div className="min-w-0">
                 <p className="truncate text-[0.9375rem] tracking-tight text-graphite">{item.model}</p>
-                {item.stage && <p className="mt-0.5 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">{item.stage}</p>}
+                {item.stage && (
+                  <p className="mt-0.5 min-h-[2.1em] font-mono text-[0.6875rem] uppercase leading-[1.05em] tracking-[0.14em] text-titanium">
+                    {item.stage}
+                  </p>
+                )}
               </div>
             </div>
             <p className={`mt-4 text-[0.875rem] leading-snug ${item.active ? 'text-graphite' : 'text-slate'}`}>{item.role}</p>
@@ -1533,7 +1585,7 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
             />
           ))}
         </svg>
-        <p className="mt-5 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Дефект</p>
+        <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Дефект</p>
         <ul className="mt-2 space-y-1">
           {defects.map((d) => (
             <li key={d} className="text-[0.875rem] leading-snug text-graphite">
@@ -1578,7 +1630,7 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
               ))}
           </div>
         </div>
-        <p className="mt-5 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Абразив</p>
+        <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Абразив</p>
         <p className="mt-2 text-[0.875rem] leading-snug text-graphite">
           {compoundLabel} + {padLabel}
         </p>
@@ -1596,7 +1648,7 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
           <ellipse cx="128" cy="76" rx="54" ry="20" fill="#FFFFFF" opacity="0.13" />
           <rect width="200" height="120" rx="14" fill="none" stroke={EMBER} strokeOpacity="0.4" strokeWidth="1.5" />
         </svg>
-        <p className="mt-5 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Результат</p>
+        <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">Результат</p>
         <p className="mt-2 text-[0.875rem] leading-snug text-graphite">{resultNote}</p>
       </motion.div>
     </div>
@@ -1632,7 +1684,7 @@ export function AssemblyChain({ items }: { items: AssemblyItem[] }) {
       {items.map((item, i) => (
         <div key={item.label} className="contents">
           <motion.div {...card(i)} className="flex flex-col rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-5">
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</span>
+            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">{String(i + 1).padStart(2, '0')}</span>
             <p className="mt-2 text-[0.9375rem] tracking-tight text-graphite">{item.label}</p>
             <p className="mt-2 text-[0.8125rem] leading-relaxed text-slate">{item.note}</p>
           </motion.div>

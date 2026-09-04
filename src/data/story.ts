@@ -500,7 +500,8 @@ function machineScenes(p: Product): StoryScene[] {
         padLabel: pad?.model,
         nodes,
         motion: orbital ? 'orbit' : 'rotary',
-        motionNote: orbital ? (orbit ? `ход ${orbit}` : 'орбита') : speed ?? 'вращение',
+        // Только реальная цифра из прайса; нет цифры — подпись остаётся короткой.
+        motionNote: orbital ? (orbit ? `ход ${orbit}` : undefined) : speed ?? undefined,
       },
     })
   }

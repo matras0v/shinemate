@@ -518,10 +518,15 @@ function Scene({
     )
   }
 
-  // Спокойный текстовый блок — воздух между акцентами.
+  /*
+   * Спокойный текстовый блок — воздух между акцентами. Отступы здесь
+   * заметно меньше, чем у сцен с визуалом: у этой композиции почти нет
+   * собственной высоты, и с большими py секция превращалась в экран,
+   * заполненный на треть.
+   */
   if (variant === 'plain') {
     return (
-      <section className={`scene relative py-14 md:py-20 ${bg}`}>
+      <section className={`scene relative py-12 md:py-16 ${bg}`}>
         <div className="shell-wide">
           <motion.div
             {...revealProps(reduced, stagger(0, 0.08))}
@@ -540,7 +545,7 @@ function Scene({
                   <span className="text-[1.0625rem] tracking-tight text-graphite">
                     {scene.metric.value}
                   </span>
-                  <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  <span className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                     {scene.metric.caption}
                   </span>
                 </p>
@@ -555,7 +560,7 @@ function Scene({
   // Крупная цифра как самостоятельный визуальный объект.
   if (variant === 'metric') {
     return (
-      <section className={`scene relative py-16 md:py-24 ${bg}`}>
+      <section className={`scene relative py-12 md:py-20 ${bg}`}>
         <div className="shell-wide">
           <motion.div
             {...revealProps(reduced, stagger(0, 0.08))}
@@ -673,7 +678,7 @@ function Scene({
             {scene.metric && (
               <div className="mt-8 inline-flex items-baseline gap-3 rounded-full border border-ember/25 bg-ember/[0.07] px-5 py-2.5">
                 <span className="text-[1.0625rem] tracking-tight text-graphite">{scene.metric.value}</span>
-                <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <span className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   {scene.metric.caption}
                 </span>
               </div>
@@ -841,7 +846,7 @@ export function SystemChainSection({ chain }: { chain: SystemChain }) {
                 <>
                   <span className="flex items-center justify-between gap-3">
                     <span
-                      className={`font-mono text-[0.625rem] uppercase tracking-[0.16em] ${
+                      className={`font-mono text-[0.6875rem] uppercase tracking-[0.16em] ${
                         step.active ? 'text-ember' : 'text-titanium'
                       }`}
                     >
@@ -930,13 +935,13 @@ export function ComparisonSection({ table }: { table: ComparisonTable }) {
           <table className="w-full min-w-[46rem] border-collapse text-left">
             <thead>
               <tr className="border-b border-graphite/20">
-                <th className="w-[22rem] py-4 pr-6 font-mono text-[0.625rem] font-medium uppercase tracking-[0.16em] text-titanium">
+                <th className="w-[22rem] py-4 pr-6 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-titanium">
                   Модель
                 </th>
                 {table.columns.map((col) => (
                   <th
                     key={col}
-                    className="py-4 pr-6 font-mono text-[0.625rem] font-medium uppercase tracking-[0.16em] text-titanium"
+                    className="py-4 pr-6 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-titanium"
                   >
                     {col}
                   </th>
@@ -976,7 +981,7 @@ export function ComparisonSection({ table }: { table: ComparisonTable }) {
                           >
                             {row.model}
                             {row.active && (
-                              <span className="ml-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-ember">
+                              <span className="ml-2 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-ember">
                                 эта модель
                               </span>
                             )}
@@ -1326,7 +1331,7 @@ export function ProcessSection({ process }: { process: NonNullable<ProductStory[
                 <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-slate">{stage.goal}</p>
 
                 <div className="mt-6 border-t border-graphite/[0.12] pt-5">
-                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                     Что снимается
                   </p>
                   <ul className="mt-2.5 space-y-1.5">
@@ -1342,11 +1347,11 @@ export function ProcessSection({ process }: { process: NonNullable<ProductStory[
                 <span className="flex-1" />
 
                 <div className="mt-6 border-t border-graphite/[0.12] pt-5">
-                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                     Паста
                   </p>
                   <p className="mt-1.5 text-[0.9375rem] leading-snug text-graphite">{stage.paste}</p>
-                  <p className="mt-4 font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                  <p className="mt-4 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                     Круг
                   </p>
                   {stage.pads.map((pad) => (

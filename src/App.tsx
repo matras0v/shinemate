@@ -18,6 +18,7 @@ import { ProductObject } from './components/scenes/ProductObject'
 import { TechFeatures } from './components/scenes/TechFeatures'
 import { ReflectionReveal } from './components/scenes/ReflectionReveal'
 import { ScrollStage } from './components/scenes/ScrollStage'
+import { SystemAssembly } from './components/scenes/SystemAssembly'
 import { Wholesale } from './components/scenes/Wholesale'
 import { ScrollProgress } from './components/ui/ScrollProgress'
 import { products } from './data/catalog'
@@ -118,6 +119,7 @@ export default function App() {
           <ReflectionReveal />
           <CategoryNavigator />
           <ScrollStage />
+          <SystemAssembly />
           <FeaturedModels />
           <Engineering />
           <Contact onOpenConsent={() => setLegalDoc(dataProcessingConsent)} />

@@ -97,7 +97,7 @@ export function ProductObject() {
           <motion.dl variants={rise} className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 sm:gap-x-10">
             {hero.specs.slice(0, 4).map((spec) => (
               <div key={spec.label} className="min-w-0 border-t border-graphite/[0.12] pt-3.5">
-                <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   {spec.label}
                 </dt>
                 <dd className="mt-2 text-[0.9375rem] tracking-tight text-graphite sm:text-[1.0625rem]">

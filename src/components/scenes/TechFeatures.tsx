@@ -98,7 +98,7 @@ export function TechFeatures() {
               </motion.div>
               <motion.p
                 variants={rise}
-                className="mt-6 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium"
+                className="mt-6 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
               >
                 {f.index}
               </motion.p>

@@ -89,7 +89,7 @@ export function BrandStory() {
             className="mt-14 grid gap-x-10 gap-y-8 border-t border-graphite/[0.12] pt-8 sm:grid-cols-3"
           >
             <motion.div variants={rise}>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+              <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                 Позиций в прайсе
               </dt>
               <dd className="mt-2 text-[2rem] font-light leading-none tracking-tight">
@@ -97,7 +97,7 @@ export function BrandStory() {
               </dd>
             </motion.div>
             <motion.div variants={rise}>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+              <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                 Моделей машинок
               </dt>
               <dd className="mt-2 text-[2rem] font-light leading-none tracking-tight">
@@ -105,7 +105,7 @@ export function BrandStory() {
               </dd>
             </motion.div>
             <motion.div variants={rise}>
-              <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+              <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                 Градации кругов
               </dt>
               <dd className="mt-2 text-[2rem] font-light leading-none tracking-tight">
@@ -143,19 +143,19 @@ export function BrandStory() {
               className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3"
             >
               <div>
-                <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   Продажи
                 </dt>
                 <dd className="mt-1.5 text-[1.0625rem] tracking-tight">80+ стран</dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   Сертификация
                 </dt>
                 <dd className="mt-1.5 text-[1.0625rem] tracking-tight">ISO 9001, CE, CCC</dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-titanium">
+                <dt className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                   Разработка
                 </dt>
                 <dd className="mt-1.5 text-[1.0625rem] tracking-tight">Своя лаборатория R&D</dd>
@@ -197,7 +197,7 @@ export function BrandStory() {
                 </motion.div>
                 <motion.p
                   variants={rise}
-                  className="mt-6 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium"
+                  className="mt-6 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium"
                 >
                   {item.step}
                 </motion.p>
