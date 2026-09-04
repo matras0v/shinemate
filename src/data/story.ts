@@ -1989,7 +1989,13 @@ function accessoryScenes(p: Product): StoryScene[] {
     })
   }
 
-  if (p.variants.length >= 2) {
+  /*
+   * Общий блок исполнений не нужен там, где размеры уже разобраны своей
+   * сценой: у сумки «Два размера — два сценария» и «Исполнения в прайсе»
+   * рассказывали об одном и том же подряд.
+   */
+  const sizesShown = scenes.some((sc) => sc.diagram?.kind === 'sizes')
+  if (p.variants.length >= 2 && !sizesShown) {
     const group = p.variants.some((v) => v.model)
     scenes.push({
       title: group ? 'Что входит в эту карточку' : 'Исполнения в прайсе',
