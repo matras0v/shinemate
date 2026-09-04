@@ -98,6 +98,20 @@ export type SceneDiagram =
   | { kind: 'stroke'; items: { model: string; mm: number }[]; activeModel: string }
   | { kind: 'sizes'; items: { label: string; note: string; mm: number }[] }
   /*
+   * Дефект → абразив → результат. Только для составов, только с реальными
+   * дефектами стадии из официальной таблицы применения — никаких
+   * придуманных повреждений и никакой фотореалистичной подделки «было/стало».
+   */
+  | {
+      kind: 'process'
+      defects: string[]
+      padLabel: string
+      padImage: string
+      compoundLabel: string
+      compoundImage: string
+      resultNote: string
+    }
+  /*
    * Реальный переключатель исполнений внутри истории. Раньше исполнения
    * аксессуаров показывались рядом ссылок на ту же самую страницу с
    * жёстко прибитой «активной» первой карточкой: клик не делал ничего,
@@ -987,6 +1001,38 @@ function compoundScenes(p: Product): StoryScene[] {
     body: p.lead,
     image: p.image,
   })
+
+  /*
+   * Главная «конфетка» страницы пасты: не механика (у состава её нет),
+   * а сам процесс обработки. Дефекты и цель — та же официальная таблица
+   * применения, что и в PolishingProcess на главной, круг — реальная
+   * совместимая позиция каталога. Ничего не придумано: если стадия
+   * неизвестна, сцена просто не показывается.
+   */
+  if (stage !== undefined) {
+    const st = POLISH_STAGES[stage]
+    const padSlugForStage: Record<number, string> = {
+      1: 'foam-diamond-t80',
+      2: 'foam-diamond-t40',
+      3: 'foam-diamond-t10',
+    }
+    const pad = bySlug(padSlugForStage[stage] ?? 'foam-diamond-t40')
+    if (pad) {
+      scenes.push({
+        title: 'Дефект → абразив → результат',
+        body: `${st.goal}. Состав наносится точками на рабочую поверхность круга и разгоняется на низких оборотах — абразив работает в паре с кругом, а не сам по себе.`,
+        diagram: {
+          kind: 'process',
+          defects: st.defects,
+          padLabel: pad.model,
+          padImage: pad.image,
+          compoundLabel: p.model,
+          compoundImage: p.image,
+          resultNote: st.goal,
+        },
+      })
+    }
+  }
 
   // Линейка V-Range реальными кадрами: от тяжёлого реза к финишу.
   const order = ['v80-heavy-cut', 'v82-fast-polish', 'v40-medium-polish', 'v20-final-finish']

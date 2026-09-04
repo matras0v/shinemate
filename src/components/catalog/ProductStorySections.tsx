@@ -5,6 +5,7 @@ import { formatPrice, minPrice, type Product } from '../../data/catalog'
 import {
   BatteryFlow,
   CutMeter,
+  DefectProcess,
   MountStack,
   OrbitPrinciple,
   PowerBar,
@@ -231,11 +232,22 @@ function Diagram({
       return <VariantPicker items={diagram.items} activeSku={activeSku} onSelect={onSelectSku} />
     case 'series':
       return <SeriesRow items={diagram.items} from={diagram.from} to={diagram.to} />
+    case 'process':
+      return (
+        <DefectProcess
+          defects={diagram.defects}
+          padLabel={diagram.padLabel}
+          padImage={diagram.padImage}
+          compoundLabel={diagram.compoundLabel}
+          compoundImage={diagram.compoundImage}
+          resultNote={diagram.resultNote}
+        />
+      )
   }
 }
 
 /** Схемам, которые сами по себе — крупный объект, рамка не нужна. */
-const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series', 'variants']
+const BARE_DIAGRAMS: SceneDiagram['kind'][] = ['mount', 'cut', 'stroke', 'sizes', 'series', 'variants', 'process']
 
 /*
  * Схема принципа привода — это «технологический» акцент страницы, и он

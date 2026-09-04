@@ -194,6 +194,26 @@
   animation: sm-dash 4.5s linear infinite;
 }
 
+/*
+ * Точка внутри круга хода эксцентрика буквально проходит амплитуду —
+ * так разница между 9 мм и 21 мм читается движением, а не только
+ * размером статичного кружка. Амплитуда задаётся переменной --amp на
+ * каждом элементе (пропорциональна реальному ходу из прайса).
+ */
+@keyframes sm-orbit-x {
+  0%,
+  100% {
+    transform: translateX(calc(-1 * var(--amp, 6px)));
+  }
+  50% {
+    transform: translateX(var(--amp, 6px));
+  }
+}
+
+.sm-orbit-dot {
+  animation: sm-orbit-x 1.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

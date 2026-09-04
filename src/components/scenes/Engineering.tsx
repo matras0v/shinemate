@@ -1,9 +1,51 @@
-import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { animate, motion, useInView, useScroll, useTransform } from 'framer-motion'
 
 import { engineeringFacts } from '../../data/catalog'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { riseProps } from '../../lib/motion'
+
+/**
+ * Значения вроде «10 000» или «400×70» — не чистое число: есть групповой
+ * пробел и иногда нечисловой хвост («×70»). Разгоняем только цифровую
+ * часть, хвост остаётся статичным текстом.
+ */
+function parseFactValue(value: string): { target: number; suffix: string } | null {
+  const m = value.match(/^(\d(?:[\d ]*\d)?)(.*)$/)
+  if (!m) return null
+  return { target: Number(m[1].replace(/\s/g, '')), suffix: m[2] }
+}
+
+/**
+ * Разовый счётчик от нуля к реальному значению при первом появлении в
+ * зоне видимости. Значение и так уже проверено (это данные из прайса),
+ * счётчик — только способ его показать, а не пересчитать заново.
+ */
+function FactValue({ value }: { value: string }) {
+  const reduced = useReducedMotion()
+  const parsed = parseFactValue(value)
+  const ref = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, amount: 0.6 })
+  const [display, setDisplay] = useState(reduced || !parsed ? parsed?.target ?? 0 : 0)
+
+  useEffect(() => {
+    if (!parsed || !inView || reduced) return
+    const controls = animate(0, parsed.target, {
+      duration: 1.2,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    })
+    return () => controls.stop()
+  }, [inView, reduced, parsed?.target])
+
+  if (!parsed) return <span ref={ref}>{value}</span>
+  return (
+    <span ref={ref}>
+      {display.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')}
+      {parsed.suffix}
+    </span>
+  )
+}
 
 export function Engineering() {
   const section = useRef<HTMLElement>(null)
@@ -54,8 +96,8 @@ export function Engineering() {
               className="border-t border-porcelain/15 pt-6"
             >
               <p className="flex items-baseline gap-2 tracking-tight">
-                <span className="text-[clamp(2.75rem,2rem+3.4vw,5rem)] font-light leading-none">
-                  {fact.value}
+                <span className="text-[clamp(2.75rem,2rem+3.4vw,5rem)] font-light leading-none tabular-nums">
+                  <FactValue value={fact.value} />
                 </span>
                 <span className="font-mono text-sm text-porcelain/45">{fact.unit}</span>
               </p>

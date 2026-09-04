@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion'
+import { useRef } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
 
 import { POLISH_STAGES } from '../../data/story'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
@@ -20,6 +21,15 @@ import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
 
 export function PolishingProcess() {
   const reduced = useReducedMotion()
+  const grid = useRef<HTMLDivElement>(null)
+  /*
+   * Прогресс-линия идёт не по всей секции, а именно по ряду карточек:
+   * offset подобран так, чтобы линия заполнялась, пока ряд проходит
+   * через видимую часть экрана, и оставалась полной, когда он уже
+   * пролистан — а не заполнялась ещё до того, как ряд появился.
+   */
+  const { scrollYProgress } = useScroll({ target: grid, offset: ['start 0.8', 'end 0.35'] })
+  const railScale = useTransform(scrollYProgress, [0, 1], [0, 1])
 
   return (
     <section className="scene relative bg-porcelain py-24 sm:py-28 md:py-36">
@@ -28,9 +38,16 @@ export function PolishingProcess() {
           <motion.p variants={rise} className="eyebrow">
             Подбор связки
           </motion.p>
-          <motion.h2 variants={rise} className="h2 mt-5 max-w-[18ch]">
+          {/*
+            /technologies — самостоятельная страница без отдельного hero:
+            этот блок был у неё единственным заголовком раздела, но h2 без
+            h1 на странице — реальный пробел, найденный при сквозном
+            прогоне (та же проверка, что раньше поймала отсутствие h1 на
+            «Контактах»).
+          */}
+          <motion.h1 variants={rise} className="h2 mt-5 max-w-[18ch]">
             Какой круг и пасту брать под задачу
-          </motion.h2>
+          </motion.h1>
           <motion.p
             variants={rise}
             className="lead mt-6 max-w-[54ch] text-ash"
@@ -41,7 +58,16 @@ export function PolishingProcess() {
           </motion.p>
         </motion.div>
 
-        <div className="mt-14 grid gap-px overflow-hidden rounded-2xl bg-graphite/[0.12] md:mt-16 md:grid-cols-2 xl:grid-cols-4">
+        <div ref={grid} className="relative mt-14 md:mt-16">
+          {!reduced && (
+            <div aria-hidden className="absolute -top-3 left-0 right-0 hidden h-[3px] rounded-full bg-graphite/10 xl:block">
+              <motion.div
+                className="h-full origin-left rounded-full bg-ember"
+                style={{ scaleX: railScale }}
+              />
+            </div>
+          )}
+          <div className="grid gap-px overflow-hidden rounded-2xl bg-graphite/[0.12] md:grid-cols-2 xl:grid-cols-4">
           {POLISH_STAGES.map((stage, i) => (
             <motion.article
               key={stage.index}
@@ -105,6 +131,7 @@ export function PolishingProcess() {
               </motion.div>
             </motion.article>
           ))}
+          </div>
         </div>
 
         <motion.p

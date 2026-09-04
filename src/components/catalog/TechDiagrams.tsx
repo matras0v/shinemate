@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { motion, useInView } from 'framer-motion'
 
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 
@@ -157,7 +157,17 @@ export function OrbitPrinciple({ orbit, dark }: { orbit?: string; dark?: boolean
       <circle cx={cx} cy={cy} r={orb} fill="none" stroke={EMBER} strokeOpacity="0.55" strokeWidth="1.6" strokeDasharray="5 6" />
       <circle cx={cx} cy={cy} r="3.5" fill={t.ink} opacity="0.55" />
 
-      {/* Сам круг: одновременно едет по орбите и вращается вокруг себя */}
+      {/*
+        Круг делает ДВЕ независимые вещи одновременно, и это должно
+        читаться как два разных движения, а не одно: внешняя группа несёт
+        диск по орбите вокруг (cx, cy) за 6с, а сам диск внутри неё
+        вращается вокруг собственной оси заметно быстрее (1.6с) — на
+        схеме это видно по спице-индикатору, которая крутится «сама по
+        себе», пока весь узел одновременно едет по кругу. Раньше диск был
+        жёстко привязан к орбите (одна и та же угловая скорость), и на
+        статичном взгляде схема читалась как один эксцентричный обод, а
+        не как «вращение + орбита».
+      */}
       {/* transformOrigin инлайном: Tailwind не генерирует классы из
           вычисляемых строк, а центр орбиты здесь параметрический. */}
       <g
@@ -165,12 +175,17 @@ export function OrbitPrinciple({ orbit, dark }: { orbit?: string; dark?: boolean
         style={{ transformOrigin: `${cx}px ${cy}px` }}
       >
         <g transform={`translate(${-orb},0)`}>
-          <circle cx={cx} cy={cy} r={pad} fill={t.disc} />
-          <circle cx={cx} cy={cy} r={pad} fill="none" stroke={t.ink} strokeOpacity={t.stroke} strokeWidth="1.8" />
-          <circle cx={cx} cy={cy} r={pad * 0.62} fill={t.discTop} />
-          <circle cx={cx} cy={cy} r={pad * 0.62} fill="none" stroke={t.ink} strokeOpacity={dark ? 0.28 : 0.16} strokeWidth="1.3" />
-          <circle cx={cx} cy={cy} r="8" fill={EMBER} />
-          <line x1={cx} y1={cy} x2={cx} y2={cy - pad + 8} stroke={EMBER} strokeWidth="3.5" strokeLinecap="round" />
+          <g
+            className={reduced ? undefined : 'animate-[spin_1.6s_linear_infinite]'}
+            style={{ transformOrigin: `${cx}px ${cy}px` }}
+          >
+            <circle cx={cx} cy={cy} r={pad} fill={t.disc} />
+            <circle cx={cx} cy={cy} r={pad} fill="none" stroke={t.ink} strokeOpacity={t.stroke} strokeWidth="1.8" />
+            <circle cx={cx} cy={cy} r={pad * 0.62} fill={t.discTop} />
+            <circle cx={cx} cy={cy} r={pad * 0.62} fill="none" stroke={t.ink} strokeOpacity={dark ? 0.28 : 0.16} strokeWidth="1.3" />
+            <circle cx={cx} cy={cy} r="8" fill={EMBER} />
+            <line x1={cx} y1={cy} x2={cx} y2={cy - pad + 8} stroke={EMBER} strokeWidth="3.5" strokeLinecap="round" />
+          </g>
         </g>
       </g>
 
@@ -207,6 +222,7 @@ const polar = (cx: number, cy: number, r: number, deg: number) => {
  * шкала, а способ увидеть, что диапазон делает в работе.
  */
 export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: string }) {
+  const reduced = useReducedMotion()
   const steps = 4
   const values = Array.from({ length: steps }, (_, i) => Math.round(min + ((max - min) * i) / (steps - 1)))
   const notes = [
@@ -215,7 +231,27 @@ export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: 
     'Съём на плоскостях',
     'Вывод глянца и производительность',
   ]
-  const [active, setActive] = useState(steps - 1)
+  const [active, setActive] = useState(reduced ? steps - 1 : 0)
+
+  /*
+   * При первом появлении шкала должна ПРОЙТИ диапазон, а не сразу
+   * показать готовый максимум — иначе пользователь видит статичную
+   * цифру и не понимает, что регулятор вообще двигается. Разовый свип
+   * 0 → максимум на входе во вьюпорт, дальше — обычный hover/tap как
+   * раньше (стейт тот же, sweep его не блокирует).
+   */
+  const wrap = useRef<HTMLDivElement>(null)
+  const inView = useInView(wrap, { once: true, amount: 0.5 })
+  useEffect(() => {
+    if (!inView || reduced) return
+    let i = 0
+    const id = window.setInterval(() => {
+      i += 1
+      setActive(Math.min(i, steps - 1))
+      if (i >= steps - 1) window.clearInterval(id)
+    }, 260)
+    return () => window.clearInterval(id)
+  }, [inView, reduced])
 
   const cx = 260
   const cy = 250
@@ -228,7 +264,7 @@ export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: 
   const angleFor = (i: number) => (180 / (steps - 1)) * i
 
   return (
-    <div className="flex h-full w-full flex-col justify-center">
+    <div ref={wrap} className="flex h-full w-full flex-col justify-center">
       <svg viewBox="0 0 520 300" role="img" aria-label={`Диапазон оборотов от ${min} до ${max} ${unit}`} className="w-full">
         <path d={arc(0, 180)} fill="none" stroke="#1A1C1E" strokeOpacity="0.14" strokeWidth="10" strokeLinecap="round" />
         <path
@@ -303,8 +339,15 @@ export function PowerBar({
   family?: { model: string; watts: number }[]
   model?: string
 }) {
+  const reduced = useReducedMotion()
   const scaleMax = Math.max(peak ?? rated, ...family.map((f) => f.watts))
   const pct = (w: number) => Math.max((w / scaleMax) * 100, 4)
+  /*
+   * Полосы раньше рисовались сразу в конечную ширину — «резерв» мощности
+   * был просто фактом на экране, а не тем, что видно. Заполнение теперь
+   * идёт от нуля один раз при входе во вьюпорт: сначала номинал, чуть
+   * позже — полупрозрачный пик поверх него, ровно в порядке чтения.
+   */
   return (
     <div className="flex h-full w-full flex-col justify-center">
       <div className="flex items-baseline gap-3">
@@ -317,9 +360,23 @@ export function PowerBar({
       <div className="mt-7">
         <div className="relative h-3.5 w-full overflow-hidden rounded-full bg-graphite/[0.09]">
           {peak && peak !== rated && (
-            <div className="absolute inset-y-0 left-0 rounded-full bg-ember/25" style={{ width: `${pct(peak)}%` }} />
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full bg-ember/25"
+              initial={reduced ? false : { width: '0%' }}
+              whileInView={{ width: `${pct(peak)}%` }}
+              viewport={{ once: true, amount: 0.6 }}
+              transition={{ duration: 0.85, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              style={reduced ? { width: `${pct(peak)}%` } : undefined}
+            />
           )}
-          <div className="absolute inset-y-0 left-0 rounded-full bg-graphite" style={{ width: `${pct(rated)}%` }} />
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-graphite"
+            initial={reduced ? false : { width: '0%' }}
+            whileInView={{ width: `${pct(rated)}%` }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            style={reduced ? { width: `${pct(rated)}%` } : undefined}
+          />
         </div>
         <div className="mt-3 flex items-baseline justify-between font-mono text-[0.6875rem] uppercase tracking-[0.14em]">
           <span className="text-titanium">Номинал</span>
@@ -331,7 +388,7 @@ export function PowerBar({
 
       {family.length > 1 && (
         <ul className="mt-9 space-y-3 border-t border-graphite/[0.12] pt-7">
-          {family.map((f) => {
+          {family.map((f, i) => {
             const on = f.model === model
             return (
               <li key={f.model} className="flex items-center gap-4">
@@ -339,9 +396,13 @@ export function PowerBar({
                   {f.model}
                 </span>
                 <span className="h-2 flex-1 overflow-hidden rounded-full bg-graphite/[0.08]">
-                  <span
+                  <motion.span
                     className={`block h-full rounded-full ${on ? 'bg-ember' : 'bg-graphite/35'}`}
-                    style={{ width: `${pct(f.watts)}%` }}
+                    initial={reduced ? false : { width: '0%' }}
+                    whileInView={{ width: `${pct(f.watts)}%` }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.6, delay: 0.15 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                    style={reduced ? { width: `${pct(f.watts)}%` } : undefined}
                   />
                 </span>
                 <span className={`w-16 shrink-0 text-right font-mono text-[0.75rem] tabular-nums ${on ? 'text-graphite' : 'text-slate'}`}>
@@ -368,21 +429,34 @@ export type MountItem = { src: string; label: string; note: string }
  */
 export function MountStack({ items }: { items: MountItem[] }) {
   const reduced = useReducedMotion()
+  const n = items.length
   /*
-   * Звенья «встают на место» по очереди при появлении блока — это
-   * читается как сборка связки, а не как три отдельные карточки рядом.
-   * Смещение маленькое (18px) и по одной оси: никакого циркового
-   * разлёта элементов.
+   * Боковой сдвиг имеет смысл, только когда звенья реально стоят В РЯД
+   * (sm и шире, см. flex-row у <ol> ниже) — на мобильном они уложены в
+   * колонку на всю ширину, и тот же -26px по x там не «сходится», а
+   * просто вылезает за левый край экрана (реальный горизонтальный
+   * оверфлоу нашёлся именно на этом фиксе — MountStack используется на
+   * каждой странице машинки и подложки, поэтому баг был массовым).
    */
-  const step = (i: number) =>
-    reduced
-      ? {}
-      : {
-          initial: { opacity: 0, y: 18 },
-          whileInView: { opacity: 1, y: 0 },
-          viewport: { once: true, amount: 0.35 },
-          transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.12 },
-        }
+  const [rowLayout, setRowLayout] = useState(false)
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 640px)')
+    const sync = () => setRowLayout(query.matches)
+    sync()
+    query.addEventListener('change', sync)
+    return () => query.removeEventListener('change', sync)
+  }, [])
+  const step = (i: number) => {
+    if (reduced) return {}
+    const edge = rowLayout ? 26 : 0
+    const x = n > 1 ? (i === 0 ? -edge : i === n - 1 ? edge : 0) : 0
+    return {
+      initial: { opacity: 0, x, y: 14 },
+      whileInView: { opacity: 1, x: 0, y: 0 },
+      viewport: { once: true, amount: 0.35 },
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.14 },
+    }
+  }
   return (
     <ol className="flex w-full flex-col gap-3 sm:flex-row sm:items-stretch">
       {items.map((item, i) => (
@@ -478,7 +552,12 @@ export function SeriesRow({ items, from, to }: { items: SeriesItem[]; from: stri
                   alt=""
                   loading="lazy"
                   decoding="async"
-                  className="h-[86%] w-[86%] object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.06]"
+                  // Активная позиция линейки чуть выходит вперёд сама по
+                  // себе — не только по наведению: так видно, где ты
+                  // сейчас находишься в шкале, даже не касаясь ряда.
+                  className={`h-[86%] w-[86%] object-contain transition-transform duration-500 ease-premium group-hover:scale-[1.06] ${
+                    item.active ? 'scale-[1.04]' : ''
+                  }`}
                 />
               </span>
               <span
@@ -600,20 +679,34 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
       <Grid id="bat-grid" step={26} />
       <rect width="520" height="250" fill="url(#bat-grid)" />
 
-      {/* Блок аккумулятора */}
-      <rect x="18" y="62" width="176" height="128" rx="16" fill="#1A1C1E" />
-      <rect x="46" y="40" width="52" height="26" rx="7" fill="#1A1C1E" />
-      <rect x="114" y="40" width="52" height="26" rx="7" fill="#1A1C1E" />
-      <rect x="18" y="150" width="176" height="40" rx="0" fill={EMBER} opacity="0.9" />
-      <path d="M 18 176 h 176 v 14 a 16 16 0 0 1 -16 16 h -144 a 16 16 0 0 1 -16 -16 z" fill="#1A1C1E" opacity="0" />
-      <text x="106" y="122" textAnchor="middle" fontSize="44" fontWeight="600" fill="#FFFFFF" letterSpacing="-1">
-        {platform}
-      </text>
-      {capacity && (
-        <text x="106" y="177" textAnchor="middle" fontSize="17" fontWeight="600" fill="#1A1C1E" fontFamily="ui-monospace, monospace">
-          {capacity}
+      {/*
+        Блок аккумулятора «встаёт на место» один раз при входе во
+        вьюпорт — короткий выезд слева с лёгким перелётом и возвратом,
+        как ощущается настоящая фиксация, а не абстрактный fade. Схема
+        не утверждает конкретный механизм крепления (защёлка, салазки,
+        байонет) — это принцип «аккумулятор подключается к инструменту»,
+        а не чертёж конкретного разъёма.
+      */}
+      <motion.g
+        initial={reduced ? undefined : { x: -22, opacity: 0 }}
+        whileInView={reduced ? undefined : { x: [-22, 6, 0], opacity: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={reduced ? undefined : { duration: 0.65, ease: [0.16, 1, 0.3, 1], times: [0, 0.7, 1] }}
+      >
+        <rect x="18" y="62" width="176" height="128" rx="16" fill="#1A1C1E" />
+        <rect x="46" y="40" width="52" height="26" rx="7" fill="#1A1C1E" />
+        <rect x="114" y="40" width="52" height="26" rx="7" fill="#1A1C1E" />
+        <rect x="18" y="150" width="176" height="40" rx="0" fill={EMBER} opacity="0.9" />
+        <path d="M 18 176 h 176 v 14 a 16 16 0 0 1 -16 16 h -144 a 16 16 0 0 1 -16 -16 z" fill="#1A1C1E" opacity="0" />
+        <text x="106" y="122" textAnchor="middle" fontSize="44" fontWeight="600" fill="#FFFFFF" letterSpacing="-1">
+          {platform}
         </text>
-      )}
+        {capacity && (
+          <text x="106" y="177" textAnchor="middle" fontSize="17" fontWeight="600" fill="#1A1C1E" fontFamily="ui-monospace, monospace">
+            {capacity}
+          </text>
+        )}
+      </motion.g>
 
       {/* Поток энергии */}
       <line x1="210" y1="126" x2="330" y2="126" stroke="#1A1C1E" strokeOpacity="0.22" strokeWidth="2.5" strokeDasharray="8 8" />
@@ -704,13 +797,26 @@ export function StrokeScale({
       {items.map((item) => {
         const on = item.model === activeModel
         const size = 34 + (item.mm / max) * 78
+        /*
+         * Круги сами по себе уже показывали разницу в ходе размером —
+         * но размер статичен, и «9 мм против 21 мм» приходилось читать
+         * глазами по линейке, а не почувствовать. Точка внутри реально
+         * проходит эту амплитуду: её вылет — доля радиуса круга, то есть
+         * пропорционален настоящему ходу эксцентрика из прайса.
+         */
+        const amp = Math.max(size * 0.22, 3)
         return (
           <li key={item.model} className="flex flex-col items-center gap-3">
             <span
               aria-hidden
-              className={`block rounded-full ${on ? 'bg-ember/20 ring-2 ring-ember' : 'bg-graphite/[0.08] ring-1 ring-graphite/20'}`}
+              className={`relative flex items-center justify-center overflow-hidden rounded-full ${on ? 'bg-ember/20 ring-2 ring-ember' : 'bg-graphite/[0.08] ring-1 ring-graphite/20'}`}
               style={{ width: size, height: size }}
-            />
+            >
+              <span
+                className={`sm-orbit-dot block h-2 w-2 rounded-full ${on ? 'bg-ember' : 'bg-graphite/50'}`}
+                style={{ '--amp': `${amp}px` } as CSSProperties}
+              />
+            </span>
             <span className={`font-mono text-[0.8125rem] tabular-nums ${on ? 'text-graphite' : 'text-slate'}`}>
               {item.mm} мм
             </span>
@@ -750,5 +856,137 @@ export function SizeScale({ items }: { items: { label: string; note: string; mm:
         )
       })}
     </ul>
+  )
+}
+
+/* ───────────────────────── Дефект → абразив → результат ───────────────────────── */
+
+export type DefectProcessData = {
+  /** Реальные дефекты этой стадии — из официальной таблицы применения. */
+  defects: string[]
+  padLabel: string
+  padImage: string
+  compoundLabel: string
+  compoundImage: string
+  /** Что стадия реально даёт — формулировка из тех же данных, что и таблица применения. */
+  resultNote: string
+}
+
+/**
+ * Единственная в проекте схема, которая говорит не о механике, а о
+ * ПРОЦЕССЕ: что было на панели, чем это снимают и что получают в итоге.
+ * Левая и правая иллюстрации — намеренно условные (волны и рельефный
+ * блик, а не фотографии конкретной панели): у нас нет исходной пары
+ * «до/после» именно для этого состава, и подделывать её фотореалистично
+ * означало бы выдать схему за реальный кейс. Средняя карточка — честная:
+ * это те же кадры пасты и круга, что и в каталоге.
+ */
+export function DefectProcess({ defects, padLabel, padImage, compoundLabel, compoundImage, resultNote }: DefectProcessData) {
+  const reduced = useReducedMotion()
+  const dotDelay = (i: number) => 0.55 + i * 0.16
+
+  const card = (i: number) =>
+    reduced
+      ? {}
+      : {
+          initial: { opacity: 0, y: 18 },
+          whileInView: { opacity: 1, y: 0 },
+          viewport: { once: true, amount: 0.4 },
+          transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.12 },
+        }
+
+  return (
+    <div className="grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-3">
+      {/* 1. Дефект — условная схема, подписана как принцип, не фото */}
+      <motion.div {...card(0)} className="rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-6">
+        <svg viewBox="0 0 200 120" role="img" aria-label="Условная схема поверхности с дефектами" className="h-24 w-full text-graphite/70">
+          <rect width="200" height="120" rx="14" fill="#1A1C1E" fillOpacity="0.06" />
+          {[32, 58, 84].map((y, i) => (
+            <path
+              key={y}
+              d={`M 18 ${y} Q 60 ${y - 14 + (i % 2) * 10}, 100 ${y} T 182 ${y}`}
+              fill="none"
+              stroke="currentColor"
+              strokeOpacity="0.55"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          ))}
+        </svg>
+        <p className="mt-5 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Дефект</p>
+        <ul className="mt-2 space-y-1">
+          {defects.map((d) => (
+            <li key={d} className="text-[0.875rem] leading-snug text-graphite">
+              {d}
+            </li>
+          ))}
+        </ul>
+      </motion.div>
+
+      <div aria-hidden className="hidden items-center justify-center text-graphite/25 lg:flex">
+        <ArrowGlyph />
+      </div>
+
+      {/* 2. Абразив — реальные кадры пасты и круга, точки состава появляются по очереди */}
+      <motion.div {...card(1)} className="rounded-2xl border border-graphite/[0.1] bg-porcelain p-6">
+        <div className="relative flex h-24 items-center justify-center gap-3">
+          <img src={compoundImage} alt="" loading="lazy" decoding="async" className="h-full w-auto object-contain" />
+          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[radial-gradient(120%_100%_at_50%_0%,#F4F7F8_0%,#E2EAEC_60%,#D2DDDF_100%)]">
+            <img src={padImage} alt="" loading="lazy" decoding="async" className="h-[80%] w-[80%] object-contain" />
+            {/*
+              Несколько точек состава, нанесённых на круг — коротким
+              появлением по очереди, один раз. Это не жидкостная
+              симуляция, просто честная графическая подсказка «состав
+              наносится точками», как и написано в тексте сцены.
+            */}
+            {!reduced &&
+              [
+                { x: '38%', y: '32%' },
+                { x: '58%', y: '48%' },
+                { x: '46%', y: '64%' },
+              ].map((p, i) => (
+                <motion.span
+                  key={i}
+                  aria-hidden
+                  className="absolute h-1.5 w-1.5 rounded-full bg-ember"
+                  style={{ left: p.x, top: p.y }}
+                  initial={{ opacity: 0, scale: 0.4 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.3, delay: dotDelay(i) }}
+                />
+              ))}
+          </div>
+        </div>
+        <p className="mt-5 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Абразив</p>
+        <p className="mt-2 text-[0.875rem] leading-snug text-graphite">
+          {compoundLabel} + {padLabel}
+        </p>
+      </motion.div>
+
+      <div aria-hidden className="hidden items-center justify-center text-graphite/25 lg:flex">
+        <ArrowGlyph />
+      </div>
+
+      {/* 3. Результат — условный блик, подпись из тех же данных, что и таблица применения */}
+      <motion.div {...card(2)} className="rounded-2xl border border-graphite/[0.1] bg-hazeSurface p-6">
+        <svg viewBox="0 0 200 120" role="img" aria-label="Условная схема ровного глянцевого отражения" className="h-24 w-full">
+          <rect width="200" height="120" rx="14" fill="#1A1C1E" />
+          <ellipse cx="66" cy="46" rx="76" ry="34" fill="#FFFFFF" opacity="0.24" />
+          <ellipse cx="128" cy="76" rx="54" ry="20" fill="#FFFFFF" opacity="0.13" />
+          <rect width="200" height="120" rx="14" fill="none" stroke={EMBER} strokeOpacity="0.4" strokeWidth="1.5" />
+        </svg>
+        <p className="mt-5 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-titanium">Результат</p>
+        <p className="mt-2 text-[0.875rem] leading-snug text-graphite">{resultNote}</p>
+      </motion.div>
+    </div>
+  )
+}
+
+function ArrowGlyph() {
+  return (
+    <svg width="28" height="16" viewBox="0 0 28 16" fill="none" aria-hidden>
+      <path d="M0 8H26M26 8L19 1M26 8L19 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
