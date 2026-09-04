@@ -2183,9 +2183,11 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
       {/* Рабочая пара идёт по панели */}
       <motion.div
         style={reduced ? { left: '42%', opacity: 1 } : { left: headX, opacity: headOpacity }}
-        className="absolute top-1/2 hidden -translate-y-1/2 sm:block"
+        /* На узком экране круг остаётся: без него сцена теряет главное —
+           видно, ЧЕМ именно исправляется панель. */
+        className="absolute top-1/2 -translate-y-1/2"
       >
-        <span className="relative flex h-24 w-24 items-center justify-center rounded-full bg-porcelain shadow-[0_12px_30px_rgba(0,0,0,0.35)] lg:h-28 lg:w-28">
+        <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-porcelain shadow-[0_12px_30px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24 lg:h-28 lg:w-28">
           <img
             src={padImage}
             alt=""
