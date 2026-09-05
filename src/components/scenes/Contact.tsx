@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { Clock, Mail, MapPin, X } from 'lucide-react'
+import { ArrowLeft, Clock, Mail, MapPin, X } from 'lucide-react'
 
 import { formatPrice } from '../../data/catalog'
 import { company } from '../../data/company'
@@ -60,6 +60,23 @@ export function Contact({ onOpenConsent, standalone }: Props) {
 
   return (
     <section id="contacts" className="scene relative bg-porcelain py-28 md:py-40">
+      {/*
+        На отдельной странице «Контакты» не было ни одной ссылки назад —
+        только логотип в шапке. Клиент показал на видео, что пытался
+        вернуться и не нашёл рабочего пути обратно. Тот же паттерн, что
+        уже используется в каталоге (CatalogView).
+      */}
+      {standalone && (
+        <div className="shell mb-8">
+          <a
+            href="."
+            className="group inline-flex items-center gap-2 text-[0.875rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
+          >
+            <ArrowLeft size={15} className="transition-transform duration-500 ease-premium group-hover:-translate-x-0.5" />
+            На главную
+          </a>
+        </div>
+      )}
       <motion.div {...riseProps(reduced, { y: 24, amount: 0.3 })} className="shell">
         <div className="overflow-hidden rounded-3xl">
           <img
@@ -78,16 +95,38 @@ export function Contact({ onOpenConsent, standalone }: Props) {
         <motion.p variants={rise} className="eyebrow">
           Контакты
         </motion.p>
+        {/*
+          На отдельной странице «Контакты» заголовок и лид были те же, что
+          и в лид-форме на главной («Подберём ShineMate под вашу задачу») —
+          человек, который зашёл узнать телефон, вместо этого видел призыв
+          заполнить анкету подбора. На главной эта формулировка остаётся:
+          там форма — продолжение карточки товара, а не самостоятельная
+          страница «Контакты».
+        */}
         <Heading variants={rise} className="h1 mt-5 max-w-[18ch]">
-          Подберём ShineMate под вашу задачу
+          {standalone ? 'Телефоны, адреса и почта' : 'Подберём ShineMate под вашу задачу'}
         </Heading>
         <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-slate">
-          Расскажите, с какими покрытиями и объёмами работаете — предложим конфигурацию машинки,
-          подложек и кругов и пришлём актуальный прайс.
+          {standalone
+            ? 'Звоните или пишите напрямую — ниже актуальные номера по регионам, адреса и карта. Если удобнее, оставьте заявку в форме, и мы подберём конфигурацию под задачу и объёмы.'
+            : 'Расскажите, с какими покрытиями и объёмами работаете — предложим конфигурацию машинки, подложек и кругов и пришлём актуальный прайс.'}
         </motion.p>
       </motion.div>
 
-      <div className="shell mt-12 grid gap-14 lg:grid-cols-[1fr_0.85fr] lg:gap-24">
+      <div
+        className={`shell mt-12 grid gap-14 lg:grid-cols-[1fr_0.85fr] lg:gap-24 ${
+          standalone ? 'lg:grid-cols-[0.85fr_1fr]' : ''
+        }`}
+      >
+        {/*
+          На отдельной странице «Контакты» реальные номера и адрес идут
+          ПЕРВЫМИ и в разметке, и визуально — это то, за чем сюда приходят.
+          Форма подбора конфигурации остаётся, но уже вторым, необязательным
+          шагом. На главной порядок прежний: там страница уже вела к форме
+          через CTA у товара, и контакты там — уточнение, а не цель захода.
+        */}
+        {standalone && <ContactDetails />}
+
         <motion.form
           {...riseProps(reduced, { y: 28, amount: 0.15 })}
           onSubmit={onSubmit}
@@ -171,53 +210,61 @@ export function Contact({ onOpenConsent, standalone }: Props) {
           <StatusLine sent={sent} />
         </motion.form>
 
-        <motion.div {...revealProps(reduced, stagger(0.15, 0.07))} className="space-y-10">
-          {company.phones.map((phone) => (
-            <motion.div key={phone.href} variants={rise}>
-              <p className="eyebrow">{phone.region}</p>
-              <a
-                href={phone.href}
-                className="mt-2.5 block text-[clamp(1.5rem,3vw,2.25rem)] tracking-tight transition-colors duration-500 ease-premium hover:text-slate"
-              >
-                {phone.display}
-              </a>
-              {/* Клиент отметил: адрес/город терялись рядом с крупным номером
-                  телефона — крупнее и темнее, а не приглушённый titanium-тон. */}
-              <p className="mt-2 flex items-center gap-2 text-[1.0625rem] font-medium text-ash">
-                <MapPin size={17} className="shrink-0 text-ember" />
-                {phone.address}
-              </p>
-              {/* Публичный embed Google Maps по адресу — не требует API-ключа
-                  (параметр output=embed), поэтому карта видна сразу, без
-                  подключения биллинга. Адрес — тот же, что и текстом выше. */}
-              <div className="mt-4 overflow-hidden rounded-2xl border border-graphite/[0.12]">
-                <iframe
-                  title={`Карта: ${phone.region}, ${phone.address}`}
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(`${phone.region}, ${phone.address}`)}&output=embed`}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="h-40 w-full grayscale-[0.2]"
-                />
-              </div>
-            </motion.div>
-          ))}
-
-          <motion.div variants={rise} className="space-y-4 border-t border-graphite/[0.12] pt-8">
-            <a
-              href={`mailto:${company.email}`}
-              className="flex items-center gap-3 text-[1.0625rem] transition-colors duration-500 ease-premium hover:text-slate"
-            >
-              <Mail size={17} className="shrink-0 text-titanium" />
-              {company.email}
-            </a>
-            <p className="flex items-center gap-3 text-[1.0625rem] text-ash">
-              <Clock size={17} className="shrink-0 text-titanium" />
-              {company.schedule}
-            </p>
-          </motion.div>
-        </motion.div>
+        {!standalone && <ContactDetails />}
       </div>
     </section>
+  )
+}
+
+/** Реальные телефоны, адрес, карта, почта и часы работы — вынесено, чтобы показывать первым на /contacts. */
+function ContactDetails() {
+  const reduced = useReducedMotion()
+  return (
+    <motion.div {...revealProps(reduced, stagger(0.15, 0.07))} className="space-y-10">
+      {company.phones.map((phone) => (
+        <motion.div key={phone.href} variants={rise}>
+          <p className="eyebrow">{phone.region}</p>
+          <a
+            href={phone.href}
+            className="mt-2.5 block text-[clamp(1.5rem,3vw,2.25rem)] tracking-tight transition-colors duration-500 ease-premium hover:text-slate"
+          >
+            {phone.display}
+          </a>
+          {/* Клиент отметил: адрес/город терялись рядом с крупным номером
+              телефона — крупнее и темнее, а не приглушённый titanium-тон. */}
+          <p className="mt-2 flex items-center gap-2 text-[1.0625rem] font-medium text-ash">
+            <MapPin size={17} className="shrink-0 text-ember" />
+            {phone.address}
+          </p>
+          {/* Публичный embed Google Maps по адресу — не требует API-ключа
+              (параметр output=embed), поэтому карта видна сразу, без
+              подключения биллинга. Адрес — тот же, что и текстом выше. */}
+          <div className="mt-4 overflow-hidden rounded-2xl border border-graphite/[0.12]">
+            <iframe
+              title={`Карта: ${phone.region}, ${phone.address}`}
+              src={`https://www.google.com/maps?q=${encodeURIComponent(`${phone.region}, ${phone.address}`)}&output=embed`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="h-40 w-full grayscale-[0.2]"
+            />
+          </div>
+        </motion.div>
+      ))}
+
+      <motion.div variants={rise} className="space-y-4 border-t border-graphite/[0.12] pt-8">
+        <a
+          href={`mailto:${company.email}`}
+          className="flex items-center gap-3 text-[1.0625rem] transition-colors duration-500 ease-premium hover:text-slate"
+        >
+          <Mail size={17} className="shrink-0 text-titanium" />
+          {company.email}
+        </a>
+        <p className="flex items-center gap-3 text-[1.0625rem] text-ash">
+          <Clock size={17} className="shrink-0 text-titanium" />
+          {company.schedule}
+        </p>
+      </motion.div>
+    </motion.div>
   )
 }
 

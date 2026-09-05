@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
+import { ArrowLeft } from 'lucide-react'
 
 import { company } from '../../data/company'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
@@ -45,6 +46,16 @@ export function Wholesale({ onOpenConsent }: Props) {
 
   return (
     <section id="wholesale" className="scene relative bg-porcelain py-28 md:py-40">
+      {/* Отдельная страница — своя ссылка назад, тот же паттерн, что в каталоге и в /contacts. */}
+      <div className="shell mb-8">
+        <a
+          href="."
+          className="group inline-flex items-center gap-2 text-[0.875rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
+        >
+          <ArrowLeft size={15} className="transition-transform duration-500 ease-premium group-hover:-translate-x-0.5" />
+          На главную
+        </a>
+      </div>
       <motion.div {...revealProps(reduced, stagger(0, 0.08))} className="shell">
         <motion.p variants={rise} className="eyebrow">
           Оптовикам
@@ -52,9 +63,17 @@ export function Wholesale({ onOpenConsent }: Props) {
         <motion.h1 variants={rise} className="h1 mt-5 max-w-[18ch]">
           Оптовые условия и поставки
         </motion.h1>
+        {/*
+          Клиент отметил: страница называла тему («оптовые условия»), но
+          не говорила, что человеку делать — оффера не было. Здесь не
+          придумываются новые коммерческие условия, только явно называется
+          то, что форма ниже и так уже делает: тип бизнеса и город
+          указываются в самой форме, а не выдумываются заранее в тексте.
+        */}
         <motion.p variants={rise} className="lead mt-6 max-w-[48ch] text-slate">
-          Для детейлинг-студий, малярных производств, магазинов и сервисных компаний — оптовый
-          прайс, подбор ассортимента и условия сотрудничества.
+          Для детейлинг-студий, малярных производств, магазинов и сервисных компаний. Укажите тип
+          бизнеса и город в форме ниже — пришлём оптовый прайс-лист и обсудим условия
+          сотрудничества.
         </motion.p>
       </motion.div>
 

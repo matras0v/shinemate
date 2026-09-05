@@ -5,6 +5,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { products } from '../../data/catalog'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { revealProps, rise, stagger } from '../../lib/motion'
+import { productHref } from '../../lib/router'
 
 // В качестве героя сцены — EP820: официальный рендер вендора высокого разрешения.
 const hero = products.find((p) => p.slug === 'ep820') ?? products[0]
@@ -107,12 +108,19 @@ export function ProductObject() {
             ))}
           </motion.dl>
 
+          {/*
+            Блок называет конкретную модель (EP820) и показывает её
+            собственные характеристики, а кнопка вела в корень каталога —
+            клиент на видео не смог понять, к какому товару вообще
+            привязана эта картинка. Теперь ссылка честно ведёт на
+            страницу именно EP820, а не на общий раздел.
+          */}
           <motion.a
             variants={rise}
-            href="catalog"
+            href={productHref(hero)}
             className="group mt-9 inline-flex items-center gap-2 rounded-full border border-graphite/20 px-6 py-3.5 text-sm transition-colors duration-500 ease-premium hover:border-graphite/50 hover:bg-graphite/[0.04]"
           >
-            Смотреть каталог
+            Смотреть {hero.model}
             <ArrowUpRight
               size={16}
               className="transition-transform duration-500 ease-premium group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

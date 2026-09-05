@@ -165,9 +165,15 @@ export function Header({ onHome, onOpenSearch }: Props) {
             // терялись среди остальных пунктов — жирнее и с фирменным
             // акцентом, чтобы было видно, что это отдельные CTA, а не
             // рядовые ссылки навигации.
+            //
+            // Отдельно клиент отметил, что сама формулировка "Розница/Опт"
+            // звучит странно: страница за ней — не переключатель вида
+            // "розница или опт", а форма ТОЛЬКО для оптовиков (см.
+            // Wholesale.tsx). Название кнопки приведено в соответствие с
+            // тем, что на неё реально ведёт.
             className="whitespace-nowrap text-[1rem] font-semibold text-ember transition-colors duration-500 ease-premium hover:text-ember/70"
           >
-            Розница/Опт
+            Оптовикам
           </a>
         </nav>
 
@@ -366,7 +372,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                 }}
                 className="border-b border-graphite/[0.06] py-4 text-lg font-semibold text-ember last:border-0"
               >
-                Розница/Опт
+                Оптовикам
               </a>
 
               <a

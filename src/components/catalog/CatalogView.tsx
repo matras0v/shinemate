@@ -116,11 +116,48 @@ export function CatalogView({ category }: Props) {
             <SortControl sort={sort} onChange={setSort} open={sortOpen} setOpen={setSortOpen} />
           </div>
 
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 lg:mt-4">
-            {list.map((product, i) => (
-              <ProductCard key={product.slug} product={product} index={i} />
-            ))}
-          </div>
+          {/*
+            «Все товары» показывает раздельные группы, а не общую сетку.
+            Раньше здесь была одна плоская сетка на всю базу: клиент
+            открыл раздел «Все товары» с телефона и увидел роторные,
+            эксцентриковые и шлифовальные машинки вперемешку, без единого
+            намёка на структуру — только через отдельную шторку выбора
+            категории, до которой ещё нужно было додуматься нажать. Группы
+            и порядок — те же самые categoryGroups, что уже используются в
+            сайдбаре и в мега-меню, никакой новой классификации.
+          */}
+          {category === 'all' && sort === 'recommended' ? (
+            <div className="mt-6 space-y-12 lg:mt-4">
+              {categoryGroups.map((group) => {
+                const groupItems = group.ids.flatMap((id) => list.filter((p) => p.category === id))
+                if (!groupItems.length) return null
+                return (
+                  <div key={group.title}>
+                    <div className="flex items-baseline justify-between gap-4 border-b border-graphite/[0.1] pb-3">
+                      <h2 className="text-[1.0625rem] tracking-tight text-graphite">{group.title}</h2>
+                      <a
+                        href={`catalog/${group.ids[0]}`}
+                        className="shrink-0 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium transition-colors duration-300 hover:text-graphite"
+                      >
+                        {groupItems.length} {pluralize(groupItems.length)}
+                      </a>
+                    </div>
+                    <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                      {groupItems.map((product, i) => (
+                        <ProductCard key={product.slug} product={product} index={i} />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 lg:mt-4">
+              {list.map((product, i) => (
+                <ProductCard key={product.slug} product={product} index={i} />
+              ))}
+            </div>
+          )}
 
           <div className="mt-14 rounded-[1.25rem] bg-porcelain p-8 text-center md:p-12">
             <h2 className="h3 mx-auto max-w-[22ch]">
