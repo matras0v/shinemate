@@ -743,7 +743,14 @@ export const products: Product[] = [
       { sku: 'ETS-40-14', label: 'удлинитель вала 40 мм', rrp: 800, image: 'catalog-media/extension-40mm.webp', imageWidth: 665, imageHeight: 980 },
       { sku: 'ETS-80-14', label: 'удлинитель вала 80 мм', rrp: 1000, image: 'catalog-media/extension-80mm.webp', imageWidth: 676, imageHeight: 1121 },
       // Фото самого адаптера ещё не пришло — Андрей обещал прислать отдельно.
-      { sku: '75061', label: 'адаптер 6" (148 мм) для круга 5"', rrp: 725 },
+      // Без явной note карточка молча показывала фото удлинителя вала 80 мм
+      // (дефолтное фото товарной группы) как будто это и есть адаптер.
+      {
+        sku: '75061',
+        label: 'адаптер 6" (148 мм) для круга 5"',
+        rrp: 725,
+        note: 'Фото самого адаптера у вендора пока нет — на кадре показан удлинитель вала из этой же группы, а не адаптер.',
+      },
     ],
     image: 'catalog-media/extension-80mm.webp',
     imageWidth: 676,
