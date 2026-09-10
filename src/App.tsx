@@ -21,10 +21,42 @@ import { ScrollStage } from './components/scenes/ScrollStage'
 import { SystemAssembly } from './components/scenes/SystemAssembly'
 import { Wholesale } from './components/scenes/Wholesale'
 import { ScrollProgress } from './components/ui/ScrollProgress'
-import { products } from './data/catalog'
+import { categories, categoryTitle, products } from './data/catalog'
 import { dataProcessingConsent, privacyPolicy, type LegalDocument } from './data/legal'
 import { LeadProvider } from './lib/leadContext'
 import { useLinkInterceptor, useRoute } from './lib/router'
+
+const DEFAULT_DESCRIPTION =
+  'ShineMate — роторные и эксцентриковые полировальные машинки, шлифовальное и аккумуляторное оборудование для детейлинга. Официальный дистрибьютор ShineMate в России.'
+
+/**
+ * Как категория реально ищется живым человеком — не выдуманные факты, а
+ * естественная формулировка того, что и так верно про раздел. Нужно для
+ * <title>/description: раньше у каталога и всех товаров был один и тот же
+ * тег на весь сайт, и по запросам вроде «эксцентриковая машинка для
+ * полировки» или «твёрдый круг для полировки» поисковик/Алиса не могли
+ * понять, какая именно страница сайта отвечает на конкретный запрос.
+ */
+const CATEGORY_SEARCH_PHRASE: Record<string, string> = {
+  rotary: 'роторные машинки для полировки',
+  da: 'эксцентриковые машинки для полировки',
+  sander: 'шлифовальные машинки',
+  cordless: 'аккумуляторные машинки для полировки и шлифования',
+  plates: 'подложки и адаптеры для полировальных машинок',
+  pads: 'полировальные круги — поролон, микрофибра, шерсть',
+  chemistry: 'полировальные пасты V-Range',
+  workshop: 'аксессуары для полировки и детейлинга',
+}
+
+function truncate(text: string, max: number) {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  return cut.slice(0, cut.lastIndexOf(' ')) + '…'
+}
+
+function setMetaDescription(content: string) {
+  document.querySelector('meta[name="description"]')?.setAttribute('content', content)
+}
 
 export default function App() {
   const [route] = useRoute()
@@ -33,24 +65,43 @@ export default function App() {
   const [legalDoc, setLegalDoc] = useState<LegalDocument | null>(null)
   const productForRoute = route.name === 'product' ? products.find((p) => p.slug === route.slug) : undefined
 
-  // Заголовок вкладки следует за разделом.
+  // Заголовок вкладки и meta description следуют за разделом.
+  //
+  // Раньше description был один статичный тег на весь сайт (из index.html)
+  // — и каталог, и любая карточка товара отдавали в поиск/Алису одно и то
+  // же общее описание. Человек ищет не «ShineMate» вообще, а «роторная
+  // машинка для полировки» или конкретную модель — с одним тегом на сайт
+  // ни один раздел не мог ответить на конкретный запрос точнее остальных.
   useEffect(() => {
-    document.title =
-      route.name === 'catalog'
-        ? 'Каталог ShineMate'
-        : route.name === 'product'
-          ? productForRoute
-            ? `${productForRoute.model} — ShineMate`
-            : 'ShineMate'
-          : route.name === 'about'
-            ? 'О ShineMate'
-            : route.name === 'technologies'
-              ? 'Технологии ShineMate'
-              : route.name === 'contacts'
-                ? 'Контакты ShineMate'
-                : route.name === 'wholesale'
-                  ? 'Оптовикам — ShineMate'
-                  : 'ShineMate — профессиональное полировальное оборудование'
+    if (route.name === 'catalog') {
+      const category = route.category === 'all' ? undefined : categories.find((c) => c.id === route.category)
+      document.title = category ? `${category.title} ShineMate — каталог` : 'Каталог ShineMate'
+      setMetaDescription(
+        category
+          ? `${category.title} ShineMate: ${CATEGORY_SEARCH_PHRASE[category.id] ?? category.title.toLowerCase()}. ${category.subtitle} Официальный дистрибьютор ShineMate в России.`
+          : DEFAULT_DESCRIPTION,
+      )
+    } else if (route.name === 'product') {
+      if (productForRoute) {
+        document.title = `${productForRoute.model} — ${categoryTitle(productForRoute.category)} ShineMate`
+        setMetaDescription(truncate(`${productForRoute.model} (${productForRoute.kind}) ShineMate. ${productForRoute.lead}`, 300))
+      } else {
+        document.title = 'ShineMate'
+        setMetaDescription(DEFAULT_DESCRIPTION)
+      }
+    } else {
+      document.title =
+        route.name === 'about'
+          ? 'О ShineMate'
+          : route.name === 'technologies'
+            ? 'Технологии ShineMate'
+            : route.name === 'contacts'
+              ? 'Контакты ShineMate'
+              : route.name === 'wholesale'
+                ? 'Оптовикам — ShineMate'
+                : 'ShineMate — профессиональное полировальное оборудование'
+      setMetaDescription(DEFAULT_DESCRIPTION)
+    }
   }, [route, productForRoute])
 
   // Cmd/Ctrl+K открывает поиск из любого места сайта.

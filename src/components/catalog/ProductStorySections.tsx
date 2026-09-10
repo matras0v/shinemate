@@ -166,8 +166,8 @@ export function PurposeSection({ purpose }: { purpose: ProductStory['purpose'] }
             {purpose.points.length > 0 && (
               <motion.ul variants={rise} className="mt-10 space-y-4 border-t border-graphite/[0.12] pt-8">
                 {purpose.points.map((point) => (
-                  <li key={point} className="flex gap-4 text-[1rem] leading-relaxed text-slate">
-                    <span aria-hidden className="mt-2.5 h-px w-5 shrink-0 bg-ember" />
+                  <li key={point} className="flex gap-3 text-[1rem] leading-relaxed text-slate">
+                    <Check size={16} className="mt-0.5 shrink-0 text-ember" />
                     {point}
                   </li>
                 ))}
