@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, ChevronRight, Menu, Search, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Menu, Phone, Search, X } from 'lucide-react'
 
 import { categoryGroups, categories, countByCategory, totalSkus } from '../data/catalog'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
-import { nav } from '../data/company'
+import { company, nav } from '../data/company'
 import { useLead } from '../lib/leadContext'
 import { EASE } from '../lib/motion'
 import { navigateTo } from '../lib/router'
@@ -20,6 +20,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
   const [lifted, setLifted] = useState(!onHome)
   const [open, setOpen] = useState(false)
   const [catalogOpen, setCatalogOpen] = useState(false)
+  const [phoneOpen, setPhoneOpen] = useState(false)
   const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { requestWholesale, requestGeneral } = useLead()
@@ -178,6 +179,55 @@ export function Header({ onHome, onOpenSearch }: Props) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          {/*
+            Клиент на видео отдельно отметил: в шапке референсов всегда есть
+            «горячая линия», чтобы человек мог сразу позвонить, не долистывая
+            до конца страницы. Номера — те же самые, что уже на Контактах
+            (company.ts), просто вынесены на уровень выше по маршруту.
+          */}
+          <div
+            className="relative hidden lg:block"
+            onMouseEnter={() => setPhoneOpen(true)}
+            onMouseLeave={() => setPhoneOpen(false)}
+            onFocus={() => setPhoneOpen(true)}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPhoneOpen(false)
+            }}
+          >
+            <a
+              href={company.phones[0].href}
+              aria-label={`Позвонить: ${company.phones[0].display}`}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-slate transition-colors duration-400 ease-premium hover:bg-graphite/[0.06] hover:text-graphite"
+            >
+              <Phone size={17} />
+            </a>
+            <AnimatePresence>
+              {phoneOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18, ease: EASE }}
+                  className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-graphite/[0.08] bg-porcelain p-4 shadow-[0_30px_70px_-35px_rgba(26,28,30,0.45)]"
+                >
+                  {company.phones.map((phone) => (
+                    <a
+                      key={phone.href}
+                      href={phone.href}
+                      className="block rounded-lg px-2 py-2 transition-colors duration-300 ease-premium hover:bg-graphite/[0.05]"
+                    >
+                      <span className="block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+                        {phone.region}
+                      </span>
+                      <span className="mt-0.5 block text-[1.0625rem] tracking-tight text-graphite">
+                        {phone.display}
+                      </span>
+                    </a>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <button
             type="button"
             onClick={onOpenSearch}
@@ -250,6 +300,18 @@ export function Header({ onHome, onOpenSearch }: Props) {
             className="max-h-[calc(100dvh-4.75rem)] overflow-y-auto border-t border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl lg:hidden"
           >
             <nav className="shell flex flex-col py-2">
+              <div className="flex flex-wrap gap-x-6 gap-y-1 border-b border-graphite/[0.06] py-4">
+                {company.phones.map((phone) => (
+                  <a
+                    key={phone.href}
+                    href={phone.href}
+                    className="flex items-center gap-2 text-[1.0625rem] tracking-tight text-graphite"
+                  >
+                    <Phone size={15} className="shrink-0 text-ember" />
+                    {phone.display}
+                  </a>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={() => setMobileCatalogOpen((v) => !v)}
