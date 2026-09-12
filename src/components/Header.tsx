@@ -10,6 +10,7 @@ import { EASE } from '../lib/motion'
 import { navigateTo } from '../lib/router'
 import { CatalogMegaMenuContent, CatalogMegaMenuFooter } from './CatalogMegaMenu'
 import { BrandLockup } from './ui/BrandLockup'
+import { WhatsAppGlyph } from './ui/WhatsAppGlyph'
 
 type Props = {
   onHome: boolean
@@ -208,21 +209,43 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.18, ease: EASE }}
-                  className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-graphite/[0.08] bg-porcelain p-4 shadow-[0_30px_70px_-35px_rgba(26,28,30,0.45)]"
+                  className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-graphite/[0.08] bg-porcelain p-4 shadow-[0_30px_70px_-35px_rgba(26,28,30,0.45)]"
                 >
                   {company.phones.map((phone) => (
-                    <a
-                      key={phone.href}
-                      href={phone.href}
-                      className="block rounded-lg px-2 py-2 transition-colors duration-300 ease-premium hover:bg-graphite/[0.05]"
-                    >
+                    <div key={phone.href} className="rounded-lg px-2 py-2.5">
                       <span className="block font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
                         {phone.region}
                       </span>
                       <span className="mt-0.5 block text-[1.0625rem] tracking-tight text-graphite">
                         {phone.display}
                       </span>
-                    </a>
+                      {/*
+                        Два равноценных способа связаться, а не номер как
+                        единственная ссылка: звонок и WhatsApp — разные
+                        каналы, и выбор должен быть виден сразу, а не только
+                        через угадывание, что клик по номеру звонит.
+                      */}
+                      <div className="mt-2.5 flex gap-2">
+                        <a
+                          href={phone.href}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-graphite/15 py-2 text-[0.8125rem] text-graphite transition-colors duration-300 ease-premium hover:border-graphite/35 hover:bg-graphite/[0.04]"
+                        >
+                          <Phone size={13} />
+                          Позвонить
+                        </a>
+                        {phone.whatsapp && (
+                          <a
+                            href={phone.whatsapp}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-graphite/15 py-2 text-[0.8125rem] text-graphite transition-colors duration-300 ease-premium hover:border-graphite/35 hover:bg-graphite/[0.04]"
+                          >
+                            <WhatsAppGlyph size={13} />
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </motion.div>
               )}
@@ -300,16 +323,28 @@ export function Header({ onHome, onOpenSearch }: Props) {
             className="max-h-[calc(100dvh-4.75rem)] overflow-y-auto border-t border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl lg:hidden"
           >
             <nav className="shell flex flex-col py-2">
-              <div className="flex flex-wrap gap-x-6 gap-y-1 border-b border-graphite/[0.06] py-4">
+              <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-graphite/[0.06] py-4">
                 {company.phones.map((phone) => (
-                  <a
-                    key={phone.href}
-                    href={phone.href}
-                    className="flex items-center gap-2 text-[1.0625rem] tracking-tight text-graphite"
-                  >
-                    <Phone size={15} className="shrink-0 text-ember" />
-                    {phone.display}
-                  </a>
+                  <span key={phone.href} className="flex items-center gap-1">
+                    <a
+                      href={phone.href}
+                      className="flex items-center gap-2 text-[1.0625rem] tracking-tight text-graphite"
+                    >
+                      <Phone size={15} className="shrink-0 text-ember" />
+                      {phone.display}
+                    </a>
+                    {phone.whatsapp && (
+                      <a
+                        href={phone.whatsapp}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Написать в WhatsApp: ${phone.display}`}
+                        className="flex h-8 w-8 items-center justify-center text-slate"
+                      >
+                        <WhatsAppGlyph size={15} />
+                      </a>
+                    )}
+                  </span>
                 ))}
               </div>
               <button
