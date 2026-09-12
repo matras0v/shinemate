@@ -8,6 +8,30 @@ type Props = {
   onOpenDoc: (doc: LegalDocument) => void
 }
 
+/**
+ * Свой значок вместо логотипа WhatsApp: у сайта монохромная line-icon
+ * система (lucide), а цветной фирменный бейдж Meta сюда не впишется.
+ * Форма — узнаваемый «чат + трубка», не копия логотипа бренда.
+ */
+function WhatsAppGlyph({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 21l1.65-4.95A8.5 8.5 0 1 1 8.9 19.4L3 21Z" />
+      <path d="M8.7 9.6c0 3.1 2.6 5.7 5.7 5.7.4 0 .7-.3.8-.6l.3-1a.9.9 0 0 0-.5-1.1l-1.4-.6a.9.9 0 0 0-1 .2l-.3.3a5.1 5.1 0 0 1-2.1-2.1l.3-.3a.9.9 0 0 0 .2-1l-.6-1.4a.9.9 0 0 0-1.1-.5l-1 .3c-.3.1-.6.4-.6.8Z" />
+    </svg>
+  )
+}
+
 export function Footer({ onOpenDoc }: Props) {
   return (
     <footer className="border-t border-graphite/[0.12] bg-mist py-14 md:py-16">
@@ -64,6 +88,22 @@ export function Footer({ onOpenDoc }: Props) {
                   {phone.display}
                 </a>
                 <span className="block text-[0.75rem] text-titanium">{phone.address}</span>
+                {/*
+                  Кнопка — только у номера, где WhatsApp реально проверен и
+                  работает. У второго номера whatsapp: null — ссылка на
+                  недоступный чат хуже, чем её отсутствие.
+                */}
+                {phone.whatsapp && (
+                  <a
+                    href={phone.whatsapp}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1.5 inline-flex items-center gap-1.5 text-[0.75rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
+                  >
+                    <WhatsAppGlyph size={14} />
+                    Написать в WhatsApp
+                  </a>
+                )}
               </li>
             ))}
             <li className="pt-1">
