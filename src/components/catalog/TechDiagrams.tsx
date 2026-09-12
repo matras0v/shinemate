@@ -688,7 +688,17 @@ export function VariantPicker({
 
 export function BatteryFlow({ platform, capacity }: { platform: string; capacity?: string }) {
   const reduced = useReducedMotion()
+  /*
+   * whileInView на <motion.g> внутри <svg> ненадёжен в мобильном Safari —
+   * см. комментарий в PadConstruction. Наблюдение здесь тоже переведено
+   * на обычный html-div, иначе весь блок аккумулятора (включая подпись
+   * платформы, например «18V») мог навсегда остаться невидимым.
+   */
+  const wrap = useRef<HTMLDivElement>(null)
+  const inView = useInView(wrap, { once: true, amount: 0.15 })
+  const on = reduced || inView
   return (
+    <div ref={wrap} className="h-full w-full">
     <svg
       viewBox="0 0 520 250"
       role="img"
@@ -707,10 +717,9 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
         а не чертёж конкретного разъёма.
       */}
       <motion.g
-        initial={reduced ? undefined : { x: -22, opacity: 0 }}
-        whileInView={reduced ? undefined : { x: [-22, 6, 0], opacity: 1 }}
-        viewport={{ once: true, amount: 0.15 }}
-        transition={reduced ? undefined : { duration: 0.65, ease: [0.16, 1, 0.3, 1], times: [0, 0.7, 1] }}
+        initial={{ x: -22, opacity: 0 }}
+        animate={on ? { x: [-22, 6, 0], opacity: 1 } : { x: -22, opacity: 0 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.65, ease: [0.16, 1, 0.3, 1], times: [0, 0.7, 1] }}
       >
         <rect x="18" y="62" width="176" height="128" rx="16" fill="#1A1C1E" />
         <rect x="46" y="40" width="52" height="26" rx="7" fill="#1A1C1E" />
@@ -751,6 +760,7 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
         РАБОЧАЯ ГОЛОВКА
       </text>
     </svg>
+    </div>
   )
 }
 
@@ -1052,9 +1062,17 @@ export function GritSeparator() {
     { x: 118, delay: 0.4 },
     { x: 146, delay: 0.5 },
   ]
+  // whileInView на SVG-элементах ненадёжен в мобильном Safari — см.
+  // комментарий в PadConstruction. Наблюдение — на обычном html-div.
+  const wrap = useRef<HTMLDivElement>(null)
+  const inView = useInView(wrap, { once: true, amount: 0.15 })
+  const on = reduced || inView
   return (
     <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,24rem)_1fr] lg:gap-14">
-      <div className="rounded-[1.5rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E3EAEC_100%)] p-6 sm:p-8">
+      <div
+        ref={wrap}
+        className="rounded-[1.5rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E3EAEC_100%)] p-6 sm:p-8"
+      >
         <svg viewBox="0 0 260 230" className="w-full" role="img" aria-label="Условный разрез ведра: сепаратор задерживает песок на дне">
           <path d="M 52 26 L 208 26 L 192 206 L 68 206 Z" fill="#1A1C1E" fillOpacity="0.05" stroke="#1A1C1E" strokeOpacity="0.28" strokeWidth="2" />
           <path d="M 56 52 L 204 52 L 191 200 L 69 200 Z" fill="#2D5FA6" fillOpacity="0.1" />
@@ -1082,9 +1100,8 @@ export function GritSeparator() {
               r={3 + (i % 3)}
               fill="#1A1C1E"
               fillOpacity="0.42"
-              initial={reduced ? { cy: 182 } : { cy: 96, opacity: 0 }}
-              whileInView={reduced ? {} : { cy: 176 + (i % 3) * 6, opacity: 1 }}
-              viewport={{ once: true, amount: 0.15 }}
+              initial={{ cy: 96, opacity: 0 }}
+              animate={on ? { cy: 176 + (i % 3) * 6, opacity: 1 } : { cy: 96, opacity: 0 }}
               transition={{ duration: 1.1, delay: 0.3 + g.delay, ease: [0.4, 0, 0.2, 1] as const }}
             />
           ))}
@@ -1307,6 +1324,12 @@ export function HolderScene({ machineImage, holderImage }: { machineImage: strin
  */
 export function VelcroWear() {
   const reduced = useReducedMotion()
+  // whileInView на <motion.path> внутри <svg> ненадёжен в мобильном
+  // Safari — см. комментарий в PadConstruction. Один общий наблюдатель на
+  // html-обёртке вокруг обеих панелей вместо собственного на каждом path.
+  const wrap = useRef<HTMLDivElement>(null)
+  const inView = useInView(wrap, { once: true, amount: 0.15 })
+  const on = reduced || inView
 
   const hooks = (worn: boolean) =>
     Array.from({ length: 26 }, (_, i) => {
@@ -1336,9 +1359,8 @@ export function VelcroWear() {
             strokeOpacity={worn ? 0.34 : 0.6}
             strokeWidth="2"
             strokeLinecap="round"
-            initial={reduced ? undefined : { opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.15 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: on ? 1 : 0 }}
             transition={{ duration: 0.35, delay: (worn ? 0.35 : 0.05) + i * 0.012 }}
           />
         ))}
@@ -1360,7 +1382,7 @@ export function VelcroWear() {
   )
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div ref={wrap} className="grid gap-4 sm:grid-cols-2">
       {panel(false)}
       {panel(true)}
     </div>
@@ -1691,9 +1713,27 @@ export function PadConstruction({
   const layerY = [0, 54, 96]
   const restY = [0, 30, 54]
 
+  /*
+   * `whileInView`, поставленный прямо на <motion.g> внутри <svg>, у части
+   * посетителей с телефона так и не срабатывал — схема оставалась в
+   * начальном (невидимом) состоянии навсегда: IntersectionObserver на
+   * SVG-группе ведёт себя ненадёжно в мобильном Safari, и никакой порог
+   * (amount) это не чинит, потому что колбэк иногда не приходит вообще.
+   * Наблюдение вынесено на обычный html-div вокруг svg — на нём
+   * IntersectionObserver работает как положено — и уже готовый булев
+   * результат раздаётся всем слоям через animate, а не через их
+   * собственный whileInView.
+   */
+  const wrap = useRef<HTMLDivElement>(null)
+  const inView = useInView(wrap, { once: true, amount: 0.15 })
+  const on = reduced || inView
+
   return (
     <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-14">
-      <div className="rounded-[1.5rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E3EAEC_100%)] p-6 sm:p-8">
+      <div
+        ref={wrap}
+        className="rounded-[1.5rem] border border-graphite/[0.08] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EFF3F4_55%,#E3EAEC_100%)] p-6 sm:p-8"
+      >
         <svg
           viewBox="0 0 260 190"
           className="w-full"
@@ -1705,9 +1745,8 @@ export function PadConstruction({
 
         {/* 01 — рабочая поверхность */}
         <motion.g
-          initial={reduced ? { opacity: 1, y: layerY[0] } : { opacity: 0, y: restY[0] }}
-          whileInView={{ opacity: 1, y: layerY[0] }}
-          viewport={{ once: true, amount: 0.15 }}
+          initial={{ opacity: 0, y: restY[0] }}
+          animate={on ? { opacity: 1, y: layerY[0] } : { opacity: 0, y: restY[0] }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.05 }}
         >
           <FaceProfile face={face} color={color} />
@@ -1715,9 +1754,8 @@ export function PadConstruction({
 
         {/* 02 — тело круга */}
         <motion.g
-          initial={reduced ? { opacity: 1, y: layerY[1] } : { opacity: 0, y: restY[1] }}
-          whileInView={{ opacity: 1, y: layerY[1] }}
-          viewport={{ once: true, amount: 0.15 }}
+          initial={{ opacity: 0, y: restY[1] }}
+          animate={on ? { opacity: 1, y: layerY[1] } : { opacity: 0, y: restY[1] }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.19 }}
         >
           <rect x="18" y="20" width="162" height="30" rx="4" fill={color} fillOpacity="0.55" />
@@ -1727,9 +1765,8 @@ export function PadConstruction({
 
         {/* 03 — крепление Velcro: короткие крючки по всей плоскости */}
         <motion.g
-          initial={reduced ? { opacity: 1, y: layerY[2] } : { opacity: 0, y: restY[2] }}
-          whileInView={{ opacity: 1, y: layerY[2] }}
-          viewport={{ once: true, amount: 0.15 }}
+          initial={{ opacity: 0, y: restY[2] }}
+          animate={on ? { opacity: 1, y: layerY[2] } : { opacity: 0, y: restY[2] }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.33 }}
         >
           <rect x="18" y="24" width="162" height="9" rx="2" fill="#1A1C1E" fillOpacity="0.72" />
@@ -1741,9 +1778,8 @@ export function PadConstruction({
         {/* Размерная линия толщины — только когда цифра действительно есть */}
         {thickness && (
           <motion.g
-            initial={reduced ? { opacity: 1 } : { opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.15 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: on ? 1 : 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
             <g stroke="#1A1C1E" strokeOpacity="0.42" strokeWidth="1.1">

@@ -442,9 +442,29 @@ function Scene({
                   </div>
                   <p className="max-w-[54ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
                 </motion.div>
-                <motion.div variants={rise} className="mt-12">
-                  <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
-                </motion.div>
+                {/*
+                  «process» (DefectProcess, страницы паст) и «exploded»
+                  (MachineExploded, главная сцена страницы машинки) держат
+                  внутри себя `position: sticky` + скролл-джекинг на большую
+                  высоту — этому нужна незатронутая цепочка предков до
+                  самого вьюпорта. ЛЮБОЙ transform на предке (а
+                  framer-motion всегда пишет transform, даже в состоянии
+                  «y: 0» после анимации) создаёт новый containing block и
+                  рвёт sticky — снаружи это выглядело как огромная пустая
+                  страница с плавающим где-то посередине кусочком схемы
+                  (ровно то, что показал клиент на V40, и та же причина
+                  затронула бы главную сцену любой машинки). Здесь —
+                  обычный div без motion.
+                */}
+                {scene.diagram.kind === 'process' || scene.diagram.kind === 'exploded' ? (
+                  <div className="mt-12">
+                    <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
+                  </div>
+                ) : (
+                  <motion.div variants={rise} className="mt-12">
+                    <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
+                  </motion.div>
+                )}
               </>
             ) : (
               <>
