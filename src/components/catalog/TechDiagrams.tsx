@@ -242,7 +242,7 @@ export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: 
    * раньше (стейт тот же, sweep его не блокирует).
    */
   const wrap = useRef<HTMLDivElement>(null)
-  const inView = useInView(wrap, { once: true, amount: 0.5 })
+  const inView = useInView(wrap, { once: true, amount: 0.15 })
   // Свип обрывается, как только человек сам тронул регулятор — иначе
   // ручной выбор чипа посреди 780-миллисекундного свипа сбросило бы
   // следующим тиком.
@@ -383,7 +383,7 @@ export function PowerBar({
               className="absolute inset-y-0 left-0 rounded-full bg-ember/25"
               initial={reduced ? false : { width: '0%' }}
               whileInView={{ width: `${pct(peak)}%` }}
-              viewport={{ once: true, amount: 0.6 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.85, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
               style={reduced ? { width: `${pct(peak)}%` } : undefined}
             />
@@ -392,7 +392,7 @@ export function PowerBar({
             className="absolute inset-y-0 left-0 rounded-full bg-graphite"
             initial={reduced ? false : { width: '0%' }}
             whileInView={{ width: `${pct(rated)}%` }}
-            viewport={{ once: true, amount: 0.6 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             style={reduced ? { width: `${pct(rated)}%` } : undefined}
           />
@@ -419,7 +419,7 @@ export function PowerBar({
                     className={`block h-full rounded-full ${on ? 'bg-ember' : 'bg-graphite/35'}`}
                     initial={reduced ? false : { width: '0%' }}
                     whileInView={{ width: `${pct(f.watts)}%` }}
-                    viewport={{ once: true, amount: 0.6 }}
+                    viewport={{ once: true, amount: 0.15 }}
                     transition={{ duration: 0.6, delay: 0.15 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
                     style={reduced ? { width: `${pct(f.watts)}%` } : undefined}
                   />
@@ -472,7 +472,7 @@ export function MountStack({ items }: { items: MountItem[] }) {
     return {
       initial: { opacity: 0, x, y: 14 },
       whileInView: { opacity: 1, x: 0, y: 0 },
-      viewport: { once: true, amount: 0.35 },
+      viewport: { once: true, amount: 0.15 },
       transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.14 },
     }
   }
@@ -550,7 +550,7 @@ export function SeriesRow({ items, from, to }: { items: SeriesItem[]; from: stri
               : {
                   initial: { opacity: 0, y: 16 },
                   whileInView: { opacity: 1, y: 0 },
-                  viewport: { once: true, amount: 0.3 },
+                  viewport: { once: true, amount: 0.15 },
                   transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.07 },
                 })}
           >
@@ -641,7 +641,7 @@ export function VariantPicker({
               : {
                   initial: { opacity: 0, y: 16 },
                   whileInView: { opacity: 1, y: 0 },
-                  viewport: { once: true, amount: 0.3 },
+                  viewport: { once: true, amount: 0.15 },
                   transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.07 },
                 })}
           >
@@ -709,7 +709,7 @@ export function BatteryFlow({ platform, capacity }: { platform: string; capacity
       <motion.g
         initial={reduced ? undefined : { x: -22, opacity: 0 }}
         whileInView={reduced ? undefined : { x: [-22, 6, 0], opacity: 1 }}
-        viewport={{ once: true, amount: 0.5 }}
+        viewport={{ once: true, amount: 0.15 }}
         transition={reduced ? undefined : { duration: 0.65, ease: [0.16, 1, 0.3, 1], times: [0, 0.7, 1] }}
       >
         <rect x="18" y="62" width="176" height="128" rx="16" fill="#1A1C1E" />
@@ -979,7 +979,7 @@ export function SizeScale({ items, unit = 'мм' }: { items: SizeItem[]; unit?: 
               key={item.label + item.note}
               initial={reduced ? undefined : { opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.08 }}
               className="flex w-[8rem] flex-col items-center gap-3 sm:w-[10rem]"
             >
@@ -1084,7 +1084,7 @@ export function GritSeparator() {
               fillOpacity="0.42"
               initial={reduced ? { cy: 182 } : { cy: 96, opacity: 0 }}
               whileInView={reduced ? {} : { cy: 176 + (i % 3) * 6, opacity: 1 }}
-              viewport={{ once: true, amount: 0.5 }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 1.1, delay: 0.3 + g.delay, ease: [0.4, 0, 0.2, 1] as const }}
             />
           ))}
@@ -1281,7 +1281,7 @@ export function HolderScene({ machineImage, holderImage }: { machineImage: strin
             decoding="async"
             initial={reduced ? { x: 0, opacity: 1 } : { x: 90, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
-            viewport={{ once: true, amount: 0.5 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const, delay: 0.25 }}
             className="relative z-20 -ml-8 h-24 w-auto object-contain drop-shadow-[0_12px_20px_rgba(26,28,30,0.2)] sm:h-28"
           />
@@ -1338,7 +1338,7 @@ export function VelcroWear() {
             strokeLinecap="round"
             initial={reduced ? undefined : { opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.5 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.35, delay: (worn ? 0.35 : 0.05) + i * 0.012 }}
           />
         ))}
@@ -1707,7 +1707,7 @@ export function PadConstruction({
         <motion.g
           initial={reduced ? { opacity: 1, y: layerY[0] } : { opacity: 0, y: restY[0] }}
           whileInView={{ opacity: 1, y: layerY[0] }}
-          viewport={{ once: true, amount: 0.45 }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.05 }}
         >
           <FaceProfile face={face} color={color} />
@@ -1717,7 +1717,7 @@ export function PadConstruction({
         <motion.g
           initial={reduced ? { opacity: 1, y: layerY[1] } : { opacity: 0, y: restY[1] }}
           whileInView={{ opacity: 1, y: layerY[1] }}
-          viewport={{ once: true, amount: 0.45 }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.19 }}
         >
           <rect x="18" y="20" width="162" height="30" rx="4" fill={color} fillOpacity="0.55" />
@@ -1729,7 +1729,7 @@ export function PadConstruction({
         <motion.g
           initial={reduced ? { opacity: 1, y: layerY[2] } : { opacity: 0, y: restY[2] }}
           whileInView={{ opacity: 1, y: layerY[2] }}
-          viewport={{ once: true, amount: 0.45 }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.33 }}
         >
           <rect x="18" y="24" width="162" height="9" rx="2" fill="#1A1C1E" fillOpacity="0.72" />
@@ -1743,7 +1743,7 @@ export function PadConstruction({
           <motion.g
             initial={reduced ? { opacity: 1 } : { opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.45 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
             <g stroke="#1A1C1E" strokeOpacity="0.42" strokeWidth="1.1">
@@ -1765,7 +1765,7 @@ export function PadConstruction({
             key={item.label}
             initial={reduced ? undefined : { opacity: 0, x: 12 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: 0.2 + i * 0.14 }}
             className="border-l-2 border-ember/40 pl-4"
           >
@@ -2038,7 +2038,7 @@ export function RoleLine({ items }: { items: RoleItem[] }) {
           key={item.model}
           initial={reduced ? undefined : { opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.35 }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.09 }}
         >
           <a
@@ -2290,7 +2290,7 @@ export function AssemblyChain({ items }: { items: AssemblyItem[] }) {
       : {
           initial: { opacity: 0, y: 16 },
           whileInView: { opacity: 1, y: 0 },
-          viewport: { once: true, amount: 0.4 },
+          viewport: { once: true, amount: 0.15 },
           transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.14 },
         }
 

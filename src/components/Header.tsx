@@ -24,7 +24,20 @@ export function Header({ onHome, onOpenSearch }: Props) {
   const [phoneOpen, setPhoneOpen] = useState(false)
   const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const phoneRef = useRef<HTMLDivElement>(null)
   const { requestWholesale, requestGeneral } = useLead()
+
+  // На touch-устройствах нет hover и не всегда срабатывает blur при тапе
+  // мимо — кнопка звонка/WhatsApp иначе не закрывалась бы без повторного
+  // тапа по ней самой.
+  useEffect(() => {
+    if (!phoneOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (!phoneRef.current?.contains(e.target as Node)) setPhoneOpen(false)
+    }
+    document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [phoneOpen])
 
   // Хедер становится контрастнее почти сразу после начала скролла — фиксированный
   // порог в пикселях, а не доля window.innerHeight. На мобильном Safari
@@ -185,23 +198,34 @@ export function Header({ onHome, onOpenSearch }: Props) {
             «горячая линия», чтобы человек мог сразу позвонить, не долистывая
             до конца страницы. Номера — те же самые, что уже на Контактах
             (company.ts), просто вынесены на уровень выше по маршруту.
+
+            Раньше блок был `hidden lg:block` — на телефоне в шапке не было
+            вообще ничего, кроме поиска и гамбургера: клиент открыл сайт с
+            айфона и не нашёл ни звонка, ни WhatsApp без захода в меню.
+            Теперь кнопка видна на любой ширине, а триггер — <button>,
+            а не прямая ссылка: на touch нет hover, поэтому тап должен
+            открывать выбор «позвонить или в WhatsApp», а не сразу набирать
+            номер в обход WhatsApp-варианта.
           */}
           <div
-            className="relative hidden lg:block"
+            ref={phoneRef}
+            className="relative"
             onMouseEnter={() => setPhoneOpen(true)}
             onMouseLeave={() => setPhoneOpen(false)}
-            onFocus={() => setPhoneOpen(true)}
             onBlur={(e) => {
               if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPhoneOpen(false)
             }}
           >
-            <a
-              href={company.phones[0].href}
-              aria-label={`Позвонить: ${company.phones[0].display}`}
+            <button
+              type="button"
+              onClick={() => setPhoneOpen((v) => !v)}
+              aria-expanded={phoneOpen}
+              aria-haspopup="true"
+              aria-label="Позвонить или написать в WhatsApp"
               className="flex h-10 w-10 items-center justify-center rounded-full text-slate transition-colors duration-400 ease-premium hover:bg-graphite/[0.06] hover:text-graphite"
             >
               <Phone size={17} />
-            </a>
+            </button>
             <AnimatePresence>
               {phoneOpen && (
                 <motion.div
@@ -209,7 +233,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.18, ease: EASE }}
-                  className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-graphite/[0.08] bg-porcelain p-4 shadow-[0_30px_70px_-35px_rgba(26,28,30,0.45)]"
+                  className="absolute right-0 top-full mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-graphite/[0.08] bg-porcelain p-4 shadow-[0_30px_70px_-35px_rgba(26,28,30,0.45)]"
                 >
                   {company.phones.map((phone) => (
                     <div key={phone.href} className="rounded-lg px-2 py-2.5">

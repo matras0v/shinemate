@@ -946,10 +946,18 @@ export function ComparisonSection({ table }: { table: ComparisonTable }) {
           <h2 className="h2 mt-6 max-w-[20ch]">{table.caption}</h2>
         </motion.div>
 
-        <motion.div
-          {...riseProps(reduced, { y: 24, amount: 0.1 })}
-          className="-mx-[var(--shell)] mt-12 overflow-x-auto px-[var(--shell)] pb-2"
-        >
+        {/*
+          На узких экранах таблица шире контейнера и обрезается ровно по
+          краю viewport — клиент на видео показал, что без явного сигнала
+          это читается как «сломано», а не как «можно долистать». Затухание
+          справа + мобильная подпись со стрелкой делают горизонтальный
+          скролл видимым, а не тем, что нужно угадывать.
+        */}
+        <div className="relative mt-12">
+          <motion.div
+            {...riseProps(reduced, { y: 24, amount: 0.1 })}
+            className="-mx-[var(--shell)] overflow-x-auto px-[var(--shell)] pb-2"
+          >
           <table className="w-full min-w-[46rem] border-collapse text-left">
             <thead>
               <tr className="border-b border-graphite/20">
@@ -1025,7 +1033,16 @@ export function ComparisonSection({ table }: { table: ComparisonTable }) {
               })}
             </tbody>
           </table>
-        </motion.div>
+          </motion.div>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-mist to-transparent md:hidden"
+          />
+        </div>
+        <p className="mt-3 flex items-center gap-1.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium md:hidden">
+          Листайте таблицу вправо
+          <ArrowRight size={13} />
+        </p>
       </div>
     </section>
   )
