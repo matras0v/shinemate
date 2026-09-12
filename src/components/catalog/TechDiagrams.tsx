@@ -1741,30 +1741,65 @@ export function PadConstruction({
           aria-label={`Круг в разрезе: рабочая поверхность, тело круга, крепление Velcro${thickness ? `, толщина ${thickness}` : ''}`}
         >
           <Grid id="pad-profile-grid" step={26} />
+          <defs>
+            {/*
+              Плоские заливки читались как «нарисованное в Paint». Блик
+              сверху-вниз (белый → прозрачный → лёгкая тень снизу) поверх
+              ЛЮБОГО базового цвета создаёт ощущение объёма и мягкого
+              материала — без выдумывания реального разреза, которого у
+              нас нет: это тот же принцип, что и раньше, просто с
+              освещением, а не только контуром.
+            */}
+            <linearGradient id="pad-sheen" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.55" />
+              <stop offset="42%" stopColor="#FFFFFF" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#1A1C1E" stopOpacity="0.16" />
+            </linearGradient>
+            <filter id="pad-depth" x="-30%" y="-60%" width="160%" height="240%">
+              <feDropShadow dx="0" dy="5" stdDeviation="4.5" floodColor="#1A1C1E" floodOpacity="0.25" />
+            </filter>
+          </defs>
           <rect width="260" height="190" fill="url(#pad-profile-grid)" className="text-graphite/[0.09]" />
+
+          {/* Контактная тень под собранным кругом — читается как «стоит», а не «висит в воздухе». */}
+          <motion.ellipse
+            cx="99"
+            cy="158"
+            rx="96"
+            ry="9"
+            fill="#1A1C1E"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: on ? 0.16 : 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          />
 
         {/* 01 — рабочая поверхность */}
         <motion.g
+          filter="url(#pad-depth)"
           initial={{ opacity: 0, y: restY[0] }}
           animate={on ? { opacity: 1, y: layerY[0] } : { opacity: 0, y: restY[0] }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.05 }}
         >
           <FaceProfile face={face} color={color} />
+          <rect x="18" y="26" width="162" height="20" rx="2" fill="url(#pad-sheen)" opacity="0.55" />
         </motion.g>
 
         {/* 02 — тело круга */}
         <motion.g
+          filter="url(#pad-depth)"
           initial={{ opacity: 0, y: restY[1] }}
           animate={on ? { opacity: 1, y: layerY[1] } : { opacity: 0, y: restY[1] }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.19 }}
         >
           <rect x="18" y="20" width="162" height="30" rx="4" fill={color} fillOpacity="0.55" />
+          <rect x="18" y="20" width="162" height="30" rx="4" fill="url(#pad-sheen)" />
           <rect x="18" y="20" width="162" height="30" rx="4" fill="none" stroke="#1A1C1E" strokeOpacity="0.16" strokeWidth="1" />
           {hole && <rect x="90" y="20" width="18" height="30" fill="#F4F7F7" stroke="#1A1C1E" strokeOpacity="0.14" strokeWidth="1" />}
         </motion.g>
 
         {/* 03 — крепление Velcro: короткие крючки по всей плоскости */}
         <motion.g
+          filter="url(#pad-depth)"
           initial={{ opacity: 0, y: restY[2] }}
           animate={on ? { opacity: 1, y: layerY[2] } : { opacity: 0, y: restY[2] }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.33 }}
