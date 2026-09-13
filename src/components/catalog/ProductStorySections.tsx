@@ -405,6 +405,45 @@ function Scene({
 
   // Схема принципа: визуал занимает большую часть секции, текст — меньшую.
   if (variant === 'diagram' && scene.diagram) {
+    /*
+      «process» (DefectProcess, страницы паст) и «exploded» (MachineExploded,
+      главная сцена страницы машинки) держат внутри себя `position: sticky` +
+      скролл-джекинг на большую высоту — этому нужна ПОЛНОСТЬЮ незатронутая
+      цепочка предков-контейнеров до самого вьюпорта. Обычной локальной
+      правки (одна обёртка на plain div) оказалось недостаточно: framer-motion
+      добавляет transform любому <motion.*> с initial/whileInView, даже когда
+      ни один из его вариантов не описывает x/y/scale — сам факт, что элемент
+      управляется motion-пайплайном, уже создаёт containing block выше по
+      дереву. Поэтому для этих двух видов схема рендерится СОВСЕМ без
+      motion-обёрток — ни снаружи, ни у текста рядом — гарантированно голыми
+      div. Раньше уже был найден и устранён вложенный wrapper (motion.div
+      variants={rise}) вокруг самой диаграммы — этого хватило для похожих, но
+      более простых схем, но не для этой сцены целиком, потому что ВНЕШНИЙ
+      <motion.div {...revealProps(...)}> тоже оставался предком.
+    */
+    if (scene.diagram.kind === 'process' || scene.diagram.kind === 'exploded') {
+      return (
+        <section className={`scene relative py-16 md:py-24 ${bg}`}>
+          <div className="shell-wide">
+            <div className="grid gap-x-12 gap-y-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-end">
+              <div>
+                <p className="font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-ember">
+                  {scene.metric?.caption ?? 'Принцип работы'}
+                </p>
+                <h3 className="mt-4 text-[clamp(1.5rem,1.15rem+1.4vw,2.375rem)] leading-[1.1] tracking-tight">
+                  {scene.title}
+                </h3>
+              </div>
+              <p className="max-w-[54ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
+            </div>
+            <div className="mt-12">
+              <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
+            </div>
+          </div>
+        </section>
+      )
+    }
+
     const bare = BARE_DIAGRAMS.includes(scene.diagram.kind)
     const dark = DARK_DIAGRAMS.includes(scene.diagram.kind)
     // Схемы чередуются сторонами строго через одну: две подряд с одной
@@ -442,29 +481,10 @@ function Scene({
                   </div>
                   <p className="max-w-[54ch] text-[1.0625rem] leading-relaxed text-ash">{scene.body}</p>
                 </motion.div>
-                {/*
-                  «process» (DefectProcess, страницы паст) и «exploded»
-                  (MachineExploded, главная сцена страницы машинки) держат
-                  внутри себя `position: sticky` + скролл-джекинг на большую
-                  высоту — этому нужна незатронутая цепочка предков до
-                  самого вьюпорта. ЛЮБОЙ transform на предке (а
-                  framer-motion всегда пишет transform, даже в состоянии
-                  «y: 0» после анимации) создаёт новый containing block и
-                  рвёт sticky — снаружи это выглядело как огромная пустая
-                  страница с плавающим где-то посередине кусочком схемы
-                  (ровно то, что показал клиент на V40, и та же причина
-                  затронула бы главную сцену любой машинки). Здесь —
-                  обычный div без motion.
-                */}
-                {scene.diagram.kind === 'process' || scene.diagram.kind === 'exploded' ? (
-                  <div className="mt-12">
-                    <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
-                  </div>
-                ) : (
-                  <motion.div variants={rise} className="mt-12">
-                    <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
-                  </motion.div>
-                )}
+                {/* process/exploded не доходят сюда — уходят отдельной веткой выше, до захода в motion-обёртки. */}
+                <motion.div variants={rise} className="mt-12">
+                  <Diagram diagram={scene.diagram} activeSku={activeSku} onSelectSku={onSelectSku} />
+                </motion.div>
               </>
             ) : (
               <>
