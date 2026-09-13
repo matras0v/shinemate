@@ -3,8 +3,10 @@ import {
   motion,
   useInView,
   useMotionTemplate,
+  useMotionValue,
   useMotionValueEvent,
   useScroll,
+  useSpring,
   useTransform,
 } from 'framer-motion'
 
@@ -1499,6 +1501,16 @@ export function MachineExploded(data: ExplodedData) {
   const plateTiltY = useTransform(scrollYProgress, [0.34, 0.6], [-22, 0])
   const padTiltX = useTransform(scrollYProgress, [0.58, 0.84], [58, 0])
   const padTiltY = useTransform(scrollYProgress, [0.58, 0.84], [24, 0])
+  /*
+   * Глубина. Без Z разлёт оставался плоским: детали ехали по экрану, но
+   * не «от зрителя». Теперь оснастка стартует вынесенной вперёд (ближе к
+   * камере — крупнее и мягче), а к стыковке уходит в плоскость корпуса.
+   * Вместе с наклоном это читается как объект в пространстве, а не как
+   * две картинки, меняющие координату.
+   */
+  const plateZ = useTransform(scrollYProgress, [0.34, 0.6], [220, 0])
+  const padZ = useTransform(scrollYProgress, [0.58, 0.84], [260, 0])
+  const machineZ = useTransform(scrollYProgress, [0, 0.6], [0, -60])
 
   /* Статичная раскладка: то же содержание, без sticky и без скролл-трансформаций. */
   if (reduced || !desktop) {
@@ -1571,7 +1583,10 @@ export function MachineExploded(data: ExplodedData) {
             кружками рядом — это читалось как две иконки под фотографией,
             а не как сборка инструмента.
           */}
-          <div className="relative flex h-full min-h-[20rem] flex-col items-center justify-center overflow-hidden rounded-[1.75rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] px-6 py-8">
+          <div
+            className="relative flex h-full min-h-[20rem] flex-col items-center justify-center overflow-hidden rounded-[1.75rem] bg-[radial-gradient(120%_100%_at_50%_0%,#FFFFFF_0%,#EEF2F3_45%,#E2E9EB_100%)] px-6 py-8"
+            style={{ perspective: 1100, transformStyle: 'preserve-3d' }}
+          >
             <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full text-graphite/[0.07]">
               <Grid id="exploded-grid" step={32} />
               <rect width="100%" height="100%" fill="url(#exploded-grid)" />
@@ -1580,7 +1595,7 @@ export function MachineExploded(data: ExplodedData) {
             <motion.img
               src={data.machineImage}
               alt={data.machineLabel}
-              style={{ y: machineY }}
+              style={{ y: machineY, z: machineZ }}
               className="relative z-30 max-h-[40%] w-auto max-w-full flex-shrink-0 object-contain drop-shadow-[0_22px_34px_rgba(26,28,30,0.15)]"
             />
 
@@ -1592,7 +1607,7 @@ export function MachineExploded(data: ExplodedData) {
             />
 
             {/* Стек оснастки: подложка, под ней круг — по одной оси */}
-            <div className="relative z-20 flex flex-col items-center">
+            <div className="relative z-20 flex flex-col items-center" style={{ transformStyle: 'preserve-3d' }}>
               {data.plateImage && (
                 <motion.figure
                   style={{
@@ -1601,7 +1616,7 @@ export function MachineExploded(data: ExplodedData) {
                     scale: plateScale,
                     rotateX: plateTiltX,
                     rotateY: plateTiltY,
-                    transformPerspective: 900,
+                    z: plateZ,
                   }}
                   className="flex flex-col items-center"
                 >
@@ -1621,7 +1636,7 @@ export function MachineExploded(data: ExplodedData) {
                     scale: padScale,
                     rotateX: padTiltX,
                     rotateY: padTiltY,
-                    transformPerspective: 900,
+                    z: padZ,
                   }}
                   className="-mt-3 flex flex-col items-center"
                 >
@@ -1760,19 +1775,43 @@ export function PadConstruction({
   const restY = [0, 30, 54]
 
   /*
-   * `whileInView`, поставленный прямо на <motion.g> внутри <svg>, у части
-   * посетителей с телефона так и не срабатывал — схема оставалась в
-   * начальном (невидимом) состоянии навсегда: IntersectionObserver на
-   * SVG-группе ведёт себя ненадёжно в мобильном Safari, и никакой порог
-   * (amount) это не чинит, потому что колбэк иногда не приходит вообще.
-   * Наблюдение вынесено на обычный html-div вокруг svg — на нём
-   * IntersectionObserver работает как положено — и уже готовый булев
-   * результат раздаётся всем слоям через animate, а не через их
-   * собственный whileInView.
+   * Разбор круга привязан к прокрутке, а не к разовому появлению в кадре.
+   *
+   * Было: слои один раз разъезжались по IntersectionObserver и застывали —
+   * пользователь либо успевал увидеть анимацию, либо пролистывал мимо и
+   * заставал готовую картинку. Стало: положение слоёв — функция от
+   * положения секции в экране. Человек листает медленнее — круг
+   * разбирается медленнее, листает назад — собирается обратно. Это тот же
+   * принцип, что у scrub-анимаций: прогресс ведёт не таймер, а скролл.
+   *
+   * offset ['start end', 'center center'] = разбор начинается, когда
+   * верх блока коснулся низа экрана, и завершается, когда блок встал по
+   * центру. Дальше схема остаётся собранной и не дёргается.
+   *
+   * Наблюдение по-прежнему на обычном html-div вокруг svg: у SVG-групп
+   * IntersectionObserver в мобильном Safari срабатывает ненадёжно, и
+   * схема оставалась невидимой навсегда.
    */
   const wrap = useRef<HTMLDivElement>(null)
-  const inView = useInView(wrap, { once: true, amount: 0.15 })
-  const on = reduced || inView
+  const { scrollYProgress } = useScroll({
+    target: wrap,
+    offset: ['start end', 'center center'],
+  })
+  const spread = useSpring(scrollYProgress, { stiffness: 120, damping: 26, restDelta: 0.001 })
+
+  /*
+   * Каждый слой — свой трансформ (хуки нельзя звать из функции в JSX).
+   * Разбег по началу диапазона даёт очередь: сначала проступает рабочая
+   * поверхность, следом тело круга, последним крепление — читается как
+   * разбор сверху вниз, а не одновременный «прыжок» трёх пластин.
+   */
+  const faceY = useTransform(spread, [0.15, 0.9], [restY[0], layerY[0]])
+  const bodyY = useTransform(spread, [0.15, 0.9], [restY[1], layerY[1]])
+  const velcroY = useTransform(spread, [0.15, 0.9], [restY[2], layerY[2]])
+  const faceFade = useTransform(spread, [0.08, 0.4], [0, 1])
+  const bodyFade = useTransform(spread, [0.16, 0.48], [0, 1])
+  const velcroFade = useTransform(spread, [0.24, 0.56], [0, 1])
+  const sizeFade = useTransform(spread, [0.45, 0.75], [0, 1])
 
   return (
     <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-14">
@@ -1814,17 +1853,13 @@ export function PadConstruction({
             rx="96"
             ry="9"
             fill="#1A1C1E"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: on ? 0.16 : 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            style={reduced ? { opacity: 0.16 } : { opacity: sizeFade }}
           />
 
         {/* 01 — рабочая поверхность */}
         <motion.g
           filter="url(#pad-depth)"
-          initial={{ opacity: 0, y: restY[0] }}
-          animate={on ? { opacity: 1, y: layerY[0] } : { opacity: 0, y: restY[0] }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.05 }}
+          style={reduced ? { opacity: 1, y: layerY[0] } : { opacity: faceFade, y: faceY }}
         >
           <FaceProfile face={face} color={color} />
           <rect x="18" y="26" width="162" height="20" rx="2" fill="url(#pad-sheen)" opacity="0.55" />
@@ -1833,9 +1868,7 @@ export function PadConstruction({
         {/* 02 — тело круга */}
         <motion.g
           filter="url(#pad-depth)"
-          initial={{ opacity: 0, y: restY[1] }}
-          animate={on ? { opacity: 1, y: layerY[1] } : { opacity: 0, y: restY[1] }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.19 }}
+          style={reduced ? { opacity: 1, y: layerY[1] } : { opacity: bodyFade, y: bodyY }}
         >
           <rect x="18" y="20" width="162" height="30" rx="4" fill={color} fillOpacity="0.55" />
           <rect x="18" y="20" width="162" height="30" rx="4" fill="url(#pad-sheen)" />
@@ -1846,9 +1879,7 @@ export function PadConstruction({
         {/* 03 — крепление Velcro: короткие крючки по всей плоскости */}
         <motion.g
           filter="url(#pad-depth)"
-          initial={{ opacity: 0, y: restY[2] }}
-          animate={on ? { opacity: 1, y: layerY[2] } : { opacity: 0, y: restY[2] }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay: 0.33 }}
+          style={reduced ? { opacity: 1, y: layerY[2] } : { opacity: velcroFade, y: velcroY }}
         >
           <rect x="18" y="24" width="162" height="9" rx="2" fill="#1A1C1E" fillOpacity="0.72" />
           {Array.from({ length: 32 }, (_, i) => 21 + i * 5).map((x) => (
@@ -1858,11 +1889,7 @@ export function PadConstruction({
 
         {/* Размерная линия толщины — только когда цифра действительно есть */}
         {thickness && (
-          <motion.g
-            initial={{ opacity: 0 }}
-            animate={{ opacity: on ? 1 : 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
+          <motion.g style={reduced ? { opacity: 1 } : { opacity: sizeFade }}>
             <g stroke="#1A1C1E" strokeOpacity="0.42" strokeWidth="1.1">
               <line x1="196" y1="20" x2="196" y2="146" />
               <line x1="190" y1="20" x2="202" y2="20" />
@@ -2266,12 +2293,56 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
    * только необработанное), у слоя блика — зеркальная.
    */
   const polishX = useTransform(scrollYProgress, [0.08, 0.86], [10, 84])
-  const defectMask = useMotionTemplate`linear-gradient(to right, transparent ${polishX}%, #000 calc(${polishX}% + 12%))`
-  const glossMask = useMotionTemplate`linear-gradient(to right, #000 ${polishX}%, transparent calc(${polishX}% + 12%))`
+
+  /*
+   * Ручной режим на устройствах с мышью.
+   *
+   * Скролл-проход честно показывает принцип, но полировка — это работа
+   * руками, и пока панель «исправляется сама», ощущения инструмента нет.
+   * Поэтому там, где есть точный указатель, круг переходит под курсор:
+   * человек буквально водит им по лаку, и стирается ровно то, по чему
+   * он провёл. Позиция идёт через пружину, поэтому круг догоняет курсор
+   * с инерцией тяжёлой машинки, а не прилипает к нему жёстко.
+   *
+   * На touch указателя нет — там остаётся проход по скроллу, и это не
+   * деградация: палец и так ведёт страницу, второй жест забрал бы
+   * прокрутку себе.
+   */
+  const panelRef = useRef<HTMLDivElement>(null)
+  const fine = useMediaQuery('(hover: hover) and (pointer: fine)')
+  const handMode = fine && !reduced
+
+  const pointerRaw = useMotionValue(50)
+  const pointerX = useSpring(pointerRaw, { stiffness: 140, damping: 22, restDelta: 0.01 })
+  const [handTouched, setHandTouched] = useState(false)
+
+  useEffect(() => {
+    const box = panelRef.current
+    if (!box || !handMode) return
+    const onMove = (e: PointerEvent) => {
+      const r = box.getBoundingClientRect()
+      pointerRaw.set(Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100)))
+      setHandTouched(true)
+    }
+    box.addEventListener('pointermove', onMove, { passive: true })
+    return () => box.removeEventListener('pointermove', onMove)
+  }, [handMode, pointerRaw])
+
+  /** Что ведёт очистку: рука (мышь) или прокрутка (touch). */
+  const driver = handMode ? pointerX : polishX
+
+  const defectMask = useMotionTemplate`linear-gradient(to right, transparent ${driver}%, #000 calc(${driver}% + 12%))`
+  const glossMask = useMotionTemplate`linear-gradient(to right, #000 ${driver}%, transparent calc(${driver}% + 12%))`
+  const handX = useMotionTemplate`calc(${driver}% - 3.5rem)`
 
   /** Панель лака: риски слабеют, ровный блик проступает. */
   const panel = (
-    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.5rem] bg-[linear-gradient(150deg,#23262A_0%,#15171A_55%,#1E2226_100%)] sm:aspect-[16/9]">
+    <div
+      ref={panelRef}
+      className={`relative aspect-[16/10] w-full overflow-hidden rounded-[1.5rem] bg-[linear-gradient(150deg,#23262A_0%,#15171A_55%,#1E2226_100%)] sm:aspect-[16/9] ${
+        handMode ? 'cursor-none' : ''
+      }`}
+    >
       {/*
         Абстрактный видео-фон вместо плоского градиента: та же макросъёмка
         лака с рисками, из которой берётся сама идея схемы — теперь
@@ -2357,7 +2428,13 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
 
       {/* Рабочая пара идёт по панели */}
       <motion.div
-        style={reduced ? { left: '42%', opacity: 1 } : { left: headX, opacity: headOpacity }}
+        style={
+          reduced
+            ? { left: '42%', opacity: 1 }
+            : handMode
+              ? { left: handX, opacity: 1 }
+              : { left: headX, opacity: headOpacity }
+        }
         /* На узком экране круг остаётся: без него сцена теряет главное —
            видно, ЧЕМ именно исправляется панель. */
         className="absolute top-1/2 -translate-y-1/2"
@@ -2389,6 +2466,17 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
       <span className="absolute left-4 top-4 rounded-full bg-graphite/70 px-3 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-porcelain/80">
         Схема процесса
       </span>
+
+      {/* Подсказка живёт ровно до первого движения рукой. */}
+      {handMode && (
+        <span
+          className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-porcelain/25 bg-ink/45 px-5 py-2.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-porcelain/85 backdrop-blur-md transition-opacity duration-700 ease-premium ${
+            handTouched ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          Проведите по панели
+        </span>
+      )}
     </div>
   )
 
