@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { motion, useInView, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
+import {
+  motion,
+  useInView,
+  useMotionTemplate,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+} from 'framer-motion'
 
 import { DESKTOP_SCENE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
@@ -1467,6 +1474,19 @@ export function MachineExploded(data: ExplodedData) {
    */
   const plateScale = useTransform(scrollYProgress, [0.48, 0.56, 0.62], [1, 1.06, 1])
   const padScale = useTransform(scrollYProgress, [0.72, 0.8, 0.86], [1, 1.06, 1])
+  /*
+   * Разворот в 3D по пути к шпинделю: деталь приходит «ребром» (её видно
+   * под углом, как летящую в пространстве), а к моменту посадки
+   * доворачивается в плоскость инструмента. Раньше подложка и круг
+   * просто подъезжали снизу — сборка читалась как смена позиции, а не
+   * как стыковка. Угол намеренно небольшой: это по-прежнему схема
+   * принципа, а не 3D-модель конкретной машинки — геометрии её
+   * внутренностей у нас нет и мы её не показываем.
+   */
+  const plateTiltX = useTransform(scrollYProgress, [0.34, 0.6], [52, 0])
+  const plateTiltY = useTransform(scrollYProgress, [0.34, 0.6], [-22, 0])
+  const padTiltX = useTransform(scrollYProgress, [0.58, 0.84], [58, 0])
+  const padTiltY = useTransform(scrollYProgress, [0.58, 0.84], [24, 0])
 
   /* Статичная раскладка: то же содержание, без sticky и без скролл-трансформаций. */
   if (reduced || !desktop) {
@@ -1563,7 +1583,14 @@ export function MachineExploded(data: ExplodedData) {
             <div className="relative z-20 flex flex-col items-center">
               {data.plateImage && (
                 <motion.figure
-                  style={{ y: plateY, opacity: plateOpacity, scale: plateScale }}
+                  style={{
+                    y: plateY,
+                    opacity: plateOpacity,
+                    scale: plateScale,
+                    rotateX: plateTiltX,
+                    rotateY: plateTiltY,
+                    transformPerspective: 900,
+                  }}
                   className="flex flex-col items-center"
                 >
                   <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_32%_28%,#FFFFFF_0%,#F4F7F7_45%,#E1E9EB_100%)] shadow-[0_12px_26px_rgba(26,28,30,0.18),inset_0_1px_1px_rgba(255,255,255,0.9)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
@@ -1576,7 +1603,14 @@ export function MachineExploded(data: ExplodedData) {
               )}
               {data.padImage && (
                 <motion.figure
-                  style={{ y: padY, opacity: padOpacity, scale: padScale }}
+                  style={{
+                    y: padY,
+                    opacity: padOpacity,
+                    scale: padScale,
+                    rotateX: padTiltX,
+                    rotateY: padTiltY,
+                    transformPerspective: 900,
+                  }}
                   className="-mt-3 flex flex-col items-center"
                 >
                   <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_32%_28%,#FFFFFF_0%,#F4F7F7_45%,#E1E9EB_100%)] shadow-[0_12px_26px_rgba(26,28,30,0.18),inset_0_1px_1px_rgba(255,255,255,0.9)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
@@ -2206,6 +2240,23 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
   const headOpacity = useTransform(scrollYProgress, [0.02, 0.12, 0.9, 0.98], [0, 1, 1, 0])
   const resultOpacity = useTransform(scrollYProgress, [0.55, 0.78], [0, 1])
 
+  /*
+   * Полировка «проходом», а не общим угасанием.
+   *
+   * Раньше риски просто слабели по всей панели сразу, пока круг ехал
+   * мимо — связи между инструментом и результатом не читалось. Теперь
+   * позиция круга задаёт границу маски: слева от неё риски уже стёрты и
+   * проступил ровный блик, справа панель ещё в исходном состоянии.
+   * Полоса перехода шириной ~12% идёт ровно под кругом, поэтому видно,
+   * что поверхность исправляет именно он.
+   *
+   * Слои строго встречные: у слоя рисок маска «чёрное справа» (видно
+   * только необработанное), у слоя блика — зеркальная.
+   */
+  const polishX = useTransform(scrollYProgress, [0.08, 0.86], [10, 84])
+  const defectMask = useMotionTemplate`linear-gradient(to right, transparent ${polishX}%, #000 calc(${polishX}% + 12%))`
+  const glossMask = useMotionTemplate`linear-gradient(to right, #000 ${polishX}%, transparent calc(${polishX}% + 12%))`
+
   /** Панель лака: риски слабеют, ровный блик проступает. */
   const panel = (
     <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.5rem] bg-[linear-gradient(150deg,#23262A_0%,#15171A_55%,#1E2226_100%)] sm:aspect-[16/9]">
@@ -2231,12 +2282,42 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
         />
       )}
       <div className="absolute inset-0 bg-[linear-gradient(150deg,rgba(35,38,42,0.35)_0%,rgba(21,23,26,0.55)_55%,rgba(30,34,38,0.4)_100%)]" />
-      <svg viewBox="0 0 400 225" className="absolute inset-0 h-full w-full" role="img" aria-label="Условная схема: риски на лаке выводятся и остаётся ровное отражение">
-        {/*
-          Блик — мягкий градиент, а не сплошная заливка: плоское белое
-          пятно читалось как серый прямоугольник поверх панели, а не как
-          отражение на лаке.
-        */}
+      {/* Слой 1 — необработанный лак: риски видны только ПЕРЕД кругом. */}
+      <motion.svg
+        viewBox="0 0 400 225"
+        className="absolute inset-0 h-full w-full"
+        role="img"
+        aria-label="Условная схема: риски на лаке выводятся и остаётся ровное отражение"
+        style={
+          reduced
+            ? undefined
+            : { maskImage: defectMask, WebkitMaskImage: defectMask }
+        }
+      >
+        {[52, 84, 116, 148, 180].map((y, i) => (
+          <motion.path
+            key={y}
+            d={`M 24 ${y} Q 110 ${y - 16 + (i % 2) * 12}, 200 ${y} T 376 ${y}`}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeLinecap="round"
+            style={reduced ? { opacity: 0.4, strokeWidth: 2 } : { opacity: defectOpacity, strokeWidth: defectWidth }}
+          />
+        ))}
+      </motion.svg>
+
+      {/*
+        Слой 2 — вычищенная поверхность: ровный блик проступает только
+        ПОЗАДИ круга. Блик — мягкий градиент, а не сплошная заливка:
+        плоское белое пятно читалось как серый прямоугольник поверх
+        панели, а не как отражение на лаке.
+      */}
+      <motion.svg
+        viewBox="0 0 400 225"
+        aria-hidden
+        className="absolute inset-0 h-full w-full"
+        style={reduced ? undefined : { maskImage: glossMask, WebkitMaskImage: glossMask }}
+      >
         <defs>
           <radialGradient id="gloss-a" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
@@ -2260,18 +2341,7 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
           fill="url(#gloss-a)"
           style={reduced ? { opacity: 0.14 } : { opacity: glossOpacity, scale: glossScale }}
         />
-        {/* Риски — те, что выводит именно эта стадия */}
-        {[52, 84, 116, 148, 180].map((y, i) => (
-          <motion.path
-            key={y}
-            d={`M 24 ${y} Q 110 ${y - 16 + (i % 2) * 12}, 200 ${y} T 376 ${y}`}
-            fill="none"
-            stroke="#FFFFFF"
-            strokeLinecap="round"
-            style={reduced ? { opacity: 0.4, strokeWidth: 2 } : { opacity: defectOpacity, strokeWidth: defectWidth }}
-          />
-        ))}
-      </svg>
+      </motion.svg>
 
       {/* Рабочая пара идёт по панели */}
       <motion.div

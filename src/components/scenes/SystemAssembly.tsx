@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 
 import { products } from '../../data/catalog'
 import { DESKTOP_SCENE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery'
@@ -118,6 +119,9 @@ function StepGlyph({ index }: { index: number }) {
 }
 
 function StepCard({ step, index, on }: { step: Step; index: number; on: boolean }) {
+  const reducedTilt = useReducedMotion()
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
+
   const inner = (
     <>
       <span
@@ -155,12 +159,30 @@ function StepCard({ step, index, on }: { step: Step; index: number; on: boolean 
 
   if (!step.href) return <div className="flex h-full flex-col">{inner}</div>
   return (
-    <a
+    <motion.a
       href={step.href}
-      className="group flex h-full flex-col rounded-2xl outline-none transition-transform duration-500 ease-premium focus-visible:ring-2 focus-visible:ring-ember/60 focus-visible:ring-offset-4 focus-visible:ring-offset-mist"
+      /*
+        Лёгкий наклон вслед за курсором: карточка перестаёт быть плоской
+        плиткой и читается как физический объект. Порог намеренно низкий
+        (±7°) — это акцент на наведении, а не аттракцион. Мышь считается
+        от центра карточки, поэтому наклон одинаково работает в любой
+        позиции сетки. На touch событий mouse нет, и карточка остаётся
+        ровной: наклонять то, что нельзя навести, незачем.
+      */
+      onMouseMove={(e) => {
+        if (reducedTilt) return
+        const r = e.currentTarget.getBoundingClientRect()
+        const px = (e.clientX - r.left) / r.width - 0.5
+        const py = (e.clientY - r.top) / r.height - 0.5
+        setTilt({ rx: -py * 14, ry: px * 14 })
+      }}
+      onMouseLeave={() => setTilt({ rx: 0, ry: 0 })}
+      style={{ transformPerspective: 700, rotateX: tilt.rx, rotateY: tilt.ry }}
+      transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+      className="group flex h-full flex-col rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ember/60 focus-visible:ring-offset-4 focus-visible:ring-offset-mist"
     >
       {inner}
-    </a>
+    </motion.a>
   )
 }
 
@@ -207,13 +229,28 @@ export function SystemAssembly() {
     </ol>
   )
 
+  /*
+    Ниже desktop-порога шесть карточек в сетке 2×3 растягивали экран вниз
+    почти на полторы высоты — цепочка переставала читаться как цепочка и
+    превращалась в длинный список. Здесь она идёт горизонтальным рельсом
+    со scroll-snap: свайп перекидывает ровно на следующее звено, и вся
+    секция занимает один экран.
+  */
   if (reduced || !desktop) {
     return (
       <section id="system" className="scene relative bg-mist py-20 md:py-28">
-        <div className="shell-wide">
-          {header}
-          <div className="mt-12">{grid(n - 1)}</div>
-        </div>
+        <div className="shell-wide">{header}</div>
+        <ol className="sm-rail mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto px-[var(--shell)] pb-4">
+          {STEPS.map((s, i) => (
+            <li key={s.role} className="w-[15rem] shrink-0 snap-start sm:w-[17rem]">
+              <StepCard step={s} index={i} on />
+            </li>
+          ))}
+        </ol>
+        <p className="shell-wide mt-1 flex items-center gap-1.5 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+          Листайте цепочку вправо
+          <ArrowRight size={13} />
+        </p>
       </section>
     )
   }

@@ -147,6 +147,21 @@
     isolation: isolate;
   }
 
+  /*
+   * Горизонтальный рельс карточек (мобильная раскладка цепочки «система»).
+   * Системный скроллбар под карточками выглядит как элемент интерфейса
+   * браузера посреди страницы, а роль «здесь листают» уже выполняют
+   * scroll-snap и подпись со стрелкой под рельсом.
+   */
+  .sm-rail {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .sm-rail::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Мягкое зерно поверх крупных сцен — убирает «пластиковость» градиентов. */
   .grain::after {
     content: '';

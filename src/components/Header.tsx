@@ -166,14 +166,17 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   go(item.href)
                 }
               }}
-              className={`group relative whitespace-nowrap text-[1rem] transition-colors duration-500 ease-premium ${
-                item.href === 'contacts'
-                  ? 'font-semibold text-ember hover:text-ember/70'
-                  : 'text-ash hover:text-graphite'
-              }`}
+              /*
+                Раньше «Контакты» шли жирным оранжевым в один ряд с обычными
+                пунктами — клиент назвал это «вырвиглазно». Акцент оставлен
+                ровно одному элементу справа («Оптовикам» — это CTA, а не
+                навигация), остальные пункты одинаковые и спокойные; их
+                различает только подчёркивание, растущее из левого края.
+              */
+              className="group relative whitespace-nowrap text-[1rem] text-ash transition-colors duration-500 ease-premium hover:text-graphite"
             >
               {item.label}
-              <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-graphite transition-all duration-500 ease-premium group-hover:w-full" />
+              <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-graphite/60 transition-all duration-500 ease-premium group-hover:w-full" />
             </a>
           ))}
 
@@ -194,7 +197,11 @@ export function Header({ onHome, onOpenSearch }: Props) {
             // "розница или опт", а форма ТОЛЬКО для оптовиков (см.
             // Wholesale.tsx). Название кнопки приведено в соответствие с
             // тем, что на неё реально ведёт.
-            className="whitespace-nowrap text-[1rem] font-semibold text-ember transition-colors duration-500 ease-premium hover:text-ember/70"
+            // Единственный акцентный пункт в ряду: не жирный оранжевый текст
+            // (он спорил с логотипом и читался кричаще), а спокойная
+            // обводка-пилюля — видно, что это отдельное действие, но ряд
+            // навигации остаётся ровным.
+            className="whitespace-nowrap rounded-full border border-ember/35 px-4 py-1.5 text-[0.9375rem] text-ember transition-colors duration-500 ease-premium hover:border-ember/60 hover:bg-ember/[0.06]"
           >
             Оптовикам
           </a>
@@ -484,9 +491,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                       go(item.href)
                     }
                   }}
-                  className={`border-b border-graphite/[0.06] py-4 text-lg ${
-                    item.href === 'contacts' ? 'font-semibold text-ember' : 'text-graphite'
-                  }`}
+                  className="border-b border-graphite/[0.06] py-4 text-lg text-graphite"
                 >
                   {item.label}
                 </a>
@@ -499,7 +504,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   setOpen(false)
                   requestWholesale()
                 }}
-                className="border-b border-graphite/[0.06] py-4 text-lg font-semibold text-ember last:border-0"
+                className="border-b border-graphite/[0.06] py-4 text-lg text-ember last:border-0"
               >
                 Оптовикам
               </a>
