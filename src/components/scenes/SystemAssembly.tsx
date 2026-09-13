@@ -34,6 +34,8 @@ type Step = {
   note: string
   href?: string
   image?: string
+  /** Кадр поверхности, а не вырезанный товарный рендер: кадрируется по всей плитке. */
+  photo?: boolean
 }
 
 const STEPS: Step[] = (() => {
@@ -55,9 +57,29 @@ const STEPS: Step[] = (() => {
       image: product.image,
     })
   }
+  /*
+    Последние два звена — не товары, а стадии, и раньше они стояли
+    условной векторной графикой. Клиент дважды назвал её «непонятными
+    фрагментами»: диагональная полоса на чёрном не читалась ни как лак,
+    ни как результат. Теперь это фрагменты реального лака — один и тот
+    же участок капота до и после обработки, поэтому 05 и 06 отличаются
+    ровно состоянием поверхности, а не ракурсом или освещением.
+  */
   items.push(
-    { role: '05 · Покрытие', title: 'Лакокрасочное покрытие', note: 'То, ради чего собирается вся цепочка' },
-    { role: '06 · Результат', title: 'Ровное отражение', note: 'Итог даёт связка целиком, а не одно звено' },
+    {
+      role: '05 · Покрытие',
+      title: 'Лакокрасочное покрытие',
+      note: 'То, ради чего собирается вся цепочка',
+      image: 'media/stage-coating.webp',
+      photo: true,
+    },
+    {
+      role: '06 · Результат',
+      title: 'Ровное отражение',
+      note: 'Итог даёт связка целиком, а не одно звено',
+      image: 'media/stage-result.webp',
+      photo: true,
+    },
   )
   return items
 })()
@@ -131,11 +153,15 @@ function StepCard({ step, index, on }: { step: Step; index: number; on: boolean 
       >
         {step.image ? (
           <img
-            src={step.image.replace('.webp', '-thumb.webp')}
+            /* Товарные рендеры лежат отдельным лёгким -thumb; кадры
+               поверхности отдаются как есть и кадрируются по всей плитке. */
+            src={step.photo ? step.image : step.image.replace('.webp', '-thumb.webp')}
             alt=""
             loading="lazy"
             decoding="async"
-            className={`h-[74%] w-[74%] object-contain transition-all duration-500 ${on ? 'opacity-100' : 'opacity-45 grayscale'}`}
+            className={`transition-all duration-500 ${
+              step.photo ? 'h-full w-full object-cover' : 'h-[74%] w-[74%] object-contain'
+            } ${on ? 'opacity-100' : 'opacity-45 grayscale'}`}
           />
         ) : (
           <span className={`flex h-full w-full items-center justify-center transition-opacity duration-500 ${on ? 'opacity-100' : 'opacity-40'}`}>

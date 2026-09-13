@@ -1350,11 +1350,23 @@ export function VelcroWear() {
 
   const panel = (worn: boolean) => (
     <div
-      className={`relative overflow-hidden rounded-2xl border p-6 ${
-        worn ? 'border-graphite/[0.12] bg-hazeSurface' : 'border-ember/40 bg-porcelain'
-      }`}
+      className={`group relative overflow-hidden rounded-2xl border p-6 transition-all duration-500 ease-premium sm:p-7 ${
+        worn
+          ? 'border-graphite/[0.12] bg-hazeSurface hover:border-graphite/25'
+          : 'border-ember/40 bg-porcelain hover:border-ember/60'
+      } hover:shadow-[0_22px_50px_-28px_rgba(26,28,30,0.5)]`}
     >
-      <svg viewBox="0 0 200 92" className="h-24 w-full" role="img" aria-label={worn ? 'Изношенное крепление: крючки примяты' : 'Новое крепление: крючки стоят плотно'}>
+      {/*
+        Схема живёт в кадре с overflow-hidden и при наведении мягко
+        приближается: секция перестала быть плоской парой картинок,
+        появилось ощущение, что крепление можно рассмотреть.
+      */}
+      <svg
+        viewBox="0 0 200 92"
+        className="h-24 w-full origin-bottom transition-transform duration-700 ease-premium group-hover:scale-[1.06]"
+        role="img"
+        aria-label={worn ? 'Изношенное крепление: крючки примяты' : 'Новое крепление: крючки стоят плотно'}
+      >
         {/* Основание ленты */}
         <rect x="8" y="74" width="184" height="10" rx="3" fill="#1A1C1E" fillOpacity={worn ? 0.5 : 0.72} />
         {hooks(worn).map((h, i) => (
@@ -1377,10 +1389,10 @@ export function VelcroWear() {
             <circle key={x} cx={x} cy={62 - (i % 2) * 6} r="3.2" fill="#1A1C1E" fillOpacity="0.14" />
           ))}
       </svg>
-      <p className={`mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] ${worn ? 'text-titanium' : 'text-ember'}`}>
+      <p className={`mt-7 font-mono text-[0.6875rem] uppercase tracking-[0.16em] ${worn ? 'text-titanium' : 'text-ember'}`}>
         {worn ? 'Изношенное крепление' : 'Новое крепление'}
       </p>
-      <p className="mt-2 text-[0.875rem] leading-relaxed text-slate">
+      <p className="mt-3 text-[0.9375rem] leading-[1.6] text-slate">
         {worn
           ? 'Ворс примят и забит пылью — круг держится хуже и начинает смещаться под нагрузкой.'
           : 'Ворс стоит плотно и держит круг по всей плоскости — пятно контакта не смещается.'}
@@ -1389,7 +1401,7 @@ export function VelcroWear() {
   )
 
   return (
-    <div ref={wrap} className="grid gap-4 sm:grid-cols-2">
+    <div ref={wrap} className="grid gap-4 sm:grid-cols-2 sm:gap-6">
       {panel(false)}
       {panel(true)}
     </div>
@@ -2137,7 +2149,7 @@ export type RoleItem = {
 export function RoleLine({ items }: { items: RoleItem[] }) {
   const reduced = useReducedMotion()
   return (
-    <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <ol className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
       {items.map((item, i) => (
         <motion.li
           key={item.model}
@@ -2149,10 +2161,10 @@ export function RoleLine({ items }: { items: RoleItem[] }) {
           <a
             href={item.href}
             aria-current={item.active ? 'true' : undefined}
-            className={`flex h-full flex-col rounded-2xl border p-5 transition-colors duration-300 ${
+            className={`flex h-full flex-col rounded-2xl border p-6 transition-all duration-300 sm:p-7 ${
               item.active
                 ? 'border-ember/50 bg-porcelain shadow-[0_0_0_1px_rgba(254,139,12,0.12)]'
-                : 'border-graphite/[0.1] bg-hazeSurface hover:border-graphite/25'
+                : 'border-graphite/[0.1] bg-hazeSurface hover:-translate-y-0.5 hover:border-graphite/25 hover:shadow-[0_18px_40px_-24px_rgba(26,28,30,0.45)]'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -2165,17 +2177,17 @@ export function RoleLine({ items }: { items: RoleItem[] }) {
                 по вертикали и ряд выглядит собранным на глаз.
               */}
               <div className="min-w-0">
-                <p className="truncate text-[0.9375rem] tracking-tight text-graphite">{item.model}</p>
+                <p className="truncate text-[1rem] tracking-tight text-graphite">{item.model}</p>
                 {item.stage && (
-                  <p className="mt-0.5 min-h-[2.1em] font-mono text-[0.6875rem] uppercase leading-[1.05em] tracking-[0.14em] text-titanium">
+                  <p className="mt-2 min-h-[2.4em] font-mono text-[0.6875rem] uppercase leading-[1.2em] tracking-[0.14em] text-titanium">
                     {item.stage}
                   </p>
                 )}
               </div>
             </div>
-            <p className={`mt-4 text-[0.875rem] leading-snug ${item.active ? 'text-graphite' : 'text-slate'}`}>{item.role}</p>
+            <p className={`mt-6 text-[0.9375rem] leading-[1.6] ${item.active ? 'text-graphite' : 'text-slate'}`}>{item.role}</p>
             {item.compat && (
-              <p className="mt-auto border-t border-graphite/[0.1] pt-3 text-[0.75rem] leading-relaxed text-titanium">
+              <p className="mt-auto border-t border-graphite/[0.1] pt-5 text-[0.8125rem] leading-[1.55] text-titanium">
                 Круги: {item.compat}
               </p>
             )}

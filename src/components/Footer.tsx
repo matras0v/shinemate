@@ -11,23 +11,35 @@ type Props = {
 
 export function Footer({ onOpenDoc }: Props) {
   return (
-    <footer className="border-t border-graphite/[0.12] bg-mist py-14 md:py-16">
-      <div className="shell grid gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
+    /*
+      Футер переверстан из-за прямой претензии клиента: «Москва, Ростов,
+      контакты, разделы слиплись в одну кучу». Что изменено по сути:
+      выросли расстояния (колонки 14→20, строки 8→14px), ссылки стали
+      читаемого размера (13→14px), у каждой появилась своя высота нажатия
+      не меньше 44px на touch, а телефон отделён от региона и адреса
+      размером, а не только цветом. Порядок и состав ссылок прежние.
+    */
+    <footer className="border-t border-graphite/[0.12] bg-mist py-16 md:py-20">
+      <div className="shell grid gap-x-14 gap-y-12 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1.1fr] lg:gap-x-16">
         <div>
           <BrandLockup variant="full" />
-          <p className="mt-4 text-[0.75rem] leading-relaxed text-titanium">{company.role}</p>
+          <p className="mt-5 max-w-[30ch] text-[0.8125rem] leading-relaxed text-titanium">
+            {company.role}
+          </p>
         </div>
 
         <div>
           <p className="eyebrow">Каталог</p>
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-5 space-y-3.5">
             {categories.map((c) => (
               <li key={c.id}>
                 <a
                   href={`catalog/${c.id}`}
-                  className="text-[0.8125rem] leading-relaxed text-slate transition-colors duration-500 ease-premium hover:text-graphite"
+                  className="group inline-flex min-h-[1.75rem] items-center text-[0.875rem] leading-relaxed text-slate transition-colors duration-400 ease-premium hover:text-graphite"
                 >
-                  {c.title}
+                  <span className="transition-transform duration-400 ease-premium group-hover:translate-x-1">
+                    {c.title}
+                  </span>
                 </a>
               </li>
             ))}
@@ -36,14 +48,16 @@ export function Footer({ onOpenDoc }: Props) {
 
         <div>
           <p className="eyebrow">Разделы</p>
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-5 space-y-3.5">
             {nav.map((item) => (
               <li key={item.href}>
                 <a
                   href={item.href}
-                  className="text-[0.8125rem] leading-relaxed text-slate transition-colors duration-500 ease-premium hover:text-graphite"
+                  className="group inline-flex min-h-[1.75rem] items-center text-[0.875rem] leading-relaxed text-slate transition-colors duration-400 ease-premium hover:text-graphite"
                 >
-                  {item.label}
+                  <span className="transition-transform duration-400 ease-premium group-hover:translate-x-1">
+                    {item.label}
+                  </span>
                 </a>
               </li>
             ))}
@@ -52,19 +66,19 @@ export function Footer({ onOpenDoc }: Props) {
 
         <div>
           <p className="eyebrow">Контакты</p>
-          <ul className="mt-4 space-y-2 text-[0.8125rem] leading-relaxed text-slate">
+          <ul className="mt-5 space-y-6 text-[0.875rem] leading-relaxed text-slate">
             {company.phones.map((phone) => (
-              <li key={phone.href} className="pt-1 first:pt-0">
-                <span className="block text-[0.75rem] uppercase tracking-[0.08em] text-titanium">
+              <li key={phone.href}>
+                <span className="block font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-titanium">
                   {phone.region}
                 </span>
                 <a
                   href={phone.href}
-                  className="transition-colors duration-500 ease-premium hover:text-graphite"
+                  className="mt-1.5 block text-[1.0625rem] tracking-tight text-graphite transition-colors duration-400 ease-premium hover:text-ember"
                 >
                   {phone.display}
                 </a>
-                <span className="block text-[0.75rem] text-titanium">{phone.address}</span>
+                <span className="mt-1 block text-[0.8125rem] text-titanium">{phone.address}</span>
                 {/*
                   Кнопка — только у номера, где WhatsApp реально проверен и
                   работает. У второго номера whatsapp: null — ссылка на
@@ -75,7 +89,7 @@ export function Footer({ onOpenDoc }: Props) {
                     href={phone.whatsapp}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-1.5 inline-flex items-center gap-1.5 text-[0.75rem] text-slate transition-colors duration-500 ease-premium hover:text-graphite"
+                    className="mt-2.5 inline-flex min-h-[2.25rem] items-center gap-2 rounded-full border border-graphite/15 px-3.5 text-[0.8125rem] text-slate transition-colors duration-400 ease-premium hover:border-graphite/35 hover:text-graphite"
                   >
                     <WhatsAppGlyph size={14} />
                     Написать в WhatsApp
@@ -83,15 +97,15 @@ export function Footer({ onOpenDoc }: Props) {
                 )}
               </li>
             ))}
-            <li className="pt-1">
+            <li className="border-t border-graphite/[0.1] pt-6">
               <a
                 href={`mailto:${company.email}`}
-                className="transition-colors duration-500 ease-premium hover:text-graphite"
+                className="inline-flex min-h-[1.75rem] items-center transition-colors duration-400 ease-premium hover:text-ember"
               >
                 {company.email}
               </a>
+              <span className="mt-2 block text-[0.8125rem] text-titanium">{company.schedule}</span>
             </li>
-            <li>{company.schedule}</li>
           </ul>
         </div>
       </div>
@@ -103,53 +117,53 @@ export function Footer({ onOpenDoc }: Props) {
         LegalOverlay, что и раньше — просто общий колбэк вместо отдельного
         пропа на каждый документ.
       */}
-      <div className="shell mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6">
+      <div className="shell mt-14 flex flex-wrap items-center gap-x-8 gap-y-1 border-t border-graphite/[0.12] pt-8">
         <button
           type="button"
           onClick={() => onOpenDoc(aboutCompany)}
-          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
+          className="inline-flex min-h-[2.25rem] items-center text-[0.8125rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           О компании
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(paymentDelivery)}
-          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
+          className="inline-flex min-h-[2.25rem] items-center text-[0.8125rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Оплата и доставка
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(returns)}
-          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
+          className="inline-flex min-h-[2.25rem] items-center text-[0.8125rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Возврат
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(publicOffer)}
-          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
+          className="inline-flex min-h-[2.25rem] items-center text-[0.8125rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Договор оферты
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(privacyPolicy)}
-          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
+          className="inline-flex min-h-[2.25rem] items-center text-[0.8125rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Политика конфиденциальности
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(termsOfUse)}
-          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
+          className="inline-flex min-h-[2.25rem] items-center text-[0.8125rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Пользовательское соглашение
         </button>
         <button
           type="button"
           onClick={() => onOpenDoc(dataProcessingConsent)}
-          className="text-[0.75rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
+          className="inline-flex min-h-[2.25rem] items-center text-[0.8125rem] text-titanium transition-colors duration-400 ease-premium hover:text-graphite"
         >
           Согласие на обработку данных
         </button>
