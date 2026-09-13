@@ -93,9 +93,17 @@ export function Header({ onHome, onOpenSearch }: Props) {
 
   return (
     <header
+      /*
+        Плотность подложки: 85% пропускали сквозь шапку крупный тёмный
+        текст и кнопки контента — при скролле заголовок секции буквально
+        проступал сквозь навигацию и читался как наложение. Клиент показал
+        это на скриншотах («кнопка при скролле теряется, текст за белой
+        хуйнёй»). 96% + blur оставляют ощущение стекла, но контент под
+        шапкой больше не просвечивает.
+      */
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-700 ease-premium ${
         lifted
-          ? 'border-b border-graphite/[0.08] bg-porcelain/85 backdrop-blur-xl'
+          ? 'border-b border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl'
           : 'border-b border-transparent bg-transparent'
       }`}
     >

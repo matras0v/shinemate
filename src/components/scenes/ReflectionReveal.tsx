@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
+import { ChevronsLeftRight } from 'lucide-react'
 
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
@@ -220,11 +221,25 @@ export function ReflectionReveal() {
                 decoding="async"
                 className="h-full w-full object-cover"
               />
+              {/*
+                Линия раздела + компактная ручка на ней. Раньше была только
+                линия в 1px, а за «кнопку ползунка» принимали подсказку по
+                центру кадра — её и пытались тянуть. Ручка фиксированного
+                размера (40px — комфортная зона нажатия, но не «огромная
+                кнопка»), сидит ровно на границе и едет вместе с ней.
+              */}
               <span
                 aria-hidden
-                className="absolute inset-y-0 w-px bg-porcelain/70"
+                className="absolute inset-y-0 w-[2px] bg-porcelain/80 shadow-[0_0_12px_rgba(0,0,0,0.45)]"
                 style={{ left: 'var(--handle, 50%)' }}
               />
+              <span
+                aria-hidden
+                className="absolute top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-porcelain/60 bg-ink/45 text-porcelain backdrop-blur-md"
+                style={{ left: 'var(--handle, 50%)' }}
+              >
+                <ChevronsLeftRight size={17} />
+              </span>
             </div>
           )}
 
