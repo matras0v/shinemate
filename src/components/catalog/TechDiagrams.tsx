@@ -1487,7 +1487,7 @@ export function MachineExploded(data: ExplodedData) {
               <span aria-hidden className="absolute -top-6 left-1/2 h-6 w-px -translate-x-1/2 bg-ember/45" />
               {data.plateImage && (
                 <figure className="flex w-24 flex-col items-center gap-2">
-                  <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_18px_rgba(26,28,30,0.1)] ring-1 ring-graphite/[0.08]">
+                  <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_32%_28%,#FFFFFF_0%,#F4F7F7_45%,#E1E9EB_100%)] shadow-[0_10px_22px_rgba(26,28,30,0.16),inset_0_1px_1px_rgba(255,255,255,0.9)] ring-1 ring-graphite/[0.08]">
                     <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-[74%] w-[74%] object-contain" />
                   </span>
                   <figcaption className="text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">Подложка</figcaption>
@@ -1495,7 +1495,7 @@ export function MachineExploded(data: ExplodedData) {
               )}
               {data.padImage && (
                 <figure className="flex w-24 flex-col items-center gap-2">
-                  <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-porcelain shadow-[0_8px_18px_rgba(26,28,30,0.1)] ring-1 ring-graphite/[0.08]">
+                  <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_32%_28%,#FFFFFF_0%,#F4F7F7_45%,#E1E9EB_100%)] shadow-[0_10px_22px_rgba(26,28,30,0.16),inset_0_1px_1px_rgba(255,255,255,0.9)] ring-1 ring-graphite/[0.08]">
                     <img src={data.padImage} alt={data.padLabel ?? ''} className="h-[74%] w-[74%] object-contain" />
                   </span>
                   <figcaption className="text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">Круг</figcaption>
@@ -1566,7 +1566,7 @@ export function MachineExploded(data: ExplodedData) {
                   style={{ y: plateY, opacity: plateOpacity, scale: plateScale }}
                   className="flex flex-col items-center"
                 >
-                  <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_10px_22px_rgba(26,28,30,0.12)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
+                  <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_32%_28%,#FFFFFF_0%,#F4F7F7_45%,#E1E9EB_100%)] shadow-[0_12px_26px_rgba(26,28,30,0.18),inset_0_1px_1px_rgba(255,255,255,0.9)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
                     <img src={data.plateImage} alt={data.plateLabel ?? ''} className="h-[76%] w-[76%] object-contain" />
                   </span>
                   <figcaption className="mt-2 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
@@ -1579,7 +1579,7 @@ export function MachineExploded(data: ExplodedData) {
                   style={{ y: padY, opacity: padOpacity, scale: padScale }}
                   className="-mt-3 flex flex-col items-center"
                 >
-                  <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-porcelain shadow-[0_10px_22px_rgba(26,28,30,0.12)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
+                  <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_32%_28%,#FFFFFF_0%,#F4F7F7_45%,#E1E9EB_100%)] shadow-[0_12px_26px_rgba(26,28,30,0.18),inset_0_1px_1px_rgba(255,255,255,0.9)] ring-1 ring-graphite/[0.08] sm:h-24 sm:w-24">
                     <img
                       src={data.padImage}
                       alt={data.padLabel ?? ''}
@@ -2280,7 +2280,12 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
            видно, ЧЕМ именно исправляется панель. */
         className="absolute top-1/2 -translate-y-1/2"
       >
-        <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-porcelain shadow-[0_12px_30px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24 lg:h-28 lg:w-28">
+        {/* Контактная тень под диском — усиливает ощущение, что он реально едет по панели, а не наклеен. */}
+        <span
+          aria-hidden
+          className="absolute left-1/2 top-[86%] h-3 w-12 -translate-x-1/2 rounded-full bg-black/40 blur-md sm:w-16 lg:w-20"
+        />
+        <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_32%_28%,#FFFFFF_0%,#EFF3F4_45%,#D2DDDF_100%)] shadow-[0_14px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.9)] ring-1 ring-ember/25 sm:h-24 sm:w-24 lg:h-28 lg:w-28">
           <img
             src={padImage}
             alt=""

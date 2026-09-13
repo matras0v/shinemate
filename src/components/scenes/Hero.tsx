@@ -170,8 +170,16 @@ export function Hero() {
   // Кадр уходит вглубь медленнее текста — из этого рождается ощущение объёма.
   const mediaY = useTransform(scrollYProgress, [0, 1], ['0%', '14%'])
   const mediaScale = useTransform(scrollYProgress, [0, 1], [1, 1.08])
-  const copyY = useTransform(scrollYProgress, [0, 1], ['0%', '38%'])
-  const copyOpacity = useTransform(scrollYProgress, [0, 0.65], [1, 0])
+  const copyY = useTransform(scrollYProgress, [0, 0.4], ['0%', '38%'])
+  /*
+   * Раньше текст угасал до 65% скролла секции — половину пути он висел
+   * полупрозрачным поверх уже почти пустого светлого фона (кадр к тому
+   * моменту уже сместился/увеличился и не перекрывал текст снизу), и
+   * читалось это как «текст тонет в белом», а не как переход. Угасание
+   * сжато в первые 40% — тот же путь текст проходит быстрее и не
+   * зависает в неразборчивом полупрозрачном состоянии.
+   */
+  const copyOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0])
 
   return (
     <section
