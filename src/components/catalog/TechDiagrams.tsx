@@ -2209,6 +2209,28 @@ export function DefectProcess({ defects, padLabel, padImage, compoundLabel, comp
   /** Панель лака: риски слабеют, ровный блик проступает. */
   const panel = (
     <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.5rem] bg-[linear-gradient(150deg,#23262A_0%,#15171A_55%,#1E2226_100%)] sm:aspect-[16/9]">
+      {/*
+        Абстрактный видео-фон вместо плоского градиента: та же макросъёмка
+        лака с рисками, из которой берётся сама идея схемы — теперь
+        буквально видна за интерактивным слоем, а не только описана
+        словами. Условная иллюстрация принципа, а не фото конкретной
+        панели ShineMate — то же честное допущение, что и раньше у SVG.
+        При prefers-reduced-motion остаётся один статичный кадр (poster),
+        воспроизведение не запускается.
+      */}
+      {!reduced && (
+        <video
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+          src="media/defect-process-bg.mp4"
+          poster="media/defect-process-bg-poster.webp"
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden
+        />
+      )}
+      <div className="absolute inset-0 bg-[linear-gradient(150deg,rgba(35,38,42,0.35)_0%,rgba(21,23,26,0.55)_55%,rgba(30,34,38,0.4)_100%)]" />
       <svg viewBox="0 0 400 225" className="absolute inset-0 h-full w-full" role="img" aria-label="Условная схема: риски на лаке выводятся и остаётся ровное отражение">
         {/*
           Блик — мягкий градиент, а не сплошная заливка: плоское белое
