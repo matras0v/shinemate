@@ -43,7 +43,7 @@ export function ProductObject() {
             О ShineMate
           </motion.p>
           <motion.h2 variants={rise} className="h2 mt-5 max-w-[15ch]">
-            Инструмент, который держит результат
+            Полировка автомобиля становится проще
           </motion.h2>
           <motion.p variants={rise} className="lead mt-6 max-w-[46ch] text-ash">
             ShineMate выпускает полный цикл оборудования для полировки автомобиля и
