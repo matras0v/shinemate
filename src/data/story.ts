@@ -1299,7 +1299,7 @@ function padCompat(p: Product): CompatGroup[] {
     items: /только для роторных/i.test(p.lead)
       ? bySlugs(['ep820', 'ep801-g2', 'ep830'])
       : /микрофибр/i.test(p.kind)
-        ? bySlugs(['ex620', 'ex605'])
+        ? bySlugs(['ex620', 'ex620-5-15', 'ex605'])
         : bySlugs(['ep820', 'ex620']),
   })
   return groups.filter((g) => g.items.length > 0)
@@ -1831,7 +1831,7 @@ function plateCompat(p: Product): CompatGroup[] {
   const machines = /роторн/i.test(p.model) || /M14/i.test(thread)
     ? bySlugs(['ep820', 'ep801-g2', 'ep830'])
     : /эксцентриков/i.test(p.model) || /M8|5\/16/i.test(thread)
-      ? bySlugs(['ex620', 'ex605', 'ero600-g2'])
+      ? bySlugs(['ex620', 'ex620-5-15', 'ex605', 'ero600-g2'])
       : /шлифоваль/i.test(p.model)
         ? bySlugs(['es516', 'es700'])
         : []
