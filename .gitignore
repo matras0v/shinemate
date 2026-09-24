@@ -36,6 +36,7 @@ public/media/admin-products/*
 # внутренние рабочие заметки и локальная конфигурация инструмента —
 # не для публичного репозитория
 PROJECT_STATE.md
+CLIENT_ADMIN_HANDOFF.md
 .claude/
 graphify-out/
 qa-screens/

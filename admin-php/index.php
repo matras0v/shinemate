@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'status' => $status,
                 ]);
                 if (admin_write_overrides($overrides)) {
-                    header('Location: index.php?saved=' . urlencode($sku));
+                    header('Location: index.php?saved=' . urlencode($sku) . '&what=price');
                     exit;
                 }
                 $error = 'Не удалось сохранить — проверьте права на запись файла data/catalog-overrides.json на сервере.';
@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($previous !== null) {
                             admin_delete_media_file($previous);
                         }
-                        header('Location: index.php?saved=' . urlencode($sku));
+                        header('Location: index.php?saved=' . urlencode($sku) . '&what=photo');
                         exit;
                     }
                     $error = 'Фото загружено, но не удалось сохранить ссылку на него.';
@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if (admin_write_overrides($overrides)) {
                     admin_delete_media_file($old);
-                    header('Location: index.php?saved=' . urlencode($sku));
+                    header('Location: index.php?saved=' . urlencode($sku) . '&what=photo_restored');
                     exit;
                 }
                 $error = 'Не удалось сохранить изменения.';
@@ -188,7 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if (isset($_GET['saved'])) {
-    $flash = ($flash ? $flash . ' ' : '') . 'Сохранено: ' . htmlspecialchars((string) $_GET['saved'], ENT_QUOTES, 'UTF-8');
+    $what = (string)($_GET['what'] ?? 'price');
+    $label = $what === 'photo' ? 'Фото обновлено' : ($what === 'photo_restored' ? 'Фото возвращено' : 'Сохранено');
+    $flash = ($flash ? $flash . ' ' : '') . $label . ': ' . htmlspecialchars((string) $_GET['saved'], ENT_QUOTES, 'UTF-8');
 }
 
 $loggedIn = admin_is_logged_in();
@@ -196,6 +198,26 @@ $products = $loggedIn ? admin_effective_products() : [];
 $csrf = $loggedIn ? admin_csrf_token() : null;
 $diagnostics = $loggedIn ? admin_diagnostics() : [];
 $backups = $loggedIn ? admin_list_backups() : [];
+
+/*
+ * Товары сгруппированы по семейству (одна карточка каталога = несколько
+ * SKU-исполнений), чтобы клиент не перепутал, какой именно размер/цвет он
+ * правит — ровно жалоба из брифа: "не должен случайно поменять цену 4",
+ * думая что это 6"". admin_effective_products() уже отсортирован по
+ * модели+SKU (см. export-admin-catalog.mjs), поэтому исполнения одного
+ * семейства всегда идут подряд — здесь только собираем их в группы.
+ */
+$groups = [];
+foreach ($products as $p) {
+    $groups[$p['model']][] = $p;
+}
+
+/* Категории для фильтра — в порядке первого появления, без дублей. */
+$categoryList = [];
+foreach ($products as $p) {
+    $categoryList[$p['category']] = true;
+}
+$categoryList = array_keys($categoryList);
 ?>
 <!doctype html>
 <html lang="ru">
@@ -246,8 +268,16 @@ $backups = $loggedIn ? admin_list_backups() : [];
   .row { display: flex; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap; align-items: end; }
   .field { flex: 1; min-width: 140px; }
   .badge { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: #DE6A18; }
-  #search { margin-bottom: 1.25rem; }
+  .controls { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .controls #search { flex: 1; min-width: 200px; }
+  .controls #categoryFilter { width: auto; min-width: 160px; }
   .empty { text-align: center; color: #565C60; padding: 2rem 0; }
+  .family { margin-bottom: 1.25rem; }
+  .family-head { display: flex; gap: 0.75rem; align-items: center; padding: 0 0.25rem 0.6rem; }
+  .family-title { font-weight: 600; font-size: 1.0625rem; }
+  .card.in-family { margin-left: 1.5rem; border-left: 2px solid rgba(26,28,30,0.08); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .variant-label { font-weight: 600; font-size: 0.9375rem; }
+  .thumb.small { width: 32px; height: 32px; }
   .photo-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px dashed rgba(26,28,30,0.12); }
   .photo-row input[type=file] { flex: 1; min-width: 160px; }
   details.section { background: #fff; border: 1px solid rgba(26,28,30,0.1); border-radius: 0.75rem; padding: 0.25rem 1.125rem 1rem; margin-bottom: 0.75rem; }
@@ -293,65 +323,101 @@ $backups = $loggedIn ? admin_list_backups() : [];
     <?php if ($error): ?><p class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if ($flash): ?><p class="flash"><?= $flash ?><?= isset($_GET['saved']) ? ' — на сайте обновится сразу, перезагрузку страницы товара делать не нужно.' : '' ?></p><?php endif; ?>
 
-    <input type="search" id="search" placeholder="Поиск по модели или артикулу…" />
+    <div class="controls">
+      <input type="search" id="search" placeholder="Поиск по модели или артикулу…" />
+      <select id="categoryFilter">
+        <option value="">Все категории</option>
+        <?php foreach ($categoryList as $c): ?>
+          <option value="<?= htmlspecialchars(mb_strtolower($c), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($c, ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
 
     <div id="list">
       <?php if (!$products): ?>
         <p class="empty">Список товаров пуст. Проверьте, что admin-data/catalog-index.json загружен на сервер (генерируется командой npm run build).</p>
       <?php endif; ?>
-      <?php foreach ($products as $p): ?>
-        <div class="card<?= $p['overridden'] ? ' changed' : '' ?>" data-search="<?= htmlspecialchars(mb_strtolower($p['model'] . ' ' . $p['sku']), ENT_QUOTES, 'UTF-8') ?>">
-          <div class="card-head">
-            <div class="card-head-left">
-              <img class="thumb" src="../<?= htmlspecialchars($p['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" />
+      <?php foreach ($groups as $familyModel => $variants): ?>
+        <?php
+          // Семейство целиком скрывается поиском/фильтром, только если ВСЕ
+          // его исполнения не подходят — иначе, набирая артикул одного
+          // размера, пропадали бы остальные размеры того же товара.
+          $familySearch = mb_strtolower($familyModel);
+          foreach ($variants as $v) { $familySearch .= ' ' . mb_strtolower($v['sku']); }
+          $familyCategory = mb_strtolower($variants[0]['category']);
+        ?>
+        <section class="family" data-search="<?= htmlspecialchars($familySearch, ENT_QUOTES, 'UTF-8') ?>" data-category="<?= htmlspecialchars($familyCategory, ENT_QUOTES, 'UTF-8') ?>">
+          <?php if (count($variants) > 1): ?>
+            <div class="family-head">
+              <img class="thumb" src="../<?= htmlspecialchars($variants[0]['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" />
               <div>
-                <div class="category"><?= htmlspecialchars($p['category'], ENT_QUOTES, 'UTF-8') ?></div>
-                <div class="model">
-                  <?= htmlspecialchars($p['model'], ENT_QUOTES, 'UTF-8') ?>
-                  <?php if ($p['variantLabel']): ?><span class="variant"> · <?= htmlspecialchars($p['variantLabel'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                </div>
-                <div class="sku">Артикул: <?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="category"><?= htmlspecialchars($variants[0]['category'], ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="family-title"><?= htmlspecialchars($familyModel, ENT_QUOTES, 'UTF-8') ?></div>
               </div>
             </div>
-            <?php if ($p['overridden']): ?><span class="badge">Изменено вручную</span><?php endif; ?>
-          </div>
-          <form method="post" class="row">
-            <input type="hidden" name="action" value="save" />
-            <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
-            <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
-            <div class="field">
-              <label>Цена, ₽</label>
-              <input type="text" inputmode="decimal" name="price" value="<?= htmlspecialchars((string) $p['rrp'], ENT_QUOTES, 'UTF-8') ?>" required />
-            </div>
-            <div class="field">
-              <label>Наличие</label>
-              <select name="status">
-                <?php foreach (ADMIN_STATUSES as $s): ?>
-                  <option value="<?= $s ?>" <?= ($p['status'] ?? 'in_stock') === $s ? 'selected' : '' ?>>
-                    <?= htmlspecialchars(admin_status_label($s), ENT_QUOTES, 'UTF-8') ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div><button type="submit">Сохранить</button></div>
-          </form>
-
-          <form method="post" enctype="multipart/form-data" class="photo-row">
-            <input type="hidden" name="action" value="upload_image" />
-            <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
-            <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
-            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required />
-            <button type="submit" class="small secondary">Загрузить фото</button>
-          </form>
-          <?php if ($p['imageOverridden']): ?>
-            <form method="post" style="margin-top:0.4rem;">
-              <input type="hidden" name="action" value="restore_image" />
-              <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
-              <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
-              <button type="submit" class="small secondary">Вернуть фото по умолчанию</button>
-            </form>
           <?php endif; ?>
-        </div>
+          <?php foreach ($variants as $p): ?>
+            <div class="card<?= $p['overridden'] ? ' changed' : '' ?><?= count($variants) > 1 ? ' in-family' : '' ?>">
+              <div class="card-head">
+                <?php if (count($variants) === 1): ?>
+                  <div class="card-head-left">
+                    <img class="thumb" src="../<?= htmlspecialchars($p['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" />
+                    <div>
+                      <div class="category"><?= htmlspecialchars($p['category'], ENT_QUOTES, 'UTF-8') ?></div>
+                      <div class="model"><?= htmlspecialchars($p['model'], ENT_QUOTES, 'UTF-8') ?></div>
+                      <div class="sku">Артикул: <?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?></div>
+                    </div>
+                  </div>
+                <?php else: ?>
+                  <div class="card-head-left">
+                    <img class="thumb small" src="../<?= htmlspecialchars($p['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" />
+                    <div>
+                      <div class="variant-label"><?= htmlspecialchars($p['variantLabel'] ?: $p['sku'], ENT_QUOTES, 'UTF-8') ?></div>
+                      <div class="sku">Артикул: <?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?></div>
+                    </div>
+                  </div>
+                <?php endif; ?>
+                <?php if ($p['overridden']): ?><span class="badge">Изменено вручную</span><?php endif; ?>
+              </div>
+              <form method="post" class="row" data-dirty-form>
+                <input type="hidden" name="action" value="save" />
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+                <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
+                <div class="field">
+                  <label>Цена, ₽</label>
+                  <input type="text" inputmode="decimal" name="price" value="<?= htmlspecialchars((string) $p['rrp'], ENT_QUOTES, 'UTF-8') ?>" required />
+                </div>
+                <div class="field">
+                  <label>Наличие</label>
+                  <select name="status">
+                    <?php foreach (ADMIN_STATUSES as $s): ?>
+                      <option value="<?= $s ?>" <?= ($p['status'] ?? 'in_stock') === $s ? 'selected' : '' ?>>
+                        <?= htmlspecialchars(admin_status_label($s), ENT_QUOTES, 'UTF-8') ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div><button type="submit">Сохранить</button></div>
+              </form>
+
+              <form method="post" enctype="multipart/form-data" class="photo-row">
+                <input type="hidden" name="action" value="upload_image" />
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+                <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
+                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required />
+                <button type="submit" class="small secondary">Загрузить фото</button>
+              </form>
+              <?php if ($p['imageOverridden']): ?>
+                <form method="post" style="margin-top:0.4rem;">
+                  <input type="hidden" name="action" value="restore_image" />
+                  <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+                  <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
+                  <button type="submit" class="small secondary">Вернуть фото по умолчанию</button>
+                </form>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </section>
       <?php endforeach; ?>
     </div>
 
@@ -415,13 +481,37 @@ $backups = $loggedIn ? admin_list_backups() : [];
 
   <script>
     // Фильтрация на клиенте — товаров мало, отдельный запрос на сервер не нужен.
+    // Фильтруются целиком СЕМЕЙСТВА (.family), не отдельные исполнения —
+    // иначе поиск по одному артикулу прятал бы соседние размеры того же товара.
     var search = document.getElementById('search');
-    var cards = Array.prototype.slice.call(document.querySelectorAll('#list .card'));
-    search.addEventListener('input', function () {
+    var categoryFilter = document.getElementById('categoryFilter');
+    var families = Array.prototype.slice.call(document.querySelectorAll('#list .family'));
+    function applyFilter() {
       var q = search.value.trim().toLowerCase();
-      cards.forEach(function (card) {
-        card.style.display = card.dataset.search.indexOf(q) === -1 ? 'none' : '';
+      var cat = categoryFilter.value;
+      families.forEach(function (family) {
+        var matchesSearch = !q || family.dataset.search.indexOf(q) !== -1;
+        var matchesCategory = !cat || family.dataset.category === cat;
+        family.style.display = matchesSearch && matchesCategory ? '' : 'none';
       });
+    }
+    search.addEventListener('input', applyFilter);
+    categoryFilter.addEventListener('change', applyFilter);
+
+    // Предупреждение при уходе со страницы с несохранённой ценой/наличием —
+    // клиент отредактировал поле, но не нажал "Сохранить". Фото-формы сюда
+    // не входят: там нет "черновика", загрузка происходит сразу по кнопке.
+    // Сброс отметки — на submit самой этой формы (сохранение уводит со
+    // страницы через redirect, so сама форма всё равно не остаётся "грязной").
+    var dirty = false;
+    document.querySelectorAll('[data-dirty-form]').forEach(function (form) {
+      form.addEventListener('input', function () { dirty = true; });
+      form.addEventListener('submit', function () { dirty = false; });
+    });
+    window.addEventListener('beforeunload', function (e) {
+      if (!dirty) return;
+      e.preventDefault();
+      e.returnValue = '';
     });
   </script>
 

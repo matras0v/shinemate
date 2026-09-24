@@ -419,6 +419,93 @@ export function ProductPage({ product }: Props) {
               </dl>
             )}
 
+            {/*
+              Выбор исполнения — ПРЯМО в hero, рядом с ценой/артикулом, а
+              не только внизу страницы в «Что выбрать». Раньше человек мог
+              решить, что показанная цена — единственная, не долистав до
+              блока характеристик. Состояние ОДНО (selectedSku выше) —
+              переключатель здесь и блок «Что выбрать» ниже читают и пишут
+              один и тот же variant, поэтому они всегда синхронны сами по
+              себе, без отдельной обвязки.
+            */}
+            {!group && product.variants.length > 1 && (
+              <div className="mt-8 border-t border-graphite/[0.12] pt-7">
+                {showAxisChips ? (
+                  <div className="space-y-5">
+                    <div>
+                      <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+                        {product.axisLabel ?? 'Размер'}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {axis1Options.map((axis1) => (
+                          <button
+                            key={axis1}
+                            type="button"
+                            onClick={() => selectAxis1(axis1)}
+                            aria-pressed={selectedVariant?.axis1 === axis1}
+                            className={`min-h-11 min-w-11 rounded-full border px-5 text-[0.9375rem] tracking-tight transition-colors duration-300 ease-premium ${
+                              selectedVariant?.axis1 === axis1
+                                ? 'border-graphite bg-graphite text-porcelain'
+                                : 'border-graphite/20 text-graphite hover:border-graphite/45'
+                            }`}
+                          >
+                            {axis1}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {axis2Options.length > 0 && (
+                      <div>
+                        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+                          Градация
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {axis2Options.map((axis2) => (
+                            <button
+                              key={axis2}
+                              type="button"
+                              onClick={() => selectAxis2(axis2)}
+                              aria-pressed={selectedVariant?.axis2 === axis2}
+                              className={`min-h-11 rounded-full border px-5 text-[0.9375rem] tracking-tight transition-colors duration-300 ease-premium ${
+                                selectedVariant?.axis2 === axis2
+                                  ? 'border-graphite bg-graphite text-porcelain'
+                                  : 'border-graphite/20 text-graphite hover:border-graphite/45'
+                              }`}
+                            >
+                              {axis2}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
+                      Исполнение
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {product.variants.map((variant) => (
+                        <button
+                          key={variant.sku}
+                          type="button"
+                          onClick={() => setSelectedSku(variant.sku)}
+                          aria-pressed={selectedVariant?.sku === variant.sku}
+                          className={`min-h-11 rounded-full border px-5 text-left text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
+                            selectedVariant?.sku === variant.sku
+                              ? 'border-graphite bg-graphite text-porcelain'
+                              : 'border-graphite/20 text-graphite hover:border-graphite/45'
+                          }`}
+                        >
+                          {variant.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div
               className="mt-8 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-graphite/[0.12] pt-7"
             >
@@ -548,11 +635,22 @@ export function ProductPage({ product }: Props) {
           </motion.div>
 
           <motion.div {...riseProps(reduced, { y: 24, amount: 0.2 })}>
+            {/*
+              Основной выбор исполнения — уже в hero (см. блок «Размер»/
+              «Исполнение» выше по странице). Здесь — тот же выбор, но с
+              полными данными по каждой позиции сразу, для сверки: один
+              selectedSku на всю страницу, значит выбор 6" тут подсвечивает
+              6" и наверху, и наоборот.
+            */}
             <p className="eyebrow">
               {product.variants.length < 2 ? 'Артикул и РРЦ' : group ? 'Позиции в карточке' : 'Исполнения и РРЦ'}
             </p>
             <h2 className="h2 mt-6 max-w-[14ch]">
-              {product.variants.length < 2 ? 'Позиция в прайсе' : group ? 'Что это за товар' : 'Что выбрать'}
+              {product.variants.length < 2
+                ? 'Позиция в прайсе'
+                : group
+                  ? 'Что это за товар'
+                  : 'Все исполнения'}
             </h2>
 
             <div className="mt-10">
