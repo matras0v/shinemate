@@ -27,9 +27,11 @@
       значок-globus вместо логотипа: .ico на сайте не было вовсе).
     -->
     <link rel="icon" href="favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="brand/favicon-512.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="brand/favicon-180.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <link rel="manifest" href="site.webmanifest" />
     <!--
       Статический фолбэк на главную — App.tsx (setCanonical) переписывает
       href этого же тега на каждый маршрут сразу после монтирования, но
@@ -69,7 +71,7 @@
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "ShineMate Россия",
-        "alternateName": ["ShineMate", "ShineMate Russia", "Шайнмате"],
+        "alternateName": ["ShineMate", "ShineMate Russia", "Шайнмате", "Шайнмейт"],
         "url": "https://shinemate-russia.ru/",
         "logo": "https://shinemate-russia.ru/brand/logo-shinemate.webp",
         "description": "Официальный дистрибьютор ShineMate в России."
@@ -80,7 +82,7 @@
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "ShineMate Россия",
-        "alternateName": ["ShineMate", "ShineMate Russia", "Шайнмате"],
+        "alternateName": ["ShineMate", "ShineMate Russia", "Шайнмате", "Шайнмейт"],
         "url": "https://shinemate-russia.ru/",
         "inLanguage": "ru"
       }

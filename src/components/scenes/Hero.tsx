@@ -246,19 +246,31 @@ export function Hero() {
               привязана к левому краю всей секции и на lg заезжала прямо на
               текстовую колонку и CTA-кнопки под ней. Внутри контейнера фото
               она всегда остаётся над снимком, где бы текст ни заканчивался. */}
-          <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1.5 rounded-full bg-porcelain p-1.5 shadow-[0_4px_16px_rgba(26,28,30,0.14)] lg:bottom-8 lg:left-8">
+          {/*
+            Таблетка навигации карусели НИКОГДА не гаснет по таймеру — нет
+            и не было opacity-анимации, завязанной на время (проверено на
+            реальном проде: стрелки/точки остаются полностью непрозрачными
+            и через 8+ секунд бездействия). Размер кнопок здесь всё же
+            увеличен под палец: h-8 (32px) на десктопе достаточно для
+            мыши, но меньше рекомендуемых ~44px для тач-цели — теперь это
+            есть по умолчанию (мобильный кейс) и уменьшается только от sm.
+          */}
+          <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1 rounded-full bg-porcelain p-1.5 shadow-[0_4px_16px_rgba(26,28,30,0.14)] sm:gap-1.5 lg:bottom-8 lg:left-8">
             <button
               type="button"
               onClick={() => go(-1)}
               aria-label="Предыдущий слайд"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain sm:h-8 sm:w-8"
             >
               <ChevronLeft size={16} />
             </button>
 
             {/* Индикаторы — не декоративные точки: каждая переключает слайд
-                и сбрасывает таймер автопрокрутки, как и стрелки. */}
-            <div className="flex items-center gap-1.5 px-1.5">
+                и сбрасывает таймер автопрокрутки, как и стрелки. Область
+                клика (h-11/w-8) заметно больше видимой точки — то же
+                соотношение, что и у стрелок, тач-цель не должна быть
+                размером с саму точку. */}
+            <div className="flex items-center px-1">
               {SLIDES.map((s, i) => (
                 <button
                   key={s.slug}
@@ -266,7 +278,7 @@ export function Hero() {
                   onClick={() => goTo(i)}
                   aria-label={`Слайд ${i + 1}: ${s.lines.join(' ')}`}
                   aria-current={i === index}
-                  className="group flex h-6 w-4 items-center justify-center"
+                  className="group flex h-11 w-8 items-center justify-center sm:h-6 sm:w-4"
                 >
                   <span
                     className={`block h-1.5 rounded-full transition-all duration-500 ease-premium ${
@@ -283,7 +295,7 @@ export function Hero() {
               type="button"
               onClick={() => go(1)}
               aria-label="Следующий слайд"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain sm:h-8 sm:w-8"
             >
               <ChevronRight size={16} />
             </button>

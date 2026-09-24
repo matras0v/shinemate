@@ -14,7 +14,11 @@ function admin_start_session(): void
     session_name(SESSION_NAME);
     session_set_cookie_params([
         'lifetime' => 0,
-        'path' => '/admin/',
+        // Путь cookie должен буквально совпадать с тем, на каком URL эта
+        // папка развёрнута на сервере (см. ADMIN_URL_PATH ниже и раздел
+        // про скрытый путь /admin в PROJECT_STATE) — иначе браузер просто
+        // не пришлёт cookie обратно и сессия не заработает.
+        'path' => ADMIN_URL_PATH,
         'httponly' => true,
         'secure' => $secure,
         // Strict, не Lax: у /admin нет сценария, где вход по ссылке с чужого
@@ -42,9 +46,34 @@ function admin_client_ip(): string
     return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 }
 
+/**
+ * Токен, который меняется при каждой смене пароля (см. admin_change_
+ * password). Создаётся при первом обращении, если файла ещё нет.
+ */
+function admin_cred_version(): string
+{
+    if (is_file(CRED_VERSION_FILE)) {
+        $v = trim((string) file_get_contents(CRED_VERSION_FILE));
+        if ($v !== '') {
+            return $v;
+        }
+    }
+    $v = bin2hex(random_bytes(16));
+    file_put_contents(CRED_VERSION_FILE, $v, LOCK_EX);
+    return $v;
+}
+
 function admin_is_logged_in(): bool
 {
     if (empty($_SESSION['admin_authed'])) {
+        return false;
+    }
+    // Сессия создана ДО последней смены пароля — считаем её недействительной,
+    // даже если по времени бездействия она ещё не истекла. Иначе смена
+    // пароля (в т.ч. после подозрения на компрометацию) не отключала бы
+    // никакую другую уже открытую сессию, кроме той вкладки, где его меняли.
+    if (($_SESSION['cred_version'] ?? null) !== admin_cred_version()) {
+        admin_logout();
         return false;
     }
     // Неактивность дольше SESSION_IDLE_SECONDS — тихий логаут: открытая
@@ -182,6 +211,7 @@ function admin_login(string $password): bool
     session_regenerate_id(true);
     $_SESSION['admin_authed'] = true;
     $_SESSION['last_activity'] = time();
+    $_SESSION['cred_version'] = admin_cred_version();
     admin_clear_failed_logins();
     return true;
 }
@@ -241,5 +271,14 @@ function admin_change_password(string $current, string $new): ?string
         @unlink($tmp);
         return 'Не удалось заменить config.php — проверьте права на запись в папку admin/.';
     }
+
+    // Новый токен версии — любая другая уже открытая сессия (включая
+    // потенциально угнанную) перестаёт быть валидной со следующего же
+    // запроса. Текущую сессию сразу переводим на новый токен, иначе она
+    // отключила бы сама себя же следующим действием.
+    $newVersion = bin2hex(random_bytes(16));
+    file_put_contents(CRED_VERSION_FILE, $newVersion, LOCK_EX);
+    $_SESSION['cred_version'] = $newVersion;
+
     return null;
 }

@@ -6,18 +6,23 @@
   Require all denied
 </FilesMatch>
 
-# login-attempts.json и backups/ — служебные файлы, не для веб-доступа.
-<FilesMatch "^login-attempts\.json$">
+# login-attempts.json, cred-version.txt и backups/ — служебные файлы,
+# не для веб-доступа.
+<FilesMatch "^(login-attempts\.json|cred-version\.txt)$">
   Require all denied
 </FilesMatch>
 <IfModule mod_alias.c>
-  RedirectMatch 404 ^/admin/backups/
+  # Путь здесь ДОЛЖЕН совпадать с реальным путём развёртывания этой папки
+  # на сервере (см. ADMIN_URL_PATH в config.php) — RedirectMatch сверяет
+  # полный URL от корня сайта, а не путь относительно этого .htaccess.
+  # Если папку переносят на другой путь, эту строку нужно поменять вместе.
+  RedirectMatch 404 ^/sm-panel-9x4k7q/backups/
 </IfModule>
 
 Options -Indexes -MultiViews
 
-# Явно, а не полагаясь на дефолт хостинга: /admin/ (без имени файла)
-# должен открывать именно index.php.
+# Явно, а не полагаясь на дефолт хостинга: корень этой папки (без имени
+# файла) должен открывать именно index.php.
 DirectoryIndex index.php
 
 # Страница входа/управления каталогом не должна попадать в индекс поиска —

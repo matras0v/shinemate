@@ -42,6 +42,14 @@ function admin_handle_image_upload(array $file): array
     if (!in_array($type, $allowed, true)) {
         return [null, 'Разрешены только JPEG, PNG и WEBP.'];
     }
+    // Защита от "decompression bomb": getimagesize() читает только заголовок
+    // (дёшево), а imagecreatefromstring() ниже реально распаковывает пиксели
+    // в память — файл в несколько КБ с заголовком 40000×40000 попытался бы
+    // выделить гигабайты ОЗУ. Проверяем размеры ДО декодирования.
+    [$width, $height] = $info;
+    if ($width * $height > 40_000_000) {
+        return [null, 'Слишком большое разрешение изображения.'];
+    }
     if (!function_exists('imagecreatefromstring')) {
         return [null, 'На сервере недоступно расширение GD — загрузка фото невозможна.'];
     }

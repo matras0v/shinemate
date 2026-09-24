@@ -24,6 +24,9 @@ api-php/data/*.json
 admin-php/backups/
 admin-php/media-uploads/
 admin-php/login-attempts.json
+admin-php/cred-version.txt
+public/media/admin-products/*
+!public/media/admin-products/.htaccess
 
 # редакторские и системные артефакты
 *.log

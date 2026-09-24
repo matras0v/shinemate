@@ -158,8 +158,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!admin_csrf_check($_POST['csrf'] ?? null)) {
             $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
         } else {
-            $body = "Тестовое письмо из панели /admin.\nВремя: " . date('Y-m-d H:i:s') . "\nХост: " . (string)($_SERVER['HTTP_HOST'] ?? '—');
-            if (admin_send_mail(CONTACT_TO, 'Тестовое письмо — ShineMate Russia /admin', $body)) {
+            $body = "Тестовое письмо из панели управления каталогом.\nВремя: " . date('Y-m-d H:i:s') . "\nХост: " . (string)($_SERVER['HTTP_HOST'] ?? '—');
+            if (admin_send_mail(CONTACT_TO, 'Тестовое письмо — панель управления ShineMate Russia', $body)) {
                 $flash = 'Тестовое письмо отправлено на ' . htmlspecialchars(CONTACT_TO, ENT_QUOTES, 'UTF-8') . '. Проверьте папку "Входящие"/"Спам".';
             } else {
                 $error = 'mail() вернула ошибку — письмо не отправлено. Возможно, на хостинге не настроена отправка почты; обратитесь в поддержку REG.RU.';
@@ -392,7 +392,7 @@ $backups = $loggedIn ? admin_list_backups() : [];
 
     <h2>Смена пароля</h2>
     <details class="section">
-      <summary>Сменить пароль входа в /admin</summary>
+      <summary>Сменить пароль входа в панель управления</summary>
       <form method="post" autocomplete="off">
         <input type="hidden" name="action" value="change_password" />
         <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
