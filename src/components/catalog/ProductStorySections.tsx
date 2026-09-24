@@ -18,6 +18,7 @@ import {
   SeriesRow,
   VariantPicker,
   SizeScale,
+  FeatureGrid,
   SpeedDial,
   StrokeScale,
   VelcroWear,
@@ -216,7 +217,7 @@ function Diagram({
     case 'orbit':
       return <OrbitPrinciple orbit={diagram.orbit} dark={dark} />
     case 'speed':
-      return <SpeedDial min={diagram.min} max={diagram.max} unit={diagram.unit} />
+      return <SpeedDial min={diagram.min} max={diagram.max} unit={diagram.unit} levels={diagram.levels} />
     case 'power':
       return (
         <PowerBar
@@ -279,6 +280,8 @@ function Diagram({
           motionNote={diagram.motionNote}
         />
       )
+    case 'features':
+      return <FeatureGrid items={diagram.items} />
     case 'process':
       return (
         <DefectProcess

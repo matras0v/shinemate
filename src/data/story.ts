@@ -90,7 +90,7 @@ export const POLISH_STAGES: PolishStage[] = [
 export type SceneDiagram =
   | { kind: 'rotary'; rpm?: string }
   | { kind: 'orbit'; orbit?: string }
-  | { kind: 'speed'; min: number; max: number; unit: string }
+  | { kind: 'speed'; min: number; max: number; unit: string; levels?: number[] }
   | { kind: 'power'; rated: number; peak?: number; unit: string; family?: { model: string; watts: number }[]; model?: string }
   | { kind: 'mount'; items: { src: string; label: string; note: string }[] }
   | { kind: 'battery'; platform: string; capacity?: string }
@@ -207,6 +207,14 @@ export type SceneDiagram =
       to: string
       items: { slug: string; href: string; label: string; note: string; image: string; active: boolean }[]
     }
+  /*
+   * Простая сетка «пункт → пояснение». Используется для того, что не
+   * сводится ни к диаграмме, ни к цифре из прайса — сфер применения,
+   * эргономики и подобных фактов, подтверждённых официальным материалом
+   * по конкретной модели (Product.applications / Product.ergonomics).
+   * Нет данных у товара — сцена просто не строится, не заглушка.
+   */
+  | { kind: 'features'; items: { label: string; note: string }[] }
 
 /** Крупная сцена: заголовок, объяснение и — если есть — реальная цифра из прайса. */
 export type StoryScene = {
@@ -608,7 +616,7 @@ function machineScenes(p: Product): StoryScene[] {
       title: 'Диапазон под задачу, а не одна скорость',
       body:
         'Нижние обороты — разгон пасты и работа по кромкам, где важно не сжечь лак. Верхние — съём и вывод глянца на плоскостях. Регулятор позволяет держать одну и ту же скорость всю смену, а не подбирать её заново на каждой панели.',
-      diagram: { kind: 'speed', ...rng },
+      diagram: { kind: 'speed', ...rng, levels: p.speedLevels },
     })
   }
 
@@ -718,6 +726,24 @@ function machineScenes(p: Product): StoryScene[] {
       body:
         'Кабель рассчитан так, чтобы обойти автомобиль по кругу от одной розетки и не тянуть удлинитель через пост.',
       metric: { value: cable, caption: 'Кабель' },
+    })
+  }
+
+  // 09. Эргономика — только там, где вендор прямо подтвердил факты по этой модели.
+  if (p.ergonomics?.length) {
+    scenes.push({
+      title: 'Корпус рассчитан на длинную смену',
+      body: 'Не общие слова про удобство, а то, что производитель заявляет именно для этой модели.',
+      diagram: { kind: 'features', items: p.ergonomics },
+    })
+  }
+
+  // 10. Сферы применения — только там, где вендор публикует это для конкретной модели.
+  if (p.applications?.length) {
+    scenes.push({
+      title: 'Где реально работает эта машинка',
+      body: 'Сайт продаёт её для автомобиля, но конструкция не привязана только к кузову — производитель прямо указывает это для данной модели.',
+      diagram: { kind: 'features', items: p.applications },
     })
   }
 

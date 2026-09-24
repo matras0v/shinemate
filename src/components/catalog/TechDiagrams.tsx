@@ -231,16 +231,34 @@ const polar = (cx: number, cy: number, r: number, deg: number) => {
  * промежуточными значениями. Точки кликабельны — это не декоративная
  * шкала, а способ увидеть, что диапазон делает в работе.
  */
-export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: string }) {
+export function SpeedDial({
+  min,
+  max,
+  unit,
+  levels,
+}: {
+  min: number
+  max: number
+  unit: string
+  /**
+   * Реальные позиции регулятора, если управление ступенчатое (например,
+   * 6-позиционный диск у EP830 — подтверждено официальной страницей
+   * модели). Без этого поля шкала остаётся условной 4-точечной
+   * интерполяцией диапазона, как и раньше.
+   */
+  levels?: number[]
+}) {
   const reduced = useReducedMotion()
-  const steps = 4
-  const values = Array.from({ length: steps }, (_, i) => Math.round(min + ((max - min) * i) / (steps - 1)))
-  const notes = [
-    'Разгон пасты, работа по кромкам',
-    'Основная коррекция на панели',
-    'Съём на плоскостях',
-    'Вывод глянца и производительность',
-  ]
+  const steps = levels?.length ?? 4
+  const values = levels ?? Array.from({ length: steps }, (_, i) => Math.round(min + ((max - min) * i) / (steps - 1)))
+  const notes = levels
+    ? Array.from({ length: steps }, () => 'Фиксированные позиции регулятора — не плавная шкала')
+    : [
+        'Разгон пасты, работа по кромкам',
+        'Основная коррекция на панели',
+        'Съём на плоскостях',
+        'Вывод глянца и производительность',
+      ]
   const [active, setActive] = useState(reduced ? steps - 1 : 0)
 
   /*
@@ -348,6 +366,33 @@ export function SpeedDial({ min, max, unit }: { min: number; max: number; unit: 
       </div>
       <p className="mt-4 text-center text-[0.9375rem] leading-relaxed text-slate">{notes[active]}</p>
     </div>
+  )
+}
+
+/*
+ * ─────────────────────── Пункт → пояснение (features) ───────────────────────
+ * Сферы применения, эргономика и подобные подтверждённые факты по
+ * конкретной модели — не диаграмма и не цифра из прайса, просто список,
+ * оформленный в общем визуальном языке страницы.
+ */
+export function FeatureGrid({ items }: { items: { label: string; note: string }[] }) {
+  const reduced = useReducedMotion()
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {items.map((item, i) => (
+        <motion.li
+          key={item.label}
+          initial={reduced ? undefined : { opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
+          className="rounded-2xl border border-graphite/[0.12] bg-porcelain p-5"
+        >
+          <p className="text-[0.9375rem] font-medium tracking-tight text-graphite">{item.label}</p>
+          <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-slate">{item.note}</p>
+        </motion.li>
+      ))}
+    </ul>
   )
 }
 
