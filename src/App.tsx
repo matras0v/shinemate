@@ -30,7 +30,7 @@ import { routePath, useLinkInterceptor, useRoute } from './lib/router'
 const SITE_ORIGIN = 'https://shinemate-russia.ru'
 
 const DEFAULT_DESCRIPTION =
-  'ShineMate — роторные и эксцентриковые полировальные машинки, шлифовальное и аккумуляторное оборудование для детейлинга. Официальный дистрибьютор ShineMate в России.'
+  'ShineMate Россия — полировальное оборудование: роторные и эксцентриковые машинки, круги и пасты для детейлинга. Официальный дистрибьютор ShineMate в России.'
 
 /**
  * Как категория реально ищется живым человеком — не выдуманные факты, а
@@ -200,7 +200,7 @@ export default function App() {
               ? 'Контакты ShineMate'
               : route.name === 'wholesale'
                 ? 'Оптовикам — ShineMate'
-                : 'ShineMate — профессиональное полировальное оборудование'
+                : 'ShineMate Россия — оборудование для полировки автомобилей'
       setMetaDescription(DEFAULT_DESCRIPTION)
       setJsonLd('ld-breadcrumb', null)
       setJsonLd('ld-product', null)
