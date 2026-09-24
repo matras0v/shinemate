@@ -16,7 +16,7 @@
   # на сервере (см. ADMIN_URL_PATH в config.php) — RedirectMatch сверяет
   # полный URL от корня сайта, а не путь относительно этого .htaccess.
   # Если папку переносят на другой путь, эту строку нужно поменять вместе.
-  RedirectMatch 404 ^/sm-panel-9x4k7q/backups/
+  RedirectMatch 404 ^/sm-gkd2tpg4qp/backups/
 </IfModule>
 
 Options -Indexes -MultiViews
