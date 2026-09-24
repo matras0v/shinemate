@@ -1,0 +1,55 @@
+# SPA-фолбэк для Apache (REG.RU shared hosting).
+#
+# Сайт — клиентский React-роутер (src/lib/router.ts): единственный
+# реальный HTML-файл — index.html, дальше JS сам разбирает
+# location.pathname и рисует нужный маршрут. На GitHub Pages это решал
+# трюк с 404.html (см. .github/workflows/deploy.yml); на Apache для
+# этого есть mod_rewrite — прямой переход на глубокий URL вроде
+# /catalog/rotary/ep830 или обновление страницы на нём должны отдавать
+# index.html с кодом 200, а не 404 от Apache.
+#
+# Настоящие файлы (картинки, JS, CSS, шрифты) отдаются как обычно —
+# правило ниже подменяет ТОЛЬКО те запросы, которым не соответствует
+# ни файл, ни папка на диске.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ── Один канонический хост: https://shinemate-russia.ru (без www) ──
+  #
+  # На проверке до правки http/https и www/без-www отдавали ОДИНАКОВЫЙ
+  # контент 200 OK на всех 4 комбинациях — с точки зрения поисковика это
+  # четыре дубля одной страницы. Правила ниже сводят всё к одному хосту.
+  #
+  # X-Forwarded-Proto в условии — на REG.RU перед Apache стоит nginx
+  # (see итоговый отчёт), и терминация TLS может происходить на нём: без
+  # этого условия при неверной настройке проксирования %{HTTPS} на
+  # Apache всегда читался бы как "off", и редирект зациклился бы
+  # (https → апстрим по http → редирект на https → …). Если после
+  # загрузки http:// НЕ редиректит на https — значит nginx не
+  # прокидывает этот заголовок, и правило ниже нужно поменять на
+  # безусловное "RewriteCond %{HTTPS} off" (без второй строки).
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://shinemate-russia.ru%{REQUEST_URI} [L,R=301]
+
+  RewriteCond %{HTTP_HOST} ^www\.shinemate-russia\.ru$ [NC]
+  RewriteRule ^ https://shinemate-russia.ru%{REQUEST_URI} [L,R=301]
+
+  # Уже запрошен сам index.html — ничего не делать.
+  RewriteRule ^index\.html$ - [L]
+
+  # Есть такой файл или папка на диске — отдать как есть (картинки, JS, CSS, шрифты, favicon и т.д.).
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Иначе — это маршрут SPA: отдать index.html, роутер разберёт путь сам.
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# На случай, если mod_rewrite на хостинге отключён: 404 от Apache
+# отдаёт тот же index.html, а не пустую страницу ошибки хостинга.
+# Код ответа останется 404, но контент будет рабочим — тот же трюк,
+# что и на GitHub Pages.
+ErrorDocument 404 /index.html

@@ -1,0 +1,13 @@
+# Только index.php должен быть точкой входа — остальные .php-файлы
+# сами себя защищают константой SHINEMATE_ADMIN_BOOTSTRAP (403 при
+# прямом обращении), но запрет на уровне сервера — вторая, независимая
+# линия защиты на случай, если PHP-обработчик когда-нибудь отключат.
+<FilesMatch "^(config|auth|catalog)\.php$">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes -MultiViews
+
+# Явно, а не полагаясь на дефолт хостинга: /admin/ (без имени файла)
+# должен открывать именно index.php.
+DirectoryIndex index.php

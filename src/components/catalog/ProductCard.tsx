@@ -154,7 +154,13 @@ export function ProductCard({ product, index }: Props) {
             <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
               {multi ? `РРЦ от · ${variantsLabel(product.variants.length)}` : 'РРЦ'}
             </p>
-            <p className="mt-1.5 truncate text-[1.25rem] tracking-tight">{formatPriceOrInquire(price)}</p>
+            <p className="mt-1.5 truncate text-[1.25rem] tracking-tight">
+              {defaultVariant?.status === 'on_request' ? 'По запросу' : formatPriceOrInquire(price)}
+            </p>
+            {/* Задаётся только через /admin — у остальных карточек ничего не меняется. */}
+            {defaultVariant?.status === 'out_of_stock' && (
+              <p className="mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-ember">Нет в наличии</p>
+            )}
           </div>
           {/* Всегда видимая стрелка — сигнал «нажми, откроется подробнее», не завязанный на hover. */}
           <span

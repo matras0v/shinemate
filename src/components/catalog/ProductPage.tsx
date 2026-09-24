@@ -423,11 +423,25 @@ export function ProductPage({ product }: Props) {
               className="mt-8 flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-graphite/[0.12] pt-7"
             >
               <p className="text-[clamp(2rem,1.6rem+1.2vw,2.75rem)] leading-none tracking-tight">
-                {selectedVariant ? formatPrice(selectedVariant.rrp) : '—'}
+                {selectedVariant
+                  ? selectedVariant.status === 'on_request'
+                    ? 'Цена по запросу'
+                    : formatPrice(selectedVariant.rrp)
+                  : '—'}
               </p>
               <p className="font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-titanium">
-                {priceNote}
+                {selectedVariant?.status === 'on_request' ? 'Уточняйте при заявке' : priceNote}
               </p>
+              {/*
+                Показывается только когда статус реально выставлен через
+                /admin — у остальных позиций status не задан, и страница
+                выглядит ровно как раньше.
+              */}
+              {selectedVariant?.status === 'out_of_stock' && (
+                <p className="w-full font-mono text-[0.75rem] uppercase tracking-[0.1em] text-ember">
+                  Временно нет в наличии
+                </p>
+              )}
               <p className="w-full font-mono text-[0.8125rem] tracking-tight text-slate">
                 Артикул: {selectedVariant?.sku}
               </p>

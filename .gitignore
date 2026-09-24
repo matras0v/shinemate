@@ -8,6 +8,17 @@ assets/raw
 .env.local
 .env.*.local
 
+# реальный пароль /admin (bcrypt-хеш) — шаблон см. admin-php/config.example.php
+admin-php/config.php
+
+# готовые ZIP-пакеты для загрузки на хостинг — собираются локально, не в git
+*.zip
+
+# генерируются заново при каждой сборке (npm run build) — как dist,
+# не нужны в git, иначе диффы на каждое изменение каталога
+public/sitemap.xml
+public/admin-data/
+
 # редакторские и системные артефакты
 *.log
 .vscode
