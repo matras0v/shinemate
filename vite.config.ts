@@ -1,15 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   plugins: [react()],
-  // Сайт публикуется на GitHub Pages как проектный сайт репозитория —
-  // https://matras0v.github.io/shinemate/ — поэтому все ассеты и роуты
-  // должны резолвиться относительно этого подпути, а не корня домена.
-  // В dev-режиме подпути нет: Vite поднимает сервер на "/", поведение не
-  // меняется. index.html и router.ts читают этот же base через %BASE_URL%
-  // и import.meta.env.BASE_URL соответственно — один источник истины.
-  base: command === 'build' ? '/shinemate/' : '/',
+  /*
+   * Сайт продолжает деплоиться через GitHub Pages (тот же workflow), но
+   * теперь на клиентский домен, подключённый как custom domain к этому
+   * же Pages-проекту — GitHub при этом отдаёт содержимое с корня домена
+   * ("/"), а не из-под /shinemate/, как было раньше на голом
+   * matras0v.github.io/shinemate/. Поэтому base — "/" и в dev, и в
+   * production: раньше здесь было два разных значения именно из-за
+   * подпути /shinemate/, которого на custom domain больше нет.
+   * index.html и router.ts читают этот же base через %BASE_URL% и
+   * import.meta.env.BASE_URL соответственно — один источник истины,
+   * их менять не нужно.
+   */
+  base: '/',
   // dist не должен попадать в watcher: сборка во время работы dev-сервера
   // иначе вызывает лишние перезагрузки страницы.
   server: { watch: { ignored: ['**/dist/**', '**/assets/raw/**'] } },
@@ -17,4 +23,4 @@ export default defineConfig(({ command }) => ({
   // /catalog/<раздел> открывается напрямую и переживает перезагрузку.
   appType: 'spa',
   build: { target: 'es2020', assetsInlineLimit: 2048 },
-}))
+})

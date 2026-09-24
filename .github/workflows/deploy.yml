@@ -41,7 +41,7 @@ jobs:
       - name: SPA fallback for GitHub Pages
         # У GitHub Pages нет server-side rewrite для client-side роутинга.
         # 404.html — это index.html же: любой прямой переход на глубокий
-        # роут (например /shinemate/catalog/plates) или refresh на нём
+        # роут (например /catalog/plates) или refresh на нём
         # получает тот же HTML-шелл, который сам React-роутер разбирает по
         # location.pathname. .nojekyll отключает обработку Jekyll, которая
         # иначе могла бы тронуть папки, начинающиеся с "_" или ".".
