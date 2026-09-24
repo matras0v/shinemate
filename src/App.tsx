@@ -24,7 +24,10 @@ import { ScrollProgress } from './components/ui/ScrollProgress'
 import { categories, categoryTitle, products } from './data/catalog'
 import { dataProcessingConsent, privacyPolicy, type LegalDocument } from './data/legal'
 import { LeadProvider } from './lib/leadContext'
-import { useLinkInterceptor, useRoute } from './lib/router'
+import { routePath, useLinkInterceptor, useRoute } from './lib/router'
+
+/** Продакшен-домен — единственный, на который должны указывать canonical/JSON-LD/OG. */
+const SITE_ORIGIN = 'https://shinemate-russia.ru'
 
 const DEFAULT_DESCRIPTION =
   'ShineMate — роторные и эксцентриковые полировальные машинки, шлифовальное и аккумуляторное оборудование для детейлинга. Официальный дистрибьютор ShineMate в России.'
@@ -58,6 +61,38 @@ function setMetaDescription(content: string) {
   document.querySelector('meta[name="description"]')?.setAttribute('content', content)
 }
 
+/**
+ * Canonical на продакшен-домен для КАЖДОГО маршрута — Google рендерит
+ * SPA и учитывает тег, проставленный уже после загрузки (в отличие от
+ * OG-превью в мессенджерах, которые JS не выполняют и видят только
+ * статичный index.html — поэтому OG-теги ниже остаются общими на весь
+ * сайт, а не по разделу: без серверного рендеринга честно сделать их
+ * per-page нельзя, не выдавая одно за другое).
+ */
+function setCanonical(path: string) {
+  let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'canonical'
+    document.head.appendChild(link)
+  }
+  link.href = `${SITE_ORIGIN}${path === '/' ? '' : path}`
+}
+
+/** JSON-LD по id тега — null убирает тег, если для маршрута он не применим. */
+function setJsonLd(id: string, data: object | null) {
+  const existing = document.getElementById(id)
+  if (!data) {
+    existing?.remove()
+    return
+  }
+  const script = existing instanceof HTMLScriptElement ? existing : document.createElement('script')
+  script.id = id
+  script.type = 'application/ld+json'
+  script.textContent = JSON.stringify(data)
+  if (!existing) document.head.appendChild(script)
+}
+
 export default function App() {
   const [route] = useRoute()
   useLinkInterceptor()
@@ -73,6 +108,8 @@ export default function App() {
   // машинка для полировки» или конкретную модель — с одним тегом на сайт
   // ни один раздел не мог ответить на конкретный запрос точнее остальных.
   useEffect(() => {
+    setCanonical(routePath(route))
+
     if (route.name === 'catalog') {
       const category = route.category === 'all' ? undefined : categories.find((c) => c.id === route.category)
       document.title = category ? `${category.title} ShineMate — каталог` : 'Каталог ShineMate'
@@ -81,13 +118,77 @@ export default function App() {
           ? `${category.title} ShineMate: ${CATEGORY_SEARCH_PHRASE[category.id] ?? category.title.toLowerCase()}. ${category.subtitle} Официальный дистрибьютор ShineMate в России.`
           : DEFAULT_DESCRIPTION,
       )
+      setJsonLd(
+        'ld-breadcrumb',
+        category
+          ? {
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'ShineMate', item: SITE_ORIGIN },
+                { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${SITE_ORIGIN}/catalog` },
+                { '@type': 'ListItem', position: 3, name: category.title, item: `${SITE_ORIGIN}/catalog/${category.id}` },
+              ],
+            }
+          : {
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'ShineMate', item: SITE_ORIGIN },
+                { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${SITE_ORIGIN}/catalog` },
+              ],
+            },
+      )
+      setJsonLd('ld-product', null)
     } else if (route.name === 'product') {
       if (productForRoute) {
         document.title = `${productForRoute.model} — ${categoryTitle(productForRoute.category)} ShineMate`
         setMetaDescription(truncate(`${productForRoute.model} (${productForRoute.kind}) ShineMate. ${productForRoute.lead}`, 300))
+
+        const catTitle = categoryTitle(productForRoute.category)
+        setJsonLd('ld-breadcrumb', {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'ShineMate', item: SITE_ORIGIN },
+            { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${SITE_ORIGIN}/catalog` },
+            { '@type': 'ListItem', position: 3, name: catTitle, item: `${SITE_ORIGIN}/catalog/${productForRoute.category}` },
+            { '@type': 'ListItem', position: 4, name: productForRoute.model, item: `${SITE_ORIGIN}${routePath(route)}` },
+          ],
+        })
+
+        // Offer — только когда есть реальная фиксированная цена. У
+        // позиции «по запросу» (см. /admin, src/lib/overrides.ts)
+        // числовой цены не существует в природе — не подставляем
+        // выдуманную offers-цену просто чтобы схема была «полнее».
+        const variant = productForRoute.variants[0]
+        const offers =
+          variant && variant.status !== 'on_request'
+            ? {
+                '@type': 'Offer',
+                priceCurrency: 'RUB',
+                price: variant.rrp,
+                availability:
+                  variant.status === 'out_of_stock' ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+                url: `${SITE_ORIGIN}${routePath(route)}`,
+              }
+            : undefined
+        setJsonLd('ld-product', {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: productForRoute.model,
+          sku: variant?.sku,
+          category: catTitle,
+          description: productForRoute.lead,
+          image: `${SITE_ORIGIN}/${productForRoute.image}`,
+          brand: { '@type': 'Brand', name: 'ShineMate' },
+          ...(offers ? { offers } : {}),
+        })
       } else {
         document.title = 'ShineMate'
         setMetaDescription(DEFAULT_DESCRIPTION)
+        setJsonLd('ld-breadcrumb', null)
+        setJsonLd('ld-product', null)
       }
     } else {
       document.title =
@@ -101,6 +202,8 @@ export default function App() {
                 ? 'Оптовикам — ShineMate'
                 : 'ShineMate — профессиональное полировальное оборудование'
       setMetaDescription(DEFAULT_DESCRIPTION)
+      setJsonLd('ld-breadcrumb', null)
+      setJsonLd('ld-product', null)
     }
   }, [route, productForRoute])
 

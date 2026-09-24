@@ -23,6 +23,12 @@
     <link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="brand/favicon-512.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="brand/favicon-180.png" />
+    <!--
+      Статический фолбэк на главную — App.tsx (setCanonical) переписывает
+      href этого же тега на каждый маршрут сразу после монтирования, но
+      до первого рендера React здесь должно быть хоть что-то валидное.
+    -->
+    <link rel="canonical" href="https://shinemate-russia.ru/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ru_RU" />
@@ -33,16 +39,41 @@
     />
     <!--
       Абсолютный URL: OG-краулеры не всегда учитывают <base> или
-      относительные пути. TODO при подключении клиентского домена:
-      заменить оба адреса ниже на https://<домен>/ и
-      https://<домен>/media/hero-1280.webp — сейчас держат старый
-      matras0v.github.io/shinemate/, который после настройки custom
-      domain в GitHub Pages будет отдавать 301 на новый домен (см.
-      финальный отчёт), но это временное решение, а не корректный OG.
+      относительные пути. ВАЖНО: OG-теги здесь общие на весь сайт, а не
+      по разделу — мессенджеры/соцсети не выполняют JS и видят только
+      этот статичный HTML, поэтому честный per-page OG потребовал бы
+      серверного рендеринга, которого у сайта (чистый SPA) нет. Ссылка
+      всегда ведёт на главную независимо от того, с какой страницы
+      сайта её расшарили.
     -->
-    <meta property="og:url" content="https://matras0v.github.io/shinemate/" />
-    <meta property="og:image" content="https://matras0v.github.io/shinemate/media/hero-1280.webp" />
+    <meta property="og:url" content="https://shinemate-russia.ru/" />
+    <meta property="og:image" content="https://shinemate-russia.ru/media/hero-1280.webp" />
     <meta name="twitter:card" content="summary_large_image" />
+
+    <!--
+      Organization + WebSite — верны на любой странице сайта, поэтому
+      статичные, в отличие от BreadcrumbList/Product ниже (те собирает
+      React в App.tsx под конкретный маршрут — Google их дорендеривает
+      через JS, см. комментарий у setCanonical).
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "ShineMate",
+        "url": "https://shinemate-russia.ru/",
+        "logo": "https://shinemate-russia.ru/brand/favicon-512.png",
+        "description": "Официальный дистрибьютор ShineMate в России."
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "ShineMate",
+        "url": "https://shinemate-russia.ru/"
+      }
+    </script>
 
     <!--
       Шрифты — локальные копии Google Fonts (public/fonts/), а не запрос к
