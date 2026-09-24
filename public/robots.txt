@@ -3,5 +3,6 @@ Allow: /
 Disallow: /admin/
 Disallow: /admin-data/
 Disallow: /data/
+Disallow: /api/
 
 Sitemap: https://shinemate-russia.ru/sitemap.xml

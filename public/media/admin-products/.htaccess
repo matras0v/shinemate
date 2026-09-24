@@ -1,0 +1,15 @@
+# Фото товаров, загруженные клиентом через /admin. Имена файлов на этом
+# уровне полностью контролируются сервером (случайный hex + .webp/.jpg —
+# см. admin-php/media.php), но эта папка всё равно ни при каких условиях
+# не должна исполнять код — вторая, независимая линия защиты на случай
+# обхода серверной генерации имени.
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .pht .phar .cgi .pl
+AddType text/plain .php .phtml .php3 .php4 .php5 .php7 .pht .phar .cgi .pl
+
+Options -Indexes -ExecCGI

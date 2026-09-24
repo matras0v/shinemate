@@ -2,12 +2,29 @@
 # сами себя защищают константой SHINEMATE_ADMIN_BOOTSTRAP (403 при
 # прямом обращении), но запрет на уровне сервера — вторая, независимая
 # линия защиты на случай, если PHP-обработчик когда-нибудь отключат.
-<FilesMatch "^(config|auth|catalog)\.php$">
+<FilesMatch "^(config|auth|catalog|mailer|media|diagnostics)\.php$">
   Require all denied
 </FilesMatch>
+
+# login-attempts.json и backups/ — служебные файлы, не для веб-доступа.
+<FilesMatch "^login-attempts\.json$">
+  Require all denied
+</FilesMatch>
+<IfModule mod_alias.c>
+  RedirectMatch 404 ^/admin/backups/
+</IfModule>
 
 Options -Indexes -MultiViews
 
 # Явно, а не полагаясь на дефолт хостинга: /admin/ (без имени файла)
 # должен открывать именно index.php.
 DirectoryIndex index.php
+
+# Страница входа/управления каталогом не должна попадать в индекс поиска —
+# meta robots в index.php покрывает Google, заголовок ловит и остальных
+# краулеров, которые meta-тег не читают вовсе. IfModule — если mod_headers
+# почему-то не загружен на хостинге, сайт не должен падать 500-й ошибкой
+# из-за одной строки в .htaccess.
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>

@@ -19,6 +19,12 @@ admin-php/config.php
 public/sitemap.xml
 public/admin-data/
 
+# рантайм-данные PHP-бэкендов — не исходный код, не нужны в git
+api-php/data/*.json
+admin-php/backups/
+admin-php/media-uploads/
+admin-php/login-attempts.json
+
 # редакторские и системные артефакты
 *.log
 .vscode

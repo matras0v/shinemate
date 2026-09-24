@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 
@@ -6,7 +6,7 @@ import { company } from '../../data/company'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { submitLead } from '../../lib/lead'
 import { revealProps, rise, riseProps, stagger } from '../../lib/motion'
-import { ConsentCheckbox, Field, StatusLine } from './Contact'
+import { ConsentCheckbox, Field, Honeypot, StatusLine } from './Contact'
 
 const field =
   'w-full border-b border-graphite/20 bg-transparent pb-3 pt-2 text-[1.0625rem] text-graphite outline-none transition-colors duration-500 ease-premium placeholder:text-smoke focus:border-graphite'
@@ -23,25 +23,31 @@ type Props = {
  * поверх одного и того же контента.
  */
 export function Wholesale({ onOpenConsent }: Props) {
-  const [sent, setSent] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const reduced = useReducedMotion()
+  const startedAt = useRef(Date.now())
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (status === 'sending') return
     const data = new FormData(e.currentTarget)
     const value = (key: string) => String(data.get(key) ?? '').trim()
-    submitLead({
-      intent: 'wholesale',
-      name: value('name'),
-      company: value('company'),
-      phone: value('phone'),
-      email: value('email'),
-      city: value('city'),
-      inn: value('inn'),
-      businessType: value('businessType'),
-      message: value('message'),
-    })
-    setSent(true)
+    setStatus('sending')
+    const result = await submitLead(
+      {
+        intent: 'wholesale',
+        name: value('name'),
+        company: value('company'),
+        phone: value('phone'),
+        email: value('email'),
+        city: value('city'),
+        inn: value('inn'),
+        businessType: value('businessType'),
+        message: value('message'),
+      },
+      { hp: value('fax_number'), startedAt: startedAt.current }
+    )
+    setStatus(result.ok ? 'sent' : 'error')
   }
 
   return (
@@ -130,16 +136,19 @@ export function Wholesale({ onOpenConsent }: Props) {
             />
           </div>
 
+          <Honeypot />
+
           <ConsentCheckbox id="consent-wholesale" onOpenConsent={onOpenConsent} />
 
           <button
             type="submit"
-            className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
+            disabled={status === 'sending'}
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Получить оптовый прайс
+            {status === 'sending' ? 'Отправляем…' : 'Получить оптовый прайс'}
           </button>
 
-          <StatusLine sent={sent} />
+          <StatusLine status={status} />
 
           <p className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-graphite/[0.12] pt-6 text-[0.8125rem] text-slate">
             <span>Или напрямую:</span>

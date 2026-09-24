@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Clock, Mail, MapPin, X } from 'lucide-react'
 
@@ -32,30 +32,37 @@ export function Contact({ onOpenConsent, standalone }: Props) {
    * то есть должен быть h1: иначе у страницы нет h1 вообще.
    */
   const Heading = standalone ? motion.h1 : motion.h2
-  const [sent, setSent] = useState(false)
+  const [status, setStatus] = useState<Status>('idle')
   const reduced = useReducedMotion()
   const { product, variant, clearProduct } = useLead()
+  /** Момент показа формы — сервер отклоняет отправку раньше нескольких секунд как ботовую. */
+  const startedAt = useRef(Date.now())
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (status === 'sending') return
     const data = new FormData(e.currentTarget)
     const value = (key: string) => String(data.get(key) ?? '').trim()
-    submitLead({
-      intent: 'retail',
-      name: value('name'),
-      email: value('email'),
-      city: value('city'),
-      companyName: value('companyName'),
-      phone: value('phone'),
-      website: value('website'),
-      message: value('message'),
-      productModel: product?.model,
-      // Именно то исполнение, что выбрали в drawer — раньше сюда всегда
-      // уходило первое по списку, независимо от того, что смотрел человек.
-      productSku: variant?.sku,
-      productPrice: variant ? formatPrice(variant.rrp) : undefined,
-    })
-    setSent(true)
+    setStatus('sending')
+    const result = await submitLead(
+      {
+        intent: 'retail',
+        name: value('name'),
+        email: value('email'),
+        city: value('city'),
+        companyName: value('companyName'),
+        phone: value('phone'),
+        website: value('website'),
+        message: value('message'),
+        productModel: product?.model,
+        // Именно то исполнение, что выбрали в drawer — раньше сюда всегда
+        // уходило первое по списку, независимо от того, что смотрел человек.
+        productSku: variant?.sku,
+        productPrice: variant ? formatPrice(variant.rrp) : undefined,
+      },
+      { hp: value('fax_number'), startedAt: startedAt.current }
+    )
+    setStatus(result.ok ? 'sent' : 'error')
   }
 
   return (
@@ -198,16 +205,19 @@ export function Contact({ onOpenConsent, standalone }: Props) {
             />
           </div>
 
+          <Honeypot />
+
           <ConsentCheckbox id="consent-retail" onOpenConsent={onOpenConsent} />
 
           <button
             type="submit"
-            className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
+            disabled={status === 'sending'}
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-graphite px-8 py-4 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Отправить заявку
+            {status === 'sending' ? 'Отправляем…' : 'Отправить заявку'}
           </button>
 
-          <StatusLine sent={sent} />
+          <StatusLine status={status} />
         </motion.form>
 
         {!standalone && <ContactDetails />}
@@ -304,13 +314,36 @@ export function ConsentCheckbox({ id, onOpenConsent }: { id: string; onOpenConse
   )
 }
 
-export function StatusLine({ sent }: { sent: boolean }) {
+export type Status = 'idle' | 'sending' | 'sent' | 'error'
+
+export function StatusLine({ status }: { status: Status }) {
+  const text =
+    status === 'sent'
+      ? 'Заявка отправлена. Мы свяжемся с вами в ближайшее время.'
+      : status === 'error'
+        ? `Не получилось отправить заявку — попробуйте ещё раз или напишите напрямую на ${company.leadEmail}.`
+        : status === 'sending'
+          ? 'Отправляем заявку…'
+          : `Заявка уходит на адрес ${company.leadEmail}.`
   return (
     <p aria-live="polite" className="mt-5 max-w-[46ch] text-[0.8125rem] leading-relaxed text-titanium">
-      {sent
-        ? `Письмо открыто в вашем почтовом клиенте. Если он не запустился — напишите на ${company.leadEmail}.`
-        : `Заявка откроется письмом в вашем почтовом клиенте на адрес ${company.leadEmail}.`}
+      {text}
     </p>
+  )
+}
+
+/**
+ * Honeypot: поле, которое видят и заполняют только боты (скрыто с экрана,
+ * но не display:none — часть спам-скриптов игнорирует именно такие поля).
+ * Живой посетитель никогда его не видит и не может случайно заполнить —
+ * tabIndex=-1 и aria-hidden убирают его из табуляции и озвучки скринридером.
+ */
+export function Honeypot() {
+  return (
+    <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden">
+      <label htmlFor="fax_number">Факс</label>
+      <input id="fax_number" name="fax_number" type="text" tabIndex={-1} autoComplete="off" />
+    </div>
   )
 }
 

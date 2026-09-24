@@ -53,3 +53,25 @@
 # Код ответа останется 404, но контент будет рабочим — тот же трюк,
 # что и на GitHub Pages.
 ErrorDocument 404 /index.html
+
+# ── Заголовки безопасности ──
+#
+# Сознательно БЕЗ Content-Security-Policy: у страницы есть один встроенный
+# <script> без nonce (прелоад hero-кадра в index.html) и один внешний
+# ресурс, который сайт сам встраивает — Google Maps в /contacts (iframe).
+# Строгий CSP без возможности проверить его на реальном проде REG.RU перед
+# завтрашней встречей рискует тихо сломать карту или прелоад — это хуже,
+# чем отсутствие CSP. Остальные заголовки ниже безопасны и не зависят от
+# конкретных внешних доменов.
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
+  # Только на HTTPS-ответах — на голом HTTP этот заголовок бессмысленен
+  # (браузер его увидит только после того, как соединение уже безопасно).
+  # Без includeSubDomains/preload: неизвестно, что ещё может быть поднято
+  # на поддоменах shinemate-russia.ru без HTTPS — просить браузер запретить
+  # им http вообще было бы решением за пределами этого сайта.
+  Header always set Strict-Transport-Security "max-age=15552000" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
+</IfModule>

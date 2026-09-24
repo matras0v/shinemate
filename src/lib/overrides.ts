@@ -1,16 +1,29 @@
 import { products, type Variant } from '../data/catalog'
 
 /**
- * Оперативные правки каталога с /admin (REG.RU, PHP) — только цена и
- * наличие, по SKU исполнения. Артикул, характеристики, фото, состав —
- * из catalog.ts, он остаётся единственным источником истины.
+ * Оперативные правки каталога с /admin (REG.RU, PHP) — цена, наличие и,
+ * опционально, замена фото исполнения (загруженного через /admin, см.
+ * admin-php/media.php). Артикул, характеристики, состав — из catalog.ts,
+ * он остаётся единственным источником истины; фото по умолчанию тоже
+ * оттуда, override лишь подменяет его на загруженное клиентом.
  */
 type Override = {
   price?: number
   status?: 'in_stock' | 'on_request' | 'out_of_stock'
+  image?: string
 }
 
 const STATUSES = new Set(['in_stock', 'on_request', 'out_of_stock'])
+/**
+ * Путь к файлу, который сам же сервер и сгенерировал при загрузке (см.
+ * admin_handle_image_upload) — случайный 32-символьный hex-идентификатор
+ * плюс .webp/.jpg, всегда внутри media/admin-products/. Проверка здесь —
+ * не потому что серверу не доверяем, а потому что этот JSON, в отличие от
+ * самого catalog.ts, лежит в изменяемом файле на диске: если он окажется
+ * повреждён или подменён в обход /admin, next fetch не должен suddenly
+ * подставить произвольный src в <img>.
+ */
+const IMAGE_OVERRIDE_PATTERN = /^media\/admin-products\/[a-f0-9]{32}\.(webp|jpg)$/
 
 /**
  * Забирает data/catalog-overrides.json и мутирует УЖЕ ИМПОРТИРОВАННЫЕ
@@ -53,6 +66,9 @@ export async function applyCatalogOverrides(): Promise<void> {
       }
       if (typeof o.status === 'string' && STATUSES.has(o.status)) {
         variant.status = o.status as Variant['status']
+      }
+      if (typeof o.image === 'string' && IMAGE_OVERRIDE_PATTERN.test(o.image)) {
+        variant.image = o.image
       }
     }
   } catch {

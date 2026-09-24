@@ -27,6 +27,41 @@ function admin_load_overrides(): array
 }
 
 /**
+ * Бэкап overrides.json перед КАЖДЫМ изменением — если клиент случайно
+ * впишет не ту цену или не тот SKU, можно вернуть предыдущее состояние
+ * (в самой админке кнопки "восстановить бэкап" нет намеренно — это
+ * необратимое действие поверх текущих правок; бэкапы можно скачать и
+ * применить вручную). Хранится только последние MAX_BACKUPS штук —
+ * старые тихо удаляются, чтобы папка не росла бесконечно.
+ */
+function admin_backup_overrides(): void
+{
+    if (!is_file(OVERRIDES_FILE)) {
+        return;
+    }
+    if (!is_dir(BACKUPS_DIR) && !mkdir(BACKUPS_DIR, 0755, true) && !is_dir(BACKUPS_DIR)) {
+        return;
+    }
+    $stamp = date('Y-m-d_His') . '_' . substr(bin2hex(random_bytes(2)), 0, 4);
+    @copy(OVERRIDES_FILE, BACKUPS_DIR . "/catalog-overrides_{$stamp}.json");
+
+    $files = glob(BACKUPS_DIR . '/catalog-overrides_*.json') ?: [];
+    sort($files);
+    $excess = count($files) - MAX_BACKUPS;
+    for ($i = 0; $i < $excess; $i++) {
+        @unlink($files[$i]);
+    }
+}
+
+/** Список бэкапов, новые сверху — для блока "Бэкапы" в /admin. */
+function admin_list_backups(): array
+{
+    $files = glob(BACKUPS_DIR . '/catalog-overrides_*.json') ?: [];
+    rsort($files);
+    return array_map(static fn(string $f) => basename($f), $files);
+}
+
+/**
  * Атомарная запись: пишем во временный файл рядом и переименовываем —
  * rename() на одной файловой системе атомарен, поэтому фронтенд никогда
  * не увидит частично записанный JSON, даже если запрос оборвётся на
@@ -38,6 +73,7 @@ function admin_write_overrides(array $overrides): bool
     if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
         return false;
     }
+    admin_backup_overrides();
     $json = json_encode($overrides, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
         return false;
@@ -66,6 +102,11 @@ function admin_effective_products(): array
         if (isset($overrides[$sku]['status'])) {
             $item['status'] = $overrides[$sku]['status'];
         }
+        // defaultImage — то, что реально уйдёт на сайт при пустых overrides
+        // (см. scripts/export-admin-catalog.mjs); image — то, что показывает
+        // /admin как текущее эффективное фото (с учётом ручной загрузки).
+        $item['image'] = $overrides[$sku]['image'] ?? $item['defaultImage'];
+        $item['imageOverridden'] = isset($overrides[$sku]['image']);
         $item['overridden'] = isset($overrides[$sku]);
     }
     unset($item);

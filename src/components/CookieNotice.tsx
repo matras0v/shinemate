@@ -52,8 +52,8 @@ export function CookieNotice({ onOpenPrivacy }: Props) {
         >
           <div className="mx-auto flex max-w-2xl flex-col items-start gap-3 rounded-2xl border border-graphite/[0.12] bg-porcelain/95 p-4 shadow-[0_20px_60px_-20px_rgba(26,28,30,0.35)] backdrop-blur-xl sm:flex-row sm:items-center sm:gap-5 sm:p-5">
             <p className="text-[0.8125rem] leading-relaxed text-ash">
-              Сайт не использует cookie-трекеры и аналитику. Данные из формы уходят напрямую с
-              вашей почты — сайт их не хранит.{' '}
+              Сайт не использует cookie-трекеры и аналитику. Форма уходит на почту через сервер
+              сайта и нигде не сохраняется.{' '}
               <button
                 type="button"
                 onClick={onOpenPrivacy}

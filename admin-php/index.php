@@ -5,13 +5,35 @@ define('SHINEMATE_ADMIN_BOOTSTRAP', true);
 require __DIR__ . '/config.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/catalog.php';
+require __DIR__ . '/media.php';
+require __DIR__ . '/mailer.php';
+require __DIR__ . '/diagnostics.php';
 
 admin_start_session();
+
+// Скачивание бэкапа — до любого HTML-вывода, отдаёт файл целиком и
+// завершает запрос. Только для авторизованных, имя файла сверяется со
+// списком реальных бэкапов (admin_list_backups()) — не путь с диска, а
+// белый список, так что ни .. , ни абсолютный путь сюда просто не попадут.
+if (($_GET['action'] ?? '') === 'download_backup') {
+    admin_require_login();
+    $requested = (string)($_GET['file'] ?? '');
+    if (in_array($requested, admin_list_backups(), true)) {
+        $path = BACKUPS_DIR . '/' . $requested;
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename="' . $requested . '"');
+        header('Content-Length: ' . (string)filesize($path));
+        readfile($path);
+        exit;
+    }
+    http_response_code(404);
+    exit('Файл не найден.');
+}
 
 $error = null;
 $flash = null;
 
-/* ── POST: логин или сохранение ── */
+/* ── POST: логин, сохранение, загрузка фото, диагностика, смена пароля ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
@@ -22,7 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: index.php');
             exit;
         } else {
-            $error = 'Неверный пароль.';
+            // Намеренно НЕ уточняем, что именно неверно — единственное поле
+            // формы здесь пароль, но фраза остаётся общей на случай, если
+            // логика входа когда-нибудь расширится.
+            $error = 'Неверные данные для входа.';
         }
     } elseif ($action === 'logout') {
         admin_require_login();
@@ -59,10 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Некорректный статус наличия.';
             } else {
                 $overrides = admin_load_overrides();
-                $overrides[$sku] = [
+                // merge, не перезапись — иначе загруженное фото (ключ image)
+                // терялось бы при каждом сохранении цены/наличия.
+                $overrides[$sku] = array_merge($overrides[$sku] ?? [], [
                     'price' => round((float) $priceRaw, 2),
                     'status' => $status,
-                ];
+                ]);
                 if (admin_write_overrides($overrides)) {
                     header('Location: index.php?saved=' . urlencode($sku));
                     exit;
@@ -70,16 +97,105 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Не удалось сохранить — проверьте права на запись файла data/catalog-overrides.json на сервере.';
             }
         }
+    } elseif ($action === 'upload_image') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $sku = (string) ($_POST['sku'] ?? '');
+            $index = admin_load_catalog_index();
+            $known = array_filter($index, static fn($item) => $item['sku'] === $sku);
+            if (!$known) {
+                $error = 'Неизвестный артикул.';
+            } elseif (empty($_FILES['photo']) || ($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                $error = 'Файл не выбран.';
+            } else {
+                [$path, $uploadError] = admin_handle_image_upload($_FILES['photo']);
+                if ($uploadError !== null) {
+                    $error = $uploadError;
+                } else {
+                    $overrides = admin_load_overrides();
+                    $previous = $overrides[$sku]['image'] ?? null;
+                    $overrides[$sku] = array_merge($overrides[$sku] ?? [], ['image' => $path]);
+                    if (admin_write_overrides($overrides)) {
+                        // Старый загруженный файл (если был) больше не используется — не копим мусор.
+                        if ($previous !== null) {
+                            admin_delete_media_file($previous);
+                        }
+                        header('Location: index.php?saved=' . urlencode($sku));
+                        exit;
+                    }
+                    $error = 'Фото загружено, но не удалось сохранить ссылку на него.';
+                }
+            }
+        }
+    } elseif ($action === 'restore_image') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $sku = (string) ($_POST['sku'] ?? '');
+            $overrides = admin_load_overrides();
+            if (isset($overrides[$sku]['image'])) {
+                $old = $overrides[$sku]['image'];
+                unset($overrides[$sku]['image']);
+                if (empty($overrides[$sku])) {
+                    unset($overrides[$sku]);
+                }
+                if (admin_write_overrides($overrides)) {
+                    admin_delete_media_file($old);
+                    header('Location: index.php?saved=' . urlencode($sku));
+                    exit;
+                }
+                $error = 'Не удалось сохранить изменения.';
+            } else {
+                header('Location: index.php');
+                exit;
+            }
+        }
+    } elseif ($action === 'test_mail') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $body = "Тестовое письмо из панели /admin.\nВремя: " . date('Y-m-d H:i:s') . "\nХост: " . (string)($_SERVER['HTTP_HOST'] ?? '—');
+            if (admin_send_mail(CONTACT_TO, 'Тестовое письмо — ShineMate Russia /admin', $body)) {
+                $flash = 'Тестовое письмо отправлено на ' . htmlspecialchars(CONTACT_TO, ENT_QUOTES, 'UTF-8') . '. Проверьте папку "Входящие"/"Спам".';
+            } else {
+                $error = 'mail() вернула ошибку — письмо не отправлено. Возможно, на хостинге не настроена отправка почты; обратитесь в поддержку REG.RU.';
+            }
+        }
+    } elseif ($action === 'change_password') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $current = (string) ($_POST['current_password'] ?? '');
+            $new = (string) ($_POST['new_password'] ?? '');
+            $confirm = (string) ($_POST['new_password_confirm'] ?? '');
+            if ($new !== $confirm) {
+                $error = 'Новый пароль и подтверждение не совпадают.';
+            } else {
+                $result = admin_change_password($current, $new);
+                if ($result === null) {
+                    $flash = 'Пароль изменён.';
+                } else {
+                    $error = $result;
+                }
+            }
+        }
     }
 }
 
 if (isset($_GET['saved'])) {
-    $flash = 'Сохранено: ' . htmlspecialchars((string) $_GET['saved'], ENT_QUOTES, 'UTF-8');
+    $flash = ($flash ? $flash . ' ' : '') . 'Сохранено: ' . htmlspecialchars((string) $_GET['saved'], ENT_QUOTES, 'UTF-8');
 }
 
 $loggedIn = admin_is_logged_in();
 $products = $loggedIn ? admin_effective_products() : [];
 $csrf = $loggedIn ? admin_csrf_token() : null;
+$diagnostics = $loggedIn ? admin_diagnostics() : [];
+$backups = $loggedIn ? admin_list_backups() : [];
 ?>
 <!doctype html>
 <html lang="ru">
@@ -97,10 +213,11 @@ $csrf = $loggedIn ? admin_csrf_token() : null;
     background: #F7F6F2; color: #1A1C1E;
   }
   h1 { font-size: 1.375rem; font-weight: 600; margin: 0 0 1.5rem; letter-spacing: -0.01em; }
+  h2 { font-size: 1.0625rem; font-weight: 600; margin: 2.5rem 0 0.75rem; }
   .wrap { max-width: 720px; margin: 0 auto; }
   .login-wrap { max-width: 340px; margin: 4rem auto; }
   label { display: block; font-size: 0.8125rem; color: #565C60; margin-bottom: 0.375rem; }
-  input[type=password], input[type=text], input[type=search], select {
+  input[type=password], input[type=text], input[type=search], input[type=file], select {
     width: 100%; padding: 0.65rem 0.75rem; border: 1px solid rgba(26,28,30,0.18);
     border-radius: 0.5rem; font-size: 0.9375rem; background: #fff; color: #1A1C1E;
   }
@@ -110,6 +227,7 @@ $csrf = $loggedIn ? admin_csrf_token() : null;
   }
   button:hover { background: #34383B; }
   button.secondary { background: transparent; color: #565C60; padding: 0.5rem 0.75rem; }
+  button.small { padding: 0.4rem 0.85rem; font-size: 0.8125rem; }
   .error { background: #FDECEA; color: #B3261E; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1.25rem; }
   .flash { background: #E7F3EA; color: #1E6B3A; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1.25rem; }
   .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
@@ -118,7 +236,9 @@ $csrf = $loggedIn ? admin_csrf_token() : null;
     padding: 1rem 1.125rem; margin-bottom: 0.75rem;
   }
   .card.changed { border-color: #DE6A18; }
-  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .card-head-left { display: flex; gap: 0.75rem; align-items: flex-start; min-width: 0; }
+  .thumb { width: 44px; height: 44px; border-radius: 0.5rem; object-fit: contain; background: #F1F0EC; border: 1px solid rgba(26,28,30,0.08); flex-shrink: 0; }
   .model { font-weight: 600; font-size: 1rem; }
   .variant { color: #565C60; font-size: 0.8125rem; }
   .sku { font-family: ui-monospace, monospace; font-size: 0.75rem; color: #546166; }
@@ -128,6 +248,19 @@ $csrf = $loggedIn ? admin_csrf_token() : null;
   .badge { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; color: #DE6A18; }
   #search { margin-bottom: 1.25rem; }
   .empty { text-align: center; color: #565C60; padding: 2rem 0; }
+  .photo-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px dashed rgba(26,28,30,0.12); }
+  .photo-row input[type=file] { flex: 1; min-width: 160px; }
+  details.section { background: #fff; border: 1px solid rgba(26,28,30,0.1); border-radius: 0.75rem; padding: 0.25rem 1.125rem 1rem; margin-bottom: 0.75rem; }
+  details.section summary { cursor: pointer; padding: 0.85rem 0; font-weight: 600; font-size: 0.9375rem; }
+  table.diag { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  table.diag td { padding: 0.4rem 0; border-bottom: 1px solid rgba(26,28,30,0.06); }
+  table.diag td:first-child { color: #565C60; padding-right: 1rem; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 0.4rem; }
+  .dot.ok { background: #1E6B3A; }
+  .dot.bad { background: #B3261E; }
+  ul.backups { list-style: none; margin: 0; padding: 0; font-size: 0.8125rem; }
+  ul.backups li { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid rgba(26,28,30,0.06); gap: 0.5rem; }
+  ul.backups a { color: #1A1C1E; }
 </style>
 </head>
 <body>
@@ -158,7 +291,7 @@ $csrf = $loggedIn ? admin_csrf_token() : null;
     </div>
 
     <?php if ($error): ?><p class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-    <?php if ($flash): ?><p class="flash"><?= $flash ?> — на сайте обновится сразу, перезагрузку страницы товара делать не нужно.</p><?php endif; ?>
+    <?php if ($flash): ?><p class="flash"><?= $flash ?><?= isset($_GET['saved']) ? ' — на сайте обновится сразу, перезагрузку страницы товара делать не нужно.' : '' ?></p><?php endif; ?>
 
     <input type="search" id="search" placeholder="Поиск по модели или артикулу…" />
 
@@ -169,13 +302,16 @@ $csrf = $loggedIn ? admin_csrf_token() : null;
       <?php foreach ($products as $p): ?>
         <div class="card<?= $p['overridden'] ? ' changed' : '' ?>" data-search="<?= htmlspecialchars(mb_strtolower($p['model'] . ' ' . $p['sku']), ENT_QUOTES, 'UTF-8') ?>">
           <div class="card-head">
-            <div>
-              <div class="category"><?= htmlspecialchars($p['category'], ENT_QUOTES, 'UTF-8') ?></div>
-              <div class="model">
-                <?= htmlspecialchars($p['model'], ENT_QUOTES, 'UTF-8') ?>
-                <?php if ($p['variantLabel']): ?><span class="variant"> · <?= htmlspecialchars($p['variantLabel'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+            <div class="card-head-left">
+              <img class="thumb" src="../<?= htmlspecialchars($p['image'], ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" />
+              <div>
+                <div class="category"><?= htmlspecialchars($p['category'], ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="model">
+                  <?= htmlspecialchars($p['model'], ENT_QUOTES, 'UTF-8') ?>
+                  <?php if ($p['variantLabel']): ?><span class="variant"> · <?= htmlspecialchars($p['variantLabel'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                </div>
+                <div class="sku">Артикул: <?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?></div>
               </div>
-              <div class="sku">Артикул: <?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?></div>
             </div>
             <?php if ($p['overridden']): ?><span class="badge">Изменено вручную</span><?php endif; ?>
           </div>
@@ -199,9 +335,82 @@ $csrf = $loggedIn ? admin_csrf_token() : null;
             </div>
             <div><button type="submit">Сохранить</button></div>
           </form>
+
+          <form method="post" enctype="multipart/form-data" class="photo-row">
+            <input type="hidden" name="action" value="upload_image" />
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+            <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required />
+            <button type="submit" class="small secondary">Загрузить фото</button>
+          </form>
+          <?php if ($p['imageOverridden']): ?>
+            <form method="post" style="margin-top:0.4rem;">
+              <input type="hidden" name="action" value="restore_image" />
+              <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+              <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />
+              <button type="submit" class="small secondary">Вернуть фото по умолчанию</button>
+            </form>
+          <?php endif; ?>
         </div>
       <?php endforeach; ?>
     </div>
+
+    <h2>Диагностика</h2>
+    <details class="section">
+      <summary>Состояние сервера и почты</summary>
+      <table class="diag">
+        <?php foreach ($diagnostics as $d): ?>
+          <tr>
+            <td><span class="dot <?= $d['ok'] ? 'ok' : 'bad' ?>"></span><?= htmlspecialchars($d['label'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($d['value'], ENT_QUOTES, 'UTF-8') ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+      <form method="post" style="margin-top:1rem;">
+        <input type="hidden" name="action" value="test_mail" />
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+        <button type="submit" class="small">Отправить тестовое письмо</button>
+      </form>
+    </details>
+
+    <h2>Бэкапы цен и наличия</h2>
+    <details class="section">
+      <summary>Последние <?= count($backups) ?> из <?= MAX_BACKUPS ?></summary>
+      <?php if (!$backups): ?>
+        <p class="empty" style="padding:0.5rem 0;">Бэкапов пока нет — появятся после первого сохранения.</p>
+      <?php else: ?>
+        <ul class="backups">
+          <?php foreach ($backups as $b): ?>
+            <li>
+              <span><?= htmlspecialchars($b, ENT_QUOTES, 'UTF-8') ?></span>
+              <a href="index.php?action=download_backup&amp;file=<?= urlencode($b) ?>">Скачать</a>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      <?php endif; ?>
+    </details>
+
+    <h2>Смена пароля</h2>
+    <details class="section">
+      <summary>Сменить пароль входа в /admin</summary>
+      <form method="post" autocomplete="off">
+        <input type="hidden" name="action" value="change_password" />
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+        <div style="margin-bottom:0.75rem;">
+          <label for="current_password">Текущий пароль</label>
+          <input type="password" id="current_password" name="current_password" required />
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <label for="new_password">Новый пароль (не короче 10 символов)</label>
+          <input type="password" id="new_password" name="new_password" minlength="10" required />
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <label for="new_password_confirm">Повторите новый пароль</label>
+          <input type="password" id="new_password_confirm" name="new_password_confirm" minlength="10" required />
+        </div>
+        <button type="submit" class="small">Сменить пароль</button>
+      </form>
+    </details>
   </div>
 
   <script>

@@ -1,0 +1,18 @@
+# Только contact.php — точка входа. config.php/mailer.php защищены ещё и
+# на уровне PHP (guard-константы SHINEMATE_API_BOOTSTRAP/_MAILER_BOOTSTRAP,
+# см. сами файлы), это вторая, независимая линия защиты.
+<FilesMatch "^(config|mailer)\.php$">
+  Require all denied
+</FilesMatch>
+
+# data/ — технический файл лимита частоты запросов (IP → счётчик), не
+# предназначен для веб-доступа вообще.
+<IfModule mod_alias.c>
+  RedirectMatch 404 ^/api/data/
+</IfModule>
+
+Options -Indexes -MultiViews
+
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>
