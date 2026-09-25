@@ -12,7 +12,16 @@ export type Route =
   | { name: 'wholesale' }
 
 const CATEGORY_IDS = categories.map((c) => c.id)
-const PRODUCT_SLUGS = new Set(products.map((p) => p.slug))
+/**
+ * НЕ снимок/Set, посчитанный один раз при загрузке модуля — иначе товары,
+ * добавленные клиентом через /admin и push()-нутые в products ПОСЛЕ
+ * загрузки этого модуля (см. src/lib/adminProducts.ts, main.tsx), были
+ * бы невидимы для роутера: прямой заход по их URL откатывался бы на
+ * страницу категории вместо карточки товара. Тот же класс бага, что был
+ * у searchIndex в catalog.ts (см. rebuildSearchIndex) — здесь чинится
+ * проще: просто не кэшировать, самих товаров всего пара сотен.
+ */
+const isProductSlug = (slug: string) => products.some((p) => p.slug === slug)
 
 /**
  * Подпуть, под которым реально живёт сайт: "/" и в dev, и на GitHub
@@ -53,10 +62,10 @@ export function parseRoute(pathname: string): Route {
   // страницу; реальные данные товара ищутся по slug, а не по паре
   // категория+slug, поэтому опечатка в сегменте категории всё равно
   // приведёт на верный товар, а не на 404.
-  if (parts[2] && PRODUCT_SLUGS.has(parts[2])) {
+  if (parts[2] && isProductSlug(parts[2])) {
     return { name: 'product', slug: parts[2] }
   }
-  if (parts.length === 2 && PRODUCT_SLUGS.has(slug) && !CATEGORY_IDS.find((id) => id === slug)) {
+  if (parts.length === 2 && isProductSlug(slug) && !CATEGORY_IDS.find((id) => id === slug)) {
     return { name: 'product', slug }
   }
   const category = CATEGORY_IDS.find((id) => id === slug)

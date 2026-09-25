@@ -370,6 +370,20 @@ export function ProductPage({ product }: Props) {
             </p>
 
             {/*
+              Полное описание — необязательное поле, есть только у товаров,
+              добавленных клиентом через /admin (см. Product.description);
+              у товаров из сборки его нет ни у одного, там весь текст уже
+              в lead/characteristics. whitespace-pre-line — чтобы переносы
+              строк, которые клиент напечатал в textarea, реально были
+              видны, а не схлопывались в один абзац.
+            */}
+            {view.description && (
+              <p className="mt-4 max-w-[52ch] whitespace-pre-line text-[0.9375rem] leading-relaxed text-ash/90">
+                {view.description}
+              </p>
+            )}
+
+            {/*
               Когда в карточке лежат РАЗНЫЕ предметы (ведро, сепаратор,
               микрофибра), выбор стоит прямо в первом экране и подписан
               как выбор товара, а не как «размер». Иначе человек читает

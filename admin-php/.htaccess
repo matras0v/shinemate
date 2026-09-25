@@ -2,7 +2,7 @@
 # сами себя защищают константой SHINEMATE_ADMIN_BOOTSTRAP (403 при
 # прямом обращении), но запрет на уровне сервера — вторая, независимая
 # линия защиты на случай, если PHP-обработчик когда-нибудь отключат.
-<FilesMatch "^(config|auth|catalog|mailer|media|diagnostics|audit)\.php$">
+<FilesMatch "^(config|auth|catalog|mailer|media|diagnostics|audit|products|products-ui)\.php$">
   Require all denied
 </FilesMatch>
 

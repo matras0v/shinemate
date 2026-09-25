@@ -44,4 +44,14 @@ const body = urls
 const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
 
 writeFileSync(join(root, 'public/sitemap.xml'), xml, 'utf8')
+
+/*
+ * Снимок URL из сборки — база, поверх которой admin-php/products.php
+ * (admin_regenerate_sitemap) достраивает опубликованные клиентом товары
+ * при каждой публикации/архивации, не трогая сам sitemap.xml на диске
+ * до следующей пересборки. Один URL на строку, без XML — проще и надёжнее
+ * парсить на PHP-стороне, чем резать XML регулярками.
+ */
+writeFileSync(join(root, 'public/admin-data/sitemap-base.txt'), urls.map((u) => u.loc).join('\n') + '\n', 'utf8')
+
 console.log(`[sitemap] ok: ${urls.length} URL (${products.length} товаров, ${categories.length} разделов)`)

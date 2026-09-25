@@ -73,15 +73,52 @@ function admin_handle_image_upload(array $file): array
     }
 
     $name = bin2hex(random_bytes(16));
-    if (function_exists('imagewebp')) {
-        $filename = $name . '.webp';
+    $useWebp = function_exists('imagewebp');
+    $ext = $useWebp ? 'webp' : 'jpg';
+    $filename = $name . '.' . $ext;
+    if ($useWebp) {
         $ok = imagewebp($gd, MEDIA_DIR . '/' . $filename, 86);
     } else {
-        // WEBP-кодек GD есть не везде — JPEG есть практически всегда.
-        $filename = $name . '.jpg';
         imageinterlace($gd, true);
         $ok = imagejpeg($gd, MEDIA_DIR . '/' . $filename, 88);
     }
+
+    // Уменьшенная копия рядом, с суффиксом -thumb — карточки каталога,
+    // мега-меню, поиск и превью в zoom-галерее ВЕЗДЕ строят путь к
+    // превью как src.replace('.webp', '-thumb.webp'), не спрашивая,
+    // откуда взялась исходная картинка (см. ProductCard.tsx и другие).
+    // Для картинок из сборки такой файл всегда существует (генерируется
+    // заранее скриптом), для загруженных через /admin — раньше не
+    // создавался вовсе, и превью в этих местах молча не отображалось
+    // (404). Тот же холст $gd, отдельно не decode'им заново.
+    $thumbFilename = $name . '-thumb.' . $ext;
+    $thumbMax = 480;
+    if ($width > $thumbMax || $height > $thumbMax) {
+        $scale = $thumbMax / max($width, $height);
+        $tw = max(1, (int) round($width * $scale));
+        $th = max(1, (int) round($height * $scale));
+        $thumbGd = imagecreatetruecolor($tw, $th);
+        if ($thumbGd !== false) {
+            if (!$useWebp) {
+                $bg = imagecolorallocate($thumbGd, 255, 255, 255);
+                imagefill($thumbGd, 0, 0, $bg);
+            } else {
+                imagealphablending($thumbGd, false);
+                imagesavealpha($thumbGd, true);
+            }
+            imagecopyresampled($thumbGd, $gd, 0, 0, 0, 0, $tw, $th, $width, $height);
+            if ($useWebp) {
+                imagewebp($thumbGd, MEDIA_DIR . '/' . $thumbFilename, 80);
+            } else {
+                imagejpeg($thumbGd, MEDIA_DIR . '/' . $thumbFilename, 82);
+            }
+            imagedestroy($thumbGd);
+        }
+    } else {
+        // Картинка и так меньше порога превью — просто копия оригинала.
+        @copy(MEDIA_DIR . '/' . $filename, MEDIA_DIR . '/' . $thumbFilename);
+    }
+
     imagedestroy($gd);
 
     if (!$ok) {
@@ -110,5 +147,15 @@ function admin_delete_media_file(string $relPath): void
     $full = MEDIA_DIR . '/' . $basename;
     if (is_file($full) && dirname(realpath($full) ?: '') === realpath(MEDIA_DIR)) {
         @unlink($full);
+        // Пара -thumb, созданная вместе с оригиналом при загрузке (см.
+        // admin_handle_image_upload) — не должна оставаться сиротой на диске.
+        $dot = strrpos($basename, '.');
+        if ($dot !== false) {
+            $thumbName = substr($basename, 0, $dot) . '-thumb' . substr($basename, $dot);
+            $thumbFull = MEDIA_DIR . '/' . $thumbName;
+            if (is_file($thumbFull) && dirname(realpath($thumbFull) ?: '') === realpath(MEDIA_DIR)) {
+                @unlink($thumbFull);
+            }
+        }
     }
 }

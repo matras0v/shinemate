@@ -107,6 +107,24 @@ export type Product = {
   image: string
   imageWidth: number
   imageHeight: number
+  /**
+   * Полное описание — отдельно от короткого lead (тот всегда есть и
+   * показывается вверху страницы). Опционально: у товаров из сборки его
+   * нет ни у одного (пишем содержательные характеристики/lead вместо
+   * этого), поле существует ради товаров, добавленных клиентом через
+   * /admin (см. src/lib/adminProducts.ts) — там это единственный способ
+   * дать длинный текст без правки кода.
+   */
+  description?: string
+  /**
+   * Дополнительные фото товара (не привязанные к конкретному исполнению) —
+   * подмешиваются в галерею вместе с image/variant.image, см. gallery()
+   * в story.ts. У товаров из сборки не используется: там своих фото
+   * исполнений обычно достаточно.
+   */
+  images?: string[]
+  /** Артикулы совместимых товаров — данные для будущего использования, сейчас нигде не отображаются публично. */
+  compatibleProductIds?: string[]
   /** Выносится в раздел избранных моделей на главной. */
   featured?: boolean
   /**
@@ -1754,7 +1772,19 @@ export const formatPrice = (value: number) =>
 export const formatPriceOrInquire = (value: number | null) =>
   value === null ? 'Цена по запросу' : formatPrice(value)
 
-export const totalSkus = products.reduce((n, p) => n + p.variants.length, 0)
+/**
+ * `let`, не `const` — считается заново после того, как товары клиента
+ * (src/lib/adminProducts.ts) дописаны в products при бутстрапе, тем же
+ * вызовом recountTotals(), что и rebuildSearchIndex(): иначе счётчик
+ * "113 позиций" в шапке/меню/каталоге молча не рос бы после публикации
+ * нового товара, хотя сам товар уже показывался бы на сайте.
+ */
+export let totalSkus = products.reduce((n, p) => n + p.variants.length, 0)
+
+/** Пересчитывает featured/totalSkus — вызывать вместе с rebuildSearchIndex() после push() новых товаров. */
+export function recountTotals(): void {
+  totalSkus = products.reduce((n, p) => n + p.variants.length, 0)
+}
 
 /**
  * Короткие практические преимущества для карточки/страницы товара —
@@ -1812,27 +1842,42 @@ export function sortProducts(list: Product[], order: SortOrder): Product[] {
  * данных полноценный fuzzy-поисковый движок был бы избыточен, а substring
  * уже покрывает и «EP830», и «аккумулятор», и «V80».
  */
-const searchIndex = products.map((product) => {
-  const haystack = [
-    product.model,
-    product.kind,
-    categoryTitle(product.category),
-    ...product.variants.map((v) => v.sku),
-  ]
-    .join(' ')
-    .toLowerCase()
-  // Числовые токены (например «4», «9» — обрезки артикулов вроде «34124-4»)
-  // исключены из words: у них нет падежных окончаний, а короткое числовое
-  // совпадение в sharesStem (startsWith при длине < 3) превращало любой
-  // запрос вроде «41130» в совпадение с половиной каталога, где встречался
-  // хвост «-4» или «-1». Точный поиск по артикулу и так работает через
-  // haystack.includes(term) ниже — числам эвристика не нужна.
-  return {
-    product,
-    haystack,
-    words: haystack.split(/[^a-zа-яё0-9]+/i).filter((w) => w.length > 0 && !/^\d+$/.test(w)),
-  }
-})
+function buildSearchIndex() {
+  return products.map((product) => {
+    const haystack = [
+      product.model,
+      product.kind,
+      categoryTitle(product.category),
+      ...product.variants.map((v) => v.sku),
+    ]
+      .join(' ')
+      .toLowerCase()
+    // Числовые токены (например «4», «9» — обрезки артикулов вроде «34124-4»)
+    // исключены из words: у них нет падежных окончаний, а короткое числовое
+    // совпадение в sharesStem (startsWith при длине < 3) превращало любой
+    // запрос вроде «41130» в совпадение с половиной каталога, где встречался
+    // хвост «-4» или «-1». Точный поиск по артикулу и так работает через
+    // haystack.includes(term) ниже — числам эвристика не нужна.
+    return {
+      product,
+      haystack,
+      words: haystack.split(/[^a-zа-яё0-9]+/i).filter((w) => w.length > 0 && !/^\d+$/.test(w)),
+    }
+  })
+}
+
+let searchIndex = buildSearchIndex()
+
+/**
+ * Пересобирает индекс поиска — нужно вызвать РОВНО ОДИН РАЗ после того,
+ * как admin-созданные товары дописаны в `products` во время бутстрапа
+ * (см. src/lib/adminProducts.ts), иначе они останутся невидимы для
+ * searchProducts(): исходный индекс — это снимок products НА МОМЕНТ
+ * загрузки модуля, до того как что-либо успевает туда push()-нуться.
+ */
+export function rebuildSearchIndex(): void {
+  searchIndex = buildSearchIndex()
+}
 
 /**
  * Русские существительные меняют окончание по числу и падежу («подложка» /

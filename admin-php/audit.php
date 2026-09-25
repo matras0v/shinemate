@@ -72,6 +72,11 @@ function admin_event_label(string $event): string
         'email_change_old_verified' => 'Старый email подтверждён — ожидание нового адреса',
         'email_change_new_requested' => 'Запрошено подтверждение нового email',
         'email_change_completed' => 'Email для кода входа изменён',
+        'product_created' => 'Создан новый товар',
+        'product_edited' => 'Изменён товар',
+        'product_archived' => 'Товар архивирован',
+        'product_restored' => 'Товар восстановлен из архива',
+        'product_deleted' => 'Товар удалён безвозвратно',
     ];
     return $labels[$event] ?? $event;
 }

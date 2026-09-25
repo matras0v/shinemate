@@ -2110,11 +2110,11 @@ function highlights(p: Product): { label: string; value: string }[] {
   return out
 }
 
-/** Все реальные кадры позиции без повторов: фото товара + фото исполнений. */
+/** Все реальные кадры позиции без повторов: фото товара + доп. фото (если есть) + фото исполнений. */
 function gallery(p: Product): string[] {
   const seen = new Set<string>()
   const out: string[] = []
-  for (const src of [p.image, ...p.variants.map((v) => v.image)]) {
+  for (const src of [p.image, ...(p.images ?? []), ...p.variants.map((v) => v.image)]) {
     if (!src || seen.has(src)) continue
     seen.add(src)
     out.push(src)

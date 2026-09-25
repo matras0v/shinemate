@@ -54,6 +54,11 @@ define('REQUIRE_EMAIL_2FA', true);
 define('OVERRIDES_FILE', __DIR__ . '/../data/catalog-overrides.json');
 define('CATALOG_INDEX_FILE', __DIR__ . '/../admin-data/catalog-index.json');
 
+// Товары, созданные клиентом через /admin.
+define('ADMIN_PRODUCTS_FILE', __DIR__ . '/../data/admin-products.json');
+define('SITEMAP_BASE_FILE', __DIR__ . '/../admin-data/sitemap-base.txt');
+define('SITEMAP_PUBLIC_FILE', __DIR__ . '/../sitemap.xml');
+
 define('SESSION_NAME', 'shinemate_admin');
 define('MAX_LOGIN_ATTEMPTS', 6);
 define('LOGIN_LOCKOUT_SECONDS', 300);

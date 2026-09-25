@@ -7,6 +7,7 @@ require __DIR__ . '/audit.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/catalog.php';
 require __DIR__ . '/media.php';
+require __DIR__ . '/products.php';
 require __DIR__ . '/mailer.php';
 require __DIR__ . '/diagnostics.php';
 
@@ -19,7 +20,11 @@ admin_start_session();
 if (($_GET['action'] ?? '') === 'download_backup') {
     admin_require_login();
     $requested = (string)($_GET['file'] ?? '');
-    if (in_array($requested, admin_list_backups(), true)) {
+    // Один и тот же белый список проверяет оба вида бэкапов (цены/наличие
+    // и admin-товары) — оба лежат в BACKUPS_DIR, имя файла всё равно
+    // сверяется со списком РЕАЛЬНО существующих файлов, не собирается
+    // из пользовательского ввода.
+    if (in_array($requested, array_merge(admin_list_backups(), admin_list_product_backups()), true)) {
         $path = BACKUPS_DIR . '/' . $requested;
         header('Content-Type: application/json');
         header('Content-Disposition: attachment; filename="' . $requested . '"');
@@ -34,6 +39,8 @@ if (($_GET['action'] ?? '') === 'download_backup') {
 $error = null;
 $flash = null;
 $recoveryCodesToShow = null;
+/** id редактируемого товара ('new' — форма создания), если сохранение не удалось и форму нужно оставить открытой. */
+$productFormReopen = null;
 
 /* ── POST: логин, сохранение, загрузка фото, диагностика, смена пароля, 2FA ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -304,6 +311,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header('Location: index.php');
         exit;
+    } elseif ($action === 'product_save') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $editingId = (string) ($_POST['product_id'] ?? '') ?: null;
+            $all = admin_load_admin_products();
+            $existing = $editingId !== null ? (admin_find_product($all, $editingId) ?? []) : [];
+            [$built, $buildError] = admin_build_product_from_request($editingId, $existing);
+            if ($built === null) {
+                $error = $buildError;
+                $productFormReopen = $editingId ?? 'new';
+            } else {
+                $replaced = false;
+                foreach ($all as $i => $p) {
+                    if (($p['id'] ?? null) === $built['id']) {
+                        $all[$i] = $built;
+                        $replaced = true;
+                        break;
+                    }
+                }
+                if (!$replaced) {
+                    $all[] = $built;
+                }
+                if (admin_write_admin_products($all)) {
+                    admin_audit_log($editingId !== null ? 'product_edited' : 'product_created', [
+                        'productId' => $built['id'],
+                        'slug' => $built['slug'],
+                        'pubStatus' => $built['status'],
+                    ]);
+                    header('Location: index.php?saved_product=' . urlencode($built['model']));
+                    exit;
+                }
+                $error = 'Не удалось сохранить товар — проверьте права на запись файла data/admin-products.json на сервере.';
+                $productFormReopen = $editingId ?? 'new';
+            }
+        }
+    } elseif ($action === 'product_archive' || $action === 'product_restore') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $id = (string) ($_POST['product_id'] ?? '');
+            $all = admin_load_admin_products();
+            $found = false;
+            foreach ($all as $i => $p) {
+                if (($p['id'] ?? null) === $id) {
+                    $all[$i]['status'] = $action === 'product_archive' ? 'archived' : 'draft';
+                    $all[$i]['updatedAt'] = date('c');
+                    $found = true;
+                    break;
+                }
+            }
+            if ($found && admin_write_admin_products($all)) {
+                admin_audit_log($action === 'product_archive' ? 'product_archived' : 'product_restored', ['productId' => $id]);
+            } else {
+                $error = 'Не удалось изменить статус товара.';
+            }
+            header('Location: index.php');
+            exit;
+        }
+    } elseif ($action === 'product_delete') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $id = (string) ($_POST['product_id'] ?? '');
+            $all = admin_load_admin_products();
+            $target = admin_find_product($all, $id);
+            // Безвозвратно удалить можно только то, что уже в архиве —
+            // отдельная защита ОТ случайного удаления поверх обычного
+            // подтверждения в браузере (confirm() можно и не глядя
+            // нажать, а лишний обязательный шаг "сначала архивировать"
+            // нет).
+            if ($target === null || ($target['status'] ?? '') !== 'archived') {
+                $error = 'Удалить без возврата можно только товар из архива.';
+            } else {
+                foreach ($target['images'] ?? [] as $img) {
+                    admin_delete_media_file($img);
+                }
+                foreach ($target['variants'] ?? [] as $v) {
+                    if (!empty($v['image'])) {
+                        admin_delete_media_file($v['image']);
+                    }
+                }
+                $remaining = array_values(array_filter($all, static fn($p) => ($p['id'] ?? null) !== $id));
+                if (admin_write_admin_products($remaining)) {
+                    admin_audit_log('product_deleted', ['productId' => $id, 'slug' => $target['slug'] ?? '']);
+                } else {
+                    $error = 'Не удалось удалить товар.';
+                }
+            }
+            header('Location: index.php?pfilter=archived');
+            exit;
+        }
     }
 }
 
@@ -315,10 +417,34 @@ if (isset($_GET['saved'])) {
 if (isset($_GET['email']) && $_GET['email'] === 'changed') {
     $flash = ($flash ? $flash . ' ' : '') . 'Email для кода входа изменён.';
 }
+if (isset($_GET['saved_product'])) {
+    $flash = ($flash ? $flash . ' ' : '') . '✓ Сохранено: ' . htmlspecialchars((string) $_GET['saved_product'], ENT_QUOTES, 'UTF-8');
+}
 
 $loggedIn = admin_is_logged_in();
 $pending2fa = !$loggedIn && admin_pending_2fa();
 $products = $loggedIn ? admin_effective_products() : [];
+/* ── Товары, созданные клиентом (отдельно от сборочного каталога выше) ── */
+$myProducts = $loggedIn ? admin_load_admin_products() : [];
+$myProductFilter = (string) ($_GET['pfilter'] ?? 'all');
+if (!in_array($myProductFilter, ['all', 'published', 'draft', 'archived'], true)) {
+    $myProductFilter = 'all';
+}
+$myProductsFiltered = $myProductFilter === 'all'
+    ? $myProducts
+    : array_values(array_filter($myProducts, static fn($p) => ($p['status'] ?? 'draft') === $myProductFilter));
+// Открыть форму: либо явный ?product=<id|new> в адресе, либо форма
+// осталась открытой после неудачного сохранения (см. product_save выше).
+$openProductId = $productFormReopen ?? (isset($_GET['product']) ? (string) $_GET['product'] : null);
+$editingProduct = null;
+if ($openProductId !== null && $openProductId !== 'new') {
+    $editingProduct = admin_find_product($myProducts, $openProductId);
+    if ($editingProduct === null) {
+        $openProductId = null; // не существует/уже удалён — форму не открываем
+    }
+}
+// Список артикулов сборочного каталога — для чекбоксов "Совместимо с".
+$compatCandidates = $loggedIn ? admin_load_catalog_index() : [];
 // CSRF-токен нужен и на шаге ввода кода (ещё не $loggedIn), не только
 // в самой панели — $_SESSION уже существует к этому моменту в обоих случаях.
 $csrf = ($loggedIn || $pending2fa) ? admin_csrf_token() : null;
@@ -486,6 +612,9 @@ $categoryList = array_keys($categoryList);
     <?php if ($error): ?><p class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
     <?php if ($flash): ?><p class="flash"><?= $flash ?><?= isset($_GET['saved']) ? ' — на сайте обновится сразу, перезагрузку страницы товара делать не нужно.' : '' ?></p><?php endif; ?>
 
+    <?php include __DIR__ . '/products-ui.php'; ?>
+
+    <h2 style="margin-top:2.5rem;">Каталог сайта (из сборки)</h2>
     <div class="controls">
       <input type="search" id="search" placeholder="Поиск по модели или артикулу…" />
       <select id="categoryFilter">

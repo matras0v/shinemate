@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 
 import App from './App'
 import './index.css'
+import { applyAdminProducts } from './lib/adminProducts'
 import { applyCatalogOverrides } from './lib/overrides'
 
 /*
@@ -11,8 +12,12 @@ import { applyCatalogOverrides } from './lib/overrides'
  * бандла, а через кадр — актуальная. Запрос лёгкий (JSON того же
  * домена, с таймаутом), поэтому задержка первого рендера незаметна;
  * при сбое applyCatalogOverrides сама молча ничего не меняет.
+ *
+ * Товары, добавленные клиентом (applyAdminProducts) — независимый
+ * endpoint, идёт параллельно: сбой одного не должен ждать или
+ * блокировать другой.
  */
-applyCatalogOverrides().finally(() => {
+Promise.all([applyCatalogOverrides(), applyAdminProducts()]).finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
