@@ -200,10 +200,11 @@ function admin_clear_failed_logins(): void
 }
 
 /**
- * Возвращает 'ok' (сразу залогинен — 2FA не включена), 'need_totp'
- * (пароль верный, но нужен ещё код) или 'fail'. Один и тот же лимит
- * попыток (LOGIN_ATTEMPTS_FILE) считает и неверные пароли, и неверные
- * коды 2FA — это ОДИН бюджет попыток входа на IP, не два независимых.
+ * Возвращает 'ok' (не используется сейчас — код на email обязателен всегда,
+ * оставлено для симметрии с 'fail'/'need_otp'), 'need_otp' (пароль верный,
+ * код уже отправлен на почту) или 'fail'. Один и тот же лимит попыток
+ * (LOGIN_ATTEMPTS_FILE) считает и неверные пароли, и неверные коды —
+ * это ОДИН бюджет попыток входа на IP, не два независимых.
  */
 function admin_login(string $password): string
 {
@@ -216,20 +217,16 @@ function admin_login(string $password): string
         return 'fail';
     }
     // Регенерация ID сессии сразу на верном пароле — защита от session
-    // fixation действует уже на шаге ожидания кода 2FA, а не только после
+    // fixation действует уже на шаге ожидания кода, а не только после
     // него; admin_complete_login() ниже регенерирует ID ещё раз.
     session_regenerate_id(true);
     admin_clear_failed_logins();
 
-    if (admin_totp_is_enabled()) {
-        $_SESSION['pending_2fa'] = true;
-        $_SESSION['pending_2fa_since'] = time();
-        admin_audit_log('login_password_ok_awaiting_2fa');
-        return 'need_totp';
-    }
-
-    admin_complete_login();
-    return 'ok';
+    $_SESSION['pending_2fa'] = true;
+    $_SESSION['pending_2fa_since'] = time();
+    admin_send_login_otp();
+    admin_audit_log('login_password_ok_awaiting_otp');
+    return 'need_otp';
 }
 
 /** Второй шаг: только после этого сессия становится по-настоящему авторизованной. */
@@ -249,8 +246,8 @@ function admin_pending_2fa(): bool
         return false;
     }
     $since = (int)($_SESSION['pending_2fa_since'] ?? 0);
-    if (time() - $since > TOTP_PENDING_SECONDS) {
-        unset($_SESSION['pending_2fa'], $_SESSION['pending_2fa_since']);
+    if (time() - $since > OTP_PENDING_SECONDS) {
+        unset($_SESSION['pending_2fa'], $_SESSION['pending_2fa_since'], $_SESSION['otp_hash'], $_SESSION['otp_since'], $_SESSION['otp_attempts'], $_SESSION['otp_resend_count']);
         return false;
     }
     return true;
@@ -326,120 +323,114 @@ function admin_change_password(string $current, string $new): ?string
     return null;
 }
 
-/* ──────────────────────── Двухфакторная защита (TOTP) ──────────────────────── */
+/* ──────────────────────── Код входа на email (единственный администратор) ──────────────────────── */
 
-function admin_totp_is_enabled(): bool
+/**
+ * Ровно ОДИН администратор — email хранится только в config.php на
+ * сервере, посетитель никогда не может ни ввести, ни увидеть его целиком
+ * (см. admin_mask_email). Сменить можно только изнутри уже авторизованной
+ * панели через admin_email_change_* ниже.
+ */
+function admin_admin_email(): string
 {
-    $data = admin_read_json(TOTP_SECRET_FILE);
-    return !empty($data['enabled']) && !empty($data['secret']);
+    return defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '';
 }
 
-function admin_totp_confirmed_at(): ?int
+/** "a***@company.ru" — для отображения в уже авторизованной/предавторизованной форме. */
+function admin_mask_email(string $email): string
 {
-    $data = admin_read_json(TOTP_SECRET_FILE);
-    return isset($data['confirmedAt']) ? (int)$data['confirmedAt'] : null;
+    $at = strpos($email, '@');
+    if ($at === false || $at === 0) {
+        return '···';
+    }
+    $local = mb_substr(substr($email, 0, $at), 0, 1);
+    $domain = substr($email, $at); // включая @
+    return $local . '***' . $domain;
+}
+
+function admin_otp_generate_code(): string
+{
+    return str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 }
 
 /**
- * Начинает (или перезапускает) настройку: новый секрет сохраняется как
- * ЕЩЁ НЕ включённый (enabled=false) — если 2FA уже была включена другим
- * секретом, она остаётся рабочей, пока не пройдено подтверждение новым
- * кодом (admin_totp_confirm_setup). Так не бывает окна, где 2FA как бы
- * "включена", но верного секрета для неё ещё нет ни на одном устройстве.
+ * Генерирует код, отправляет ТОЛЬКО на предустановленный admin-email
+ * (никогда — на адрес из запроса посетителя, такого поля в форме входа
+ * вообще нет) и кладёт в сессию только ХЕШ кода, не сам код.
  */
-function admin_totp_start_setup(): string
+function admin_send_login_otp(): void
 {
-    $secret = totp_generate_secret();
-    $_SESSION['totp_setup_secret'] = $secret;
-    $_SESSION['totp_setup_since'] = time();
-    return $secret;
+    $code = admin_otp_generate_code();
+    $_SESSION['otp_hash'] = password_hash($code, PASSWORD_DEFAULT);
+    $_SESSION['otp_since'] = time();
+    $_SESSION['otp_attempts'] = 0;
+    admin_send_mail(
+        admin_admin_email(),
+        'Код входа — панель ShineMate',
+        "Код для входа в панель управления каталогом: {$code}\n\n"
+        . 'Код действует ' . (int) round(OTP_PENDING_SECONDS / 60) . " минут.\n"
+        . "Если вы не пытались войти в панель — просто игнорируйте это письмо, вход без этого кода невозможен."
+    );
+    admin_audit_log('otp_sent');
 }
 
 /**
- * Подтверждение первым верным кодом с телефона — только тогда 2FA
- * реально считается включённой. До этого момента запись в
- * TOTP_SECRET_FILE не создаётся вовсе: "почти настроенная" 2FA без
- * подтверждения не должна требовать код при следующем входе.
- *
- * @return array{0: bool, 1: string[]|null, 2: string|null} [успех, резервные коды (только один раз!), ошибка]
+ * Повторная отправка (например, письмо не пришло/попало в спам) — не
+ * более 3 раз за одну "подвисшую" попытку входа и не чаще раза в 30 сек,
+ * чтобы не заваливать почту и не превращать это в лазейку для рассылки.
  */
-function admin_totp_confirm_setup(string $code): array
+function admin_resend_login_otp(): ?string
 {
-    $secret = $_SESSION['totp_setup_secret'] ?? null;
-    $since = (int)($_SESSION['totp_setup_since'] ?? 0);
-    if (!$secret || time() - $since > TOTP_PENDING_SECONDS) {
-        unset($_SESSION['totp_setup_secret'], $_SESSION['totp_setup_since']);
-        return [false, null, 'Настройка истекла — начните заново.'];
+    if (!admin_pending_2fa()) {
+        return 'Сессия входа истекла. Войдите заново.';
     }
-    if (!totp_verify($secret, $code)) {
-        return [false, null, 'Код неверный. Проверьте время на телефоне (оно должно быть точным) и попробуйте снова.'];
+    $sentAt = (int) ($_SESSION['otp_since'] ?? 0);
+    if (time() - $sentAt < 30) {
+        return 'Код уже отправлен — подождите немного перед повторной отправкой.';
     }
-    admin_write_json_atomic(TOTP_SECRET_FILE, [
-        'secret' => $secret,
-        'enabled' => true,
-        'confirmedAt' => time(),
-    ]);
-    unset($_SESSION['totp_setup_secret'], $_SESSION['totp_setup_since']);
-    $codes = admin_totp_regenerate_recovery_codes();
-    admin_audit_log('totp_enabled');
-    return [true, $codes, null];
-}
-
-function admin_totp_disable(): void
-{
-    @unlink(TOTP_SECRET_FILE);
-    @unlink(TOTP_RECOVERY_FILE);
-    admin_audit_log('totp_disabled');
-}
-
-/**
- * Отключение 2FA требует ОБА подтверждения — текущий пароль И живой код
- * (TOTP или резервный), не только открытую сессию. Иначе один клик в уже
- * открытой вкладке на чужом/оставленном без присмотра компьютере снимал
- * бы всю дополнительную защиту.
- */
-function admin_totp_disable_with_verification(string $currentPassword, string $code): ?string
-{
-    if (!password_verify($currentPassword, ADMIN_PASSWORD_HASH)) {
-        return 'Текущий пароль указан неверно.';
+    $count = (int) ($_SESSION['otp_resend_count'] ?? 0);
+    if ($count >= 3) {
+        return 'Превышен лимит повторных отправок для этой попытки входа. Подождите несколько минут и войдите заново, либо используйте резервный код.';
     }
-    if (!admin_totp_verify_login_code($code)) {
-        return 'Код неверный.';
-    }
-    admin_totp_disable();
+    $_SESSION['otp_resend_count'] = $count + 1;
+    admin_send_login_otp();
     return null;
 }
 
-/** Пробует код как 6-значный TOTP, затем как резервный код XXXX-XXXX. */
-function admin_totp_verify_login_code(string $input): bool
+/** Пробует код как 6-значный код из письма, затем как резервный код XXXX-XXXX. */
+function admin_otp_verify_login_code(string $input): bool
 {
     $input = trim($input);
     if (preg_match('/^\d{6}$/', $input)) {
-        $data = admin_read_json(TOTP_SECRET_FILE);
-        $secret = $data['secret'] ?? null;
-        if ($secret && totp_verify($secret, $input)) {
+        $hash = $_SESSION['otp_hash'] ?? null;
+        $since = (int) ($_SESSION['otp_since'] ?? 0);
+        if (!$hash || time() - $since > OTP_PENDING_SECONDS) {
+            return false;
+        }
+        if (password_verify($input, $hash)) {
+            unset($_SESSION['otp_hash'], $_SESSION['otp_since'], $_SESSION['otp_attempts'], $_SESSION['otp_resend_count']);
             return true;
         }
         return false;
     }
     if (preg_match('/^[A-Z0-9]{4}-[A-Z0-9]{4}$/i', $input)) {
-        return admin_totp_consume_recovery_code($input);
+        return admin_otp_consume_recovery_code($input);
     }
     return false;
 }
 
-function admin_totp_consume_recovery_code(string $code): bool
+function admin_otp_consume_recovery_code(string $code): bool
 {
     $code = strtoupper(trim($code));
-    $stored = admin_read_json(TOTP_RECOVERY_FILE);
+    $stored = admin_read_json(OTP_RECOVERY_FILE);
     $list = $stored['codes'] ?? [];
     foreach ($list as $i => $entry) {
         if (!empty($entry['usedAt'])) {
             continue; // уже потрачен — не может сработать второй раз
         }
-        if (password_verify($code, (string)($entry['hash'] ?? ''))) {
+        if (password_verify($code, (string) ($entry['hash'] ?? ''))) {
             $list[$i]['usedAt'] = time();
-            admin_write_json_atomic(TOTP_RECOVERY_FILE, ['codes' => $list]);
+            admin_write_json_atomic(OTP_RECOVERY_FILE, ['codes' => $list]);
             admin_audit_log('recovery_code_used');
             return true;
         }
@@ -447,22 +438,223 @@ function admin_totp_consume_recovery_code(string $code): bool
     return false;
 }
 
-/** Новый набор кодов ПОЛНОСТЬЮ заменяет старый — прежние коды сразу перестают работать. */
-function admin_totp_regenerate_recovery_codes(): array
+/**
+ * Тестовое письмо для раздела «Безопасность» — проверить, что код входа
+ * реально доходит на текущий email, не трогая состояние логина.
+ * Одноразовый код нигде не сохраняется — этим письмом залогиниться нельзя,
+ * оно только подтверждает доставку.
+ */
+function admin_send_test_otp(): bool
 {
-    $codes = totp_generate_recovery_codes(10);
+    $code = admin_otp_generate_code();
+    $ok = admin_send_mail(
+        admin_admin_email(),
+        'Тестовый код — панель ShineMate',
+        "Это ПРОВЕРОЧНОЕ письмо, оно не подходит для входа.\n"
+        . "Если вы его получили — доставка кодов входа работает исправно.\n\n"
+        . "Пример кода: {$code}\nВремя: " . date('Y-m-d H:i:s')
+    );
+    admin_audit_log('test_otp_sent', ['ok' => $ok]);
+    return $ok;
+}
+
+/** Новый набор кодов ПОЛНОСТЬЮ заменяет старый — прежние коды сразу перестают работать. */
+function admin_otp_regenerate_recovery_codes(): array
+{
+    $codes = admin_generate_recovery_codes(10);
     $entries = array_map(
         static fn(string $c) => ['hash' => password_hash($c, PASSWORD_DEFAULT), 'usedAt' => null],
         $codes
     );
-    admin_write_json_atomic(TOTP_RECOVERY_FILE, ['codes' => $entries]);
-    admin_audit_log('totp_recovery_regenerated');
+    admin_write_json_atomic(OTP_RECOVERY_FILE, ['codes' => $entries]);
+    admin_audit_log('otp_recovery_regenerated');
     return $codes;
 }
 
-function admin_totp_recovery_remaining(): int
+function admin_otp_recovery_remaining(): int
 {
-    $stored = admin_read_json(TOTP_RECOVERY_FILE);
+    $stored = admin_read_json(OTP_RECOVERY_FILE);
     $list = $stored['codes'] ?? [];
     return count(array_filter($list, static fn($e) => empty($e['usedAt'])));
+}
+
+/** Формат XXXX-XXXX из алфавита без 0/O/1/I — легче переписать от руки. */
+function admin_generate_recovery_codes(int $count = 10): array
+{
+    $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    $codes = [];
+    for ($i = 0; $i < $count; $i++) {
+        $raw = '';
+        for ($j = 0; $j < 8; $j++) {
+            $raw .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $codes[] = substr($raw, 0, 4) . '-' . substr($raw, 4, 4);
+    }
+    return $codes;
+}
+
+/* ──────────────────────── Смена email для кода входа ──────────────────────── */
+/*
+ * Единственное место, где новый email вообще где-либо вводится — форма
+ * ТОЛЬКО внутри уже полностью авторизованной сессии (admin_require_login()
+ * вызывается в index.php перед каждым из этих действий). Ровно 4 шага
+ * из брифа: текущий пароль → код на СТАРЫЙ email → ввод нового адреса →
+ * код на НОВЫЙ email → только тогда запись в config.php обновляется.
+ * Общий бюджет попыток (LOGIN_ATTEMPTS_FILE) действует и здесь — неверный
+ * пароль или неверный код на любом из шагов считается как обычная
+ * неудачная попытка входа.
+ */
+
+function admin_email_change_stage(): ?string
+{
+    $stage = $_SESSION['email_change_stage'] ?? null;
+    $since = (int) ($_SESSION['email_change_since'] ?? 0);
+    if ($stage && time() - $since > OTP_PENDING_SECONDS) {
+        admin_email_change_cancel();
+        return null;
+    }
+    return is_string($stage) ? $stage : null;
+}
+
+function admin_email_change_cancel(): void
+{
+    unset(
+        $_SESSION['email_change_stage'],
+        $_SESSION['email_change_since'],
+        $_SESSION['email_change_otp_hash'],
+        $_SESSION['email_change_new_email'],
+        $_SESSION['email_change_attempts']
+    );
+}
+
+/** Шаг 1: текущий пароль → код уходит на СТАРЫЙ (текущий) email. */
+function admin_email_change_start(string $currentPassword): ?string
+{
+    if (!password_verify($currentPassword, ADMIN_PASSWORD_HASH)) {
+        admin_register_failed_login();
+        return 'Текущий пароль указан неверно.';
+    }
+    $code = admin_otp_generate_code();
+    $_SESSION['email_change_stage'] = 'verify_old';
+    $_SESSION['email_change_since'] = time();
+    $_SESSION['email_change_otp_hash'] = password_hash($code, PASSWORD_DEFAULT);
+    $_SESSION['email_change_attempts'] = 0;
+    admin_send_mail(
+        admin_admin_email(),
+        'Код подтверждения — смена email в панели ShineMate',
+        "Код подтверждения для смены email, на который приходит код входа: {$code}\n\n"
+        . 'Действует ' . (int) round(OTP_PENDING_SECONDS / 60) . " минут.\n"
+        . 'Если вы не запрашивали смену email — не вводите этот код и смените пароль.'
+    );
+    admin_audit_log('email_change_started');
+    return null;
+}
+
+/** Шаг 2: код с текущего email → переход к вводу нового адреса. */
+function admin_email_change_verify_old(string $code): ?string
+{
+    if (admin_email_change_stage() !== 'verify_old') {
+        return 'Сессия смены email истекла — начните заново.';
+    }
+    $hash = $_SESSION['email_change_otp_hash'] ?? null;
+    if (!$hash || !password_verify(trim($code), $hash)) {
+        admin_register_failed_login();
+        $_SESSION['email_change_attempts'] = (int) ($_SESSION['email_change_attempts'] ?? 0) + 1;
+        if ($_SESSION['email_change_attempts'] >= 6) {
+            admin_email_change_cancel();
+            return 'Слишком много неверных попыток — начните смену email заново.';
+        }
+        return 'Код неверный.';
+    }
+    $_SESSION['email_change_stage'] = 'enter_new_email';
+    $_SESSION['email_change_since'] = time();
+    unset($_SESSION['email_change_otp_hash'], $_SESSION['email_change_attempts']);
+    admin_audit_log('email_change_old_verified');
+    return null;
+}
+
+/** Шаг 3: новый адрес → код уходит на НЕГО (первый и единственный раз, когда он используется до подтверждения). */
+function admin_email_change_request_new(string $newEmail): ?string
+{
+    if (admin_email_change_stage() !== 'enter_new_email') {
+        return 'Сессия смены email истекла — начните заново.';
+    }
+    $newEmail = trim($newEmail);
+    if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+        return 'Некорректный email.';
+    }
+    $code = admin_otp_generate_code();
+    $_SESSION['email_change_stage'] = 'verify_new';
+    $_SESSION['email_change_since'] = time();
+    $_SESSION['email_change_new_email'] = $newEmail;
+    $_SESSION['email_change_otp_hash'] = password_hash($code, PASSWORD_DEFAULT);
+    $_SESSION['email_change_attempts'] = 0;
+    admin_send_mail(
+        $newEmail,
+        'Код подтверждения нового email — панель ShineMate',
+        "Код подтверждения: {$code}\n\n"
+        . 'Этот адрес станет новым получателем кодов входа в панель управления ShineMate, если вы введёте код в течение '
+        . (int) round(OTP_PENDING_SECONDS / 60) . " минут.\n"
+        . 'Если это не вы — просто игнорируйте письмо, адрес не будет изменён.'
+    );
+    admin_audit_log('email_change_new_requested');
+    return null;
+}
+
+/** Шаг 4: код с нового адреса → только теперь ADMIN_EMAIL реально обновляется на диске. */
+function admin_email_change_verify_new(string $code): ?string
+{
+    if (admin_email_change_stage() !== 'verify_new') {
+        return 'Сессия смены email истекла — начните заново.';
+    }
+    $hash = $_SESSION['email_change_otp_hash'] ?? null;
+    $newEmail = $_SESSION['email_change_new_email'] ?? null;
+    if (!$hash || !$newEmail || !password_verify(trim($code), $hash)) {
+        admin_register_failed_login();
+        $_SESSION['email_change_attempts'] = (int) ($_SESSION['email_change_attempts'] ?? 0) + 1;
+        if ($_SESSION['email_change_attempts'] >= 6) {
+            admin_email_change_cancel();
+            return 'Слишком много неверных попыток — начните смену email заново.';
+        }
+        return 'Код неверный.';
+    }
+    $result = admin_write_admin_email($newEmail);
+    admin_email_change_cancel();
+    if ($result !== null) {
+        return $result;
+    }
+    admin_audit_log('email_change_completed');
+    return null;
+}
+
+/**
+ * Переписывает config.php на диске — тот же атомарный приём (tmp + rename),
+ * что и admin_change_password() для ADMIN_PASSWORD_HASH.
+ */
+function admin_write_admin_email(string $newEmail): ?string
+{
+    $configPath = __DIR__ . '/config.php';
+    $source = file_get_contents($configPath);
+    if ($source === false) {
+        return 'Не удалось прочитать config.php.';
+    }
+    $updated = preg_replace(
+        "/define\\('ADMIN_EMAIL',\\s*'[^']*'\\);/",
+        "define('ADMIN_EMAIL', '" . addslashes($newEmail) . "');",
+        $source,
+        1,
+        $count
+    );
+    if ($updated === null || $count !== 1) {
+        return 'Не удалось найти строку с email в config.php — смените вручную на сервере.';
+    }
+    $tmp = $configPath . '.tmp-' . bin2hex(random_bytes(4));
+    if (file_put_contents($tmp, $updated, LOCK_EX) === false) {
+        return 'Не удалось записать временный файл — проверьте права на запись в папку admin/.';
+    }
+    if (!rename($tmp, $configPath)) {
+        @unlink($tmp);
+        return 'Не удалось заменить config.php — проверьте права на запись в папку admin/.';
+    }
+    return null;
 }

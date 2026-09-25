@@ -59,15 +59,19 @@ function admin_event_label(string $event): string
         'login_success' => 'Успешный вход',
         'login_failed' => 'Неверный пароль/код',
         'login_blocked' => 'Вход заблокирован (превышен лимит попыток)',
-        'login_password_ok_awaiting_2fa' => 'Пароль верный, ожидание кода 2FA',
+        'login_password_ok_awaiting_otp' => 'Пароль верный, код отправлен на email',
         'save_price' => 'Изменена цена/наличие',
         'upload_photo' => 'Загружено фото',
         'restore_photo' => 'Восстановлено фото по умолчанию',
         'change_password' => 'Изменён пароль',
-        'totp_enabled' => 'Включена двухфакторная защита',
-        'totp_disabled' => 'Отключена двухфакторная защита',
-        'totp_recovery_regenerated' => 'Созданы новые резервные коды',
+        'otp_sent' => 'Код входа отправлен на email',
+        'test_otp_sent' => 'Отправлен тестовый код',
+        'otp_recovery_regenerated' => 'Созданы новые резервные коды',
         'recovery_code_used' => 'Использован резервный код',
+        'email_change_started' => 'Начата смена email (подтверждение со старого адреса)',
+        'email_change_old_verified' => 'Старый email подтверждён — ожидание нового адреса',
+        'email_change_new_requested' => 'Запрошено подтверждение нового email',
+        'email_change_completed' => 'Email для кода входа изменён',
     ];
     return $labels[$event] ?? $event;
 }

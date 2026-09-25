@@ -26,8 +26,7 @@ admin-php/media-uploads/
 admin-php/login-attempts.json
 admin-php/cred-version.txt
 admin-php/audit.log
-admin-php/totp-secret.json
-admin-php/totp-recovery.json
+admin-php/otp-recovery.json
 public/media/admin-products/*
 !public/media/admin-products/.htaccess
 

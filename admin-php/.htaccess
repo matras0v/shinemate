@@ -2,13 +2,13 @@
 # сами себя защищают константой SHINEMATE_ADMIN_BOOTSTRAP (403 при
 # прямом обращении), но запрет на уровне сервера — вторая, независимая
 # линия защиты на случай, если PHP-обработчик когда-нибудь отключат.
-<FilesMatch "^(config|auth|catalog|mailer|media|diagnostics|audit|totp)\.php$">
+<FilesMatch "^(config|auth|catalog|mailer|media|diagnostics|audit)\.php$">
   Require all denied
 </FilesMatch>
 
-# login-attempts.json, cred-version.txt, audit.log, totp-secret.json,
-# totp-recovery.json и backups/ — служебные файлы, не для веб-доступа.
-<FilesMatch "^(login-attempts\.json|cred-version\.txt|audit\.log|totp-secret\.json|totp-recovery\.json)$">
+# login-attempts.json, cred-version.txt, audit.log, otp-recovery.json
+# и backups/ — служебные файлы, не для веб-доступа.
+<FilesMatch "^(login-attempts\.json|cred-version\.txt|audit\.log|otp-recovery\.json)$">
   Require all denied
 </FilesMatch>
 <IfModule mod_alias.c>
