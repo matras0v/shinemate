@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 define('SHINEMATE_ADMIN_BOOTSTRAP', true);
 require __DIR__ . '/config.php';
+require __DIR__ . '/audit.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/catalog.php';
 require __DIR__ . '/media.php';
@@ -91,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'status' => $status,
                 ]);
                 if (admin_write_overrides($overrides)) {
+                    admin_audit_log('save_price', ['sku' => $sku, 'price' => round((float) $priceRaw, 2), 'status' => $status]);
                     header('Location: index.php?saved=' . urlencode($sku) . '&what=price');
                     exit;
                 }
@@ -122,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($previous !== null) {
                             admin_delete_media_file($previous);
                         }
+                        admin_audit_log('upload_photo', ['sku' => $sku]);
                         header('Location: index.php?saved=' . urlencode($sku) . '&what=photo');
                         exit;
                     }
@@ -144,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if (admin_write_overrides($overrides)) {
                     admin_delete_media_file($old);
+                    admin_audit_log('restore_photo', ['sku' => $sku]);
                     header('Location: index.php?saved=' . urlencode($sku) . '&what=photo_restored');
                     exit;
                 }
@@ -179,6 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = admin_change_password($current, $new);
                 if ($result === null) {
                     $flash = 'Пароль изменён.';
+                    admin_audit_log('change_password');
                 } else {
                     $error = $result;
                 }
@@ -280,6 +285,9 @@ $categoryList = array_keys($categoryList);
   .thumb.small { width: 32px; height: 32px; }
   .photo-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px dashed rgba(26,28,30,0.12); }
   .photo-row input[type=file] { flex: 1; min-width: 160px; }
+  .photo-source { flex-basis: 100%; font-size: 0.75rem; font-weight: 500; }
+  .photo-source.own { color: #DE6A18; }
+  .photo-source.default { color: #565C60; }
   details.section { background: #fff; border: 1px solid rgba(26,28,30,0.1); border-radius: 0.75rem; padding: 0.25rem 1.125rem 1rem; margin-bottom: 0.75rem; }
   details.section summary { cursor: pointer; padding: 0.85rem 0; font-weight: 600; font-size: 0.9375rem; }
   table.diag { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
@@ -401,6 +409,9 @@ $categoryList = array_keys($categoryList);
               </form>
 
               <form method="post" enctype="multipart/form-data" class="photo-row">
+                <span class="photo-source <?= $p['imageOverridden'] ? 'own' : 'default' ?>">
+                  <?= $p['imageOverridden'] ? 'Фото: своё' : 'Фото: по умолчанию' ?>
+                </span>
                 <input type="hidden" name="action" value="upload_image" />
                 <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
                 <input type="hidden" name="sku" value="<?= htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') ?>" />

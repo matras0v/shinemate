@@ -183,6 +183,7 @@ function admin_register_failed_login(): void
     }
 
     admin_write_json_atomic(LOGIN_ATTEMPTS_FILE, $data);
+    admin_audit_log('login_failed', ['locked' => $entry['lockoutUntil'] > $now]);
     // Небольшая задержка на каждую неудачную попытку — усложняет
     // автоматический перебор, не мешает живому человеку.
     sleep(1);
@@ -201,6 +202,7 @@ function admin_clear_failed_logins(): void
 function admin_login(string $password): bool
 {
     if (admin_login_locked()) {
+        admin_audit_log('login_blocked');
         return false;
     }
     if (!password_verify($password, ADMIN_PASSWORD_HASH)) {
@@ -213,6 +215,7 @@ function admin_login(string $password): bool
     $_SESSION['last_activity'] = time();
     $_SESSION['cred_version'] = admin_cred_version();
     admin_clear_failed_logins();
+    admin_audit_log('login_success');
     return true;
 }
 
