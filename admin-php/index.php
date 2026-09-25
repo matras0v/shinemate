@@ -4,6 +4,7 @@ declare(strict_types=1);
 define('SHINEMATE_ADMIN_BOOTSTRAP', true);
 require __DIR__ . '/config.php';
 require __DIR__ . '/audit.php';
+require __DIR__ . '/totp.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/catalog.php';
 require __DIR__ . '/media.php';
@@ -33,21 +34,47 @@ if (($_GET['action'] ?? '') === 'download_backup') {
 
 $error = null;
 $flash = null;
+$recoveryCodesToShow = null;
+$show2faSetup = false;
 
-/* ── POST: логин, сохранение, загрузка фото, диагностика, смена пароля ── */
+/* ── POST: логин, сохранение, загрузка фото, диагностика, смена пароля, 2FA ── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'login') {
         if (admin_login_locked()) {
             $error = 'Слишком много попыток входа. Подождите несколько минут и попробуйте снова.';
-        } elseif (admin_login((string) ($_POST['password'] ?? ''))) {
-            header('Location: index.php');
-            exit;
         } else {
-            // Намеренно НЕ уточняем, что именно неверно — единственное поле
-            // формы здесь пароль, но фраза остаётся общей на случай, если
-            // логика входа когда-нибудь расширится.
+            $result = admin_login((string) ($_POST['password'] ?? ''));
+            if ($result === 'ok') {
+                header('Location: index.php');
+                exit;
+            } elseif ($result === 'need_totp') {
+                header('Location: index.php');
+                exit;
+            } else {
+                // Намеренно НЕ уточняем, что именно неверно — фраза общая
+                // и для неверного пароля, и (ниже, action=verify_totp) для
+                // неверного кода 2FA — по ответу нельзя понять, на каком
+                // именно шаге ошибка.
+                $error = 'Неверные данные для входа.';
+            }
+        }
+    } elseif ($action === 'verify_totp') {
+        if (!admin_pending_2fa()) {
+            $error = 'Сессия входа истекла. Войдите заново.';
+        } elseif (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } elseif (admin_login_locked()) {
+            $error = 'Слишком много попыток входа. Подождите несколько минут и попробуйте снова.';
+        } else {
+            $code = (string) ($_POST['code'] ?? '');
+            if (admin_totp_verify_login_code($code)) {
+                admin_complete_login();
+                header('Location: index.php');
+                exit;
+            }
+            admin_register_failed_login();
             $error = 'Неверные данные для входа.';
         }
     } elseif ($action === 'logout') {
@@ -189,6 +216,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+    } elseif ($action === 'setup_2fa_start') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            admin_totp_start_setup();
+            header('Location: index.php?2fa=setup');
+            exit;
+        }
+    } elseif ($action === 'setup_2fa_confirm') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            [$ok, $codes, $err] = admin_totp_confirm_setup((string) ($_POST['code'] ?? ''));
+            if ($ok) {
+                $flash = 'Двухфакторная защита включена.';
+                $recoveryCodesToShow = $codes;
+            } else {
+                $error = $err;
+                $show2faSetup = true; // остаться на форме подтверждения, не сбрасывать на общий вид
+            }
+        }
+    } elseif ($action === 'disable_2fa') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } else {
+            $result = admin_totp_disable_with_verification(
+                (string) ($_POST['current_password'] ?? ''),
+                (string) ($_POST['code'] ?? '')
+            );
+            if ($result === null) {
+                header('Location: index.php?2fa=disabled');
+                exit;
+            }
+            $error = $result;
+        }
+    } elseif ($action === 'regenerate_recovery_codes') {
+        admin_require_login();
+        if (!admin_csrf_check($_POST['csrf'] ?? null)) {
+            $error = 'Сессия истекла, обновите страницу и попробуйте снова.';
+        } elseif (!password_verify((string) ($_POST['current_password'] ?? ''), ADMIN_PASSWORD_HASH)) {
+            $error = 'Текущий пароль указан неверно.';
+        } else {
+            $recoveryCodesToShow = admin_totp_regenerate_recovery_codes();
+            $flash = 'Новые резервные коды созданы — старые больше не действуют.';
+        }
     }
 }
 
@@ -197,12 +272,30 @@ if (isset($_GET['saved'])) {
     $label = $what === 'photo' ? 'Фото обновлено' : ($what === 'photo_restored' ? 'Фото возвращено' : 'Сохранено');
     $flash = ($flash ? $flash . ' ' : '') . $label . ': ' . htmlspecialchars((string) $_GET['saved'], ENT_QUOTES, 'UTF-8');
 }
+if (isset($_GET['2fa']) && $_GET['2fa'] === 'disabled') {
+    $flash = ($flash ? $flash . ' ' : '') . 'Двухфакторная защита отключена.';
+}
 
 $loggedIn = admin_is_logged_in();
+$pending2fa = !$loggedIn && admin_pending_2fa();
 $products = $loggedIn ? admin_effective_products() : [];
-$csrf = $loggedIn ? admin_csrf_token() : null;
+// CSRF-токен нужен и на шаге ввода кода 2FA (ещё не $loggedIn), не только
+// в самой панели — $_SESSION уже существует к этому моменту в обоих случаях.
+$csrf = ($loggedIn || $pending2fa) ? admin_csrf_token() : null;
 $diagnostics = $loggedIn ? admin_diagnostics() : [];
 $backups = $loggedIn ? admin_list_backups() : [];
+$totpEnabled = $loggedIn ? admin_totp_is_enabled() : false;
+$totpRecoveryRemaining = $loggedIn && $totpEnabled ? admin_totp_recovery_remaining() : 0;
+// Секрет настройки — только из сессии (никогда не из файла напрямую при
+// показе): после редиректа с setup_2fa_start это тот же секрет, что уже
+// сохранён в $_SESSION, а не ещё один новый.
+if ($loggedIn && ((isset($_GET['2fa']) && $_GET['2fa'] === 'setup') || $show2faSetup) && !empty($_SESSION['totp_setup_secret'])) {
+    $show2faSetup = true;
+    $totpSetupSecret = (string) $_SESSION['totp_setup_secret'];
+} else {
+    $totpSetupSecret = null;
+}
+$recentEvents = $loggedIn ? admin_read_audit_tail(20) : [];
 
 /*
  * Товары сгруппированы по семейству (одна карточка каталога = несколько
@@ -299,11 +392,34 @@ $categoryList = array_keys($categoryList);
   ul.backups { list-style: none; margin: 0; padding: 0; font-size: 0.8125rem; }
   ul.backups li { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid rgba(26,28,30,0.06); gap: 0.5rem; }
   ul.backups a { color: #1A1C1E; }
+  .badge-status { display: inline-block; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.15rem 0.6rem; border-radius: 999px; font-weight: 600; }
+  .badge-status.on { background: #E7F3EA; color: #1E6B3A; }
+  .badge-status.off { background: #F1F0EC; color: #565C60; }
+  .recovery-box { background: #FFF8ED; border: 1px solid #F0D9A8; border-radius: 0.75rem; padding: 1rem 1.125rem; margin-bottom: 1rem; }
+  .recovery-codes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.75rem; }
+  .recovery-codes code { background: #fff; border: 1px solid rgba(26,28,30,0.12); border-radius: 0.4rem; padding: 0.45rem 0.6rem; font-size: 0.9375rem; text-align: center; }
+  .setup-2fa p { font-size: 0.875rem; }
+  .secret-key { font-family: ui-monospace, monospace; font-size: 1.0625rem; letter-spacing: 0.05em; background: #F1F0EC; padding: 0.6rem 0.75rem; border-radius: 0.5rem; word-break: break-all; }
 </style>
 </head>
 <body>
 
-<?php if (!$loggedIn): ?>
+<?php if ($pending2fa): ?>
+
+  <div class="login-wrap">
+    <h1>Код подтверждения</h1>
+    <p style="font-size:0.875rem; color:#565C60; margin-top:-0.75rem;">Пароль верный. Введите 6-значный код из приложения-аутентификатора — или один из резервных кодов (формат XXXX-XXXX), если телефона нет под рукой.</p>
+    <?php if ($error): ?><p class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+    <form method="post" autocomplete="off">
+      <input type="hidden" name="action" value="verify_totp" />
+      <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+      <label for="code">Код</label>
+      <input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required autofocus placeholder="123456 или XXXX-XXXX" />
+      <div style="margin-top: 1rem;"><button type="submit">Подтвердить</button></div>
+    </form>
+  </div>
+
+<?php elseif (!$loggedIn): ?>
 
   <div class="login-wrap">
     <h1>SHINEMATE — управление каталогом</h1>
@@ -467,9 +583,10 @@ $categoryList = array_keys($categoryList);
       <?php endif; ?>
     </details>
 
-    <h2>Смена пароля</h2>
+    <h2>Безопасность</h2>
+
     <details class="section">
-      <summary>Сменить пароль входа в панель управления</summary>
+      <summary>Сменить пароль</summary>
       <form method="post" autocomplete="off">
         <input type="hidden" name="action" value="change_password" />
         <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
@@ -478,16 +595,99 @@ $categoryList = array_keys($categoryList);
           <input type="password" id="current_password" name="current_password" required />
         </div>
         <div style="margin-bottom:0.75rem;">
-          <label for="new_password">Новый пароль (не короче 10 символов)</label>
-          <input type="password" id="new_password" name="new_password" minlength="10" required />
+          <label for="new_password">Новый пароль (не короче 12 символов, лучше 16+)</label>
+          <input type="password" id="new_password" name="new_password" minlength="12" required />
         </div>
         <div style="margin-bottom:0.75rem;">
           <label for="new_password_confirm">Повторите новый пароль</label>
-          <input type="password" id="new_password_confirm" name="new_password_confirm" minlength="10" required />
+          <input type="password" id="new_password_confirm" name="new_password_confirm" minlength="12" required />
         </div>
         <button type="submit" class="small">Сменить пароль</button>
       </form>
     </details>
+
+    <details class="section"<?= ($show2faSetup || $recoveryCodesToShow !== null) ? ' open' : '' ?>>
+      <summary>
+        Двухфакторная защита (2FA):
+        <span class="badge-status <?= $totpEnabled ? 'on' : 'off' ?>"><?= $totpEnabled ? 'включена' : 'выключена' ?></span>
+      </summary>
+
+      <?php if ($recoveryCodesToShow !== null): ?>
+        <div class="recovery-box">
+          <p style="margin-top:0; font-weight:600;">Сохраните эти резервные коды прямо сейчас</p>
+          <p style="font-size:0.8125rem; color:#565C60;">Каждый код работает один раз — используйте, если телефон с приложением-аутентификатором недоступен. После того как закроете эту страницу, коды снова показать нельзя (можно только создать новый набор — старый при этом перестанет работать).</p>
+          <div class="recovery-codes">
+            <?php foreach ($recoveryCodesToShow as $c): ?>
+              <code><?= htmlspecialchars($c, ENT_QUOTES, 'UTF-8') ?></code>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($show2faSetup && $totpSetupSecret): ?>
+        <div class="setup-2fa">
+          <p>1. Откройте приложение-аутентификатор (Google Authenticator, Microsoft Authenticator, 1Password, Authy или любое TOTP-совместимое).</p>
+          <p>2. Добавьте аккаунт вручную — введите этот ключ:</p>
+          <p class="secret-key"><?= htmlspecialchars(totp_format_secret_for_display($totpSetupSecret), ENT_QUOTES, 'UTF-8') ?></p>
+          <p style="font-size:0.8125rem;"><a href="<?= htmlspecialchars(totp_otpauth_uri($totpSetupSecret, TOTP_ACCOUNT_LABEL, TOTP_ISSUER), ENT_QUOTES, 'UTF-8') ?>">Открыть в приложении-аутентификаторе</a> (работает, если открываете эту страницу на самом телефоне).</p>
+          <p>3. Введите код, который показало приложение, чтобы подтвердить настройку:</p>
+          <form method="post" autocomplete="off">
+            <input type="hidden" name="action" value="setup_2fa_confirm" />
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+            <label for="totp_confirm_code">Код из приложения</label>
+            <input type="text" id="totp_confirm_code" name="code" inputmode="numeric" required autofocus placeholder="123456" style="max-width:160px;" />
+            <div style="margin-top:0.75rem;"><button type="submit" class="small">Подтвердить и включить</button></div>
+          </form>
+        </div>
+      <?php elseif (!$totpEnabled): ?>
+        <p style="font-size:0.875rem; color:#565C60;">Дополнительный код из приложения на телефоне при каждом входе — даже если кто-то узнает пароль, войти без телефона не сможет.</p>
+        <form method="post">
+          <input type="hidden" name="action" value="setup_2fa_start" />
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+          <button type="submit" class="small">Настроить двухфакторную защиту</button>
+        </form>
+      <?php else: ?>
+        <p style="font-size:0.875rem; color:#565C60;">Осталось неиспользованных резервных кодов: <?= (int)$totpRecoveryRemaining ?> из 10.</p>
+
+        <form method="post" style="margin-top:0.75rem;">
+          <input type="hidden" name="action" value="regenerate_recovery_codes" />
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+          <label for="regen_password">Текущий пароль (подтвердить создание новых кодов)</label>
+          <input type="password" id="regen_password" name="current_password" required style="max-width:260px;" />
+          <div style="margin-top:0.5rem;"><button type="submit" class="small secondary">Создать новые резервные коды</button></div>
+        </form>
+
+        <form method="post" style="margin-top:1.25rem; padding-top:1rem; border-top:1px dashed rgba(26,28,30,0.12);" autocomplete="off">
+          <input type="hidden" name="action" value="disable_2fa" />
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>" />
+          <p style="font-weight:600; margin-bottom:0.5rem;">Отключить двухфакторную защиту</p>
+          <div style="margin-bottom:0.6rem;">
+            <label for="disable_password">Текущий пароль</label>
+            <input type="password" id="disable_password" name="current_password" required style="max-width:260px;" />
+          </div>
+          <div style="margin-bottom:0.6rem;">
+            <label for="disable_code">Код из приложения (или резервный код)</label>
+            <input type="text" id="disable_code" name="code" required style="max-width:260px;" />
+          </div>
+          <button type="submit" class="small secondary">Отключить 2FA</button>
+        </form>
+      <?php endif; ?>
+    </details>
+
+    <?php if ($recentEvents): ?>
+      <details class="section">
+        <summary>Последние события безопасности</summary>
+        <table class="diag">
+          <?php foreach ($recentEvents as $e): ?>
+            <tr>
+              <td><?= htmlspecialchars((string)($e['ts'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+              <td><?= htmlspecialchars(admin_event_label((string)($e['event'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+              <td style="color:#8A9296;"><?= htmlspecialchars((string)($e['ip'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </table>
+      </details>
+    <?php endif; ?>
   </div>
 
   <script>

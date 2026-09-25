@@ -33,6 +33,13 @@ define('ADMIN_URL_PATH', '/ВСТАВЬТЕ_СЮДА_РЕАЛЬНЫЙ_ПУТЬ/'
 define('AUDIT_LOG_FILE', __DIR__ . '/audit.log');
 define('AUDIT_LOG_MAX_LINES', 1000);
 
+// Двухфакторная защита (TOTP).
+define('TOTP_SECRET_FILE', __DIR__ . '/totp-secret.json');
+define('TOTP_RECOVERY_FILE', __DIR__ . '/totp-recovery.json');
+define('TOTP_ISSUER', 'ShineMate Russia');
+define('TOTP_ACCOUNT_LABEL', 'admin');
+define('TOTP_PENDING_SECONDS', 300);
+
 // Файлы данных — вне веб-доступных путей смысла нет на shared hosting
 // без выделенного docroot-разделения, поэтому лежат рядом, но админка
 // сама не отдаёт их как статику (см. admin/.htaccess).

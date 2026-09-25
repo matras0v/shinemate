@@ -51,3 +51,48 @@ function admin_trim_audit_log(): void
     file_put_contents($tmp, implode("\n", $trimmed) . "\n", LOCK_EX);
     rename($tmp, AUDIT_LOG_FILE);
 }
+
+/** Человекочитаемая подпись события для таблицы "Последние события безопасности". */
+function admin_event_label(string $event): string
+{
+    $labels = [
+        'login_success' => 'Успешный вход',
+        'login_failed' => 'Неверный пароль/код',
+        'login_blocked' => 'Вход заблокирован (превышен лимит попыток)',
+        'login_password_ok_awaiting_2fa' => 'Пароль верный, ожидание кода 2FA',
+        'save_price' => 'Изменена цена/наличие',
+        'upload_photo' => 'Загружено фото',
+        'restore_photo' => 'Восстановлено фото по умолчанию',
+        'change_password' => 'Изменён пароль',
+        'totp_enabled' => 'Включена двухфакторная защита',
+        'totp_disabled' => 'Отключена двухфакторная защита',
+        'totp_recovery_regenerated' => 'Созданы новые резервные коды',
+        'recovery_code_used' => 'Использован резервный код',
+    ];
+    return $labels[$event] ?? $event;
+}
+
+/**
+ * Последние N записей для раздела "Последние события безопасности" в
+ * самой панели — только для чтения авторизованным клиентом, файл на
+ * диске как был недоступен по HTTP, так и остаётся (см. .htaccess).
+ */
+function admin_read_audit_tail(int $limit = 20): array
+{
+    if (!is_file(AUDIT_LOG_FILE)) {
+        return [];
+    }
+    $lines = @file(AUDIT_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return [];
+    }
+    $tail = array_slice($lines, -$limit);
+    $entries = [];
+    foreach (array_reverse($tail) as $line) {
+        $decoded = json_decode($line, true);
+        if (is_array($decoded)) {
+            $entries[] = $decoded;
+        }
+    }
+    return $entries;
+}
