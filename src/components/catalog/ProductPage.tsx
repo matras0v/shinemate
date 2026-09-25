@@ -99,6 +99,14 @@ export function ProductPage({ product }: Props) {
 
   const showAxisChips = product.variants.length > 1 && product.variants.every((v) => v.axis1)
   const axis1Options = showAxisChips ? Array.from(new Set(product.variants.map((v) => v.axis1!))) : []
+  /*
+   * Мелкий дюймовый эквивалент рядом с основным значением (мм) в
+   * переключателе — клиент попросил показывать реальный диаметр в мм
+   * крупно, дюймы вторично. axis1Alt одинаков у всех исполнений одного
+   * axis1 (задаётся на уровне размера, не грейда), поэтому первого
+   * найденного варианта достаточно.
+   */
+  const axis1AltBy = new Map(product.variants.map((v) => [v.axis1, v.axis1Alt] as const))
   const axis2Options = showAxisChips
     ? Array.from(
         new Set(
@@ -443,13 +451,22 @@ export function ProductPage({ product }: Props) {
                             type="button"
                             onClick={() => selectAxis1(axis1)}
                             aria-pressed={selectedVariant?.axis1 === axis1}
-                            className={`min-h-11 min-w-11 rounded-full border px-5 text-[0.9375rem] tracking-tight transition-colors duration-300 ease-premium ${
+                            className={`flex min-h-11 min-w-11 items-baseline gap-1 rounded-full border px-5 text-[0.9375rem] tracking-tight transition-colors duration-300 ease-premium ${
                               selectedVariant?.axis1 === axis1
                                 ? 'border-graphite bg-graphite text-porcelain'
                                 : 'border-graphite/20 text-graphite hover:border-graphite/45'
                             }`}
                           >
                             {axis1}
+                            {axis1AltBy.get(axis1) && (
+                              <span
+                                className={`text-[0.75rem] ${
+                                  selectedVariant?.axis1 === axis1 ? 'text-porcelain/60' : 'text-titanium'
+                                }`}
+                              >
+                                {axis1AltBy.get(axis1)}
+                              </span>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -667,13 +684,22 @@ export function ProductPage({ product }: Props) {
                           type="button"
                           onClick={() => selectAxis1(axis1)}
                           aria-pressed={selectedVariant?.axis1 === axis1}
-                          className={`rounded-full border px-4 py-2.5 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
+                          className={`flex items-baseline gap-1 rounded-full border px-4 py-2.5 text-[0.875rem] tracking-tight transition-colors duration-300 ease-premium ${
                             selectedVariant?.axis1 === axis1
                               ? 'border-graphite bg-graphite text-porcelain'
                               : 'border-graphite/[0.15] text-graphite hover:border-graphite/40'
                           }`}
                         >
                           {axis1}
+                          {axis1AltBy.get(axis1) && (
+                            <span
+                              className={`text-[0.75rem] ${
+                                selectedVariant?.axis1 === axis1 ? 'text-porcelain/60' : 'text-titanium'
+                              }`}
+                            >
+                              {axis1AltBy.get(axis1)}
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>

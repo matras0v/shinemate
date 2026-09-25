@@ -200,7 +200,7 @@ export default function App() {
               ? 'Контакты ShineMate'
               : route.name === 'wholesale'
                 ? 'Оптовикам — ShineMate'
-                : 'ShineMate Россия — оборудование для полировки автомобилей'
+                : 'ShineMate Россия — официальный дистрибьютор оборудования для полировки'
       setMetaDescription(DEFAULT_DESCRIPTION)
       setJsonLd('ld-breadcrumb', null)
       setJsonLd('ld-product', null)

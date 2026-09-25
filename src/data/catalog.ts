@@ -36,6 +36,14 @@ export type Variant = {
   rrp: number
   /** Первая ось выбора: градация, тип подушки и т.п. */
   axis1?: string
+  /**
+   * Мелкий вторичный подпись рядом с axis1 в переключателе — дюймовый
+   * эквивалент, когда основное значение уже переведено в мм (клиент прямо
+   * попросил: реальный диаметр в мм — крупно и первично, дюймы — если
+   * нужно, мелким текстом рядом). Значение axis1 при этом остаётся
+   * ключом выбора/сравнения — здесь только то, что рисуется ДОПОЛНИТЕЛЬНО.
+   */
+  axis1Alt?: string
   /** Вторая ось выбора: размер/диаметр. */
   axis2?: string
   /**
@@ -831,11 +839,11 @@ export const products: Product[] = [
       // (5"–6") — плоские диски с чёрным поролоновым слоем: это разные по
       // форме подложки, а не один диск в разном масштабе, поэтому фото
       // различается по группе размеров, а не просто дублируется.
-      { sku: '14212-24', label: '1,2" (30 мм)', rrp: 440, axis1: '1,2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
-      { sku: '14220-24', label: '2" (48 мм)', rrp: 470, axis1: '2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
-      { sku: '14231-24', label: '3" (74 мм)', rrp: 510, axis1: '3"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
-      { sku: '13850-2', label: '5" (123 мм), чёрный поролон', rrp: 900, axis1: '5"', image: 'catalog-media/plate-flexedge.webp', imageWidth: 763, imageHeight: 763 },
-      { sku: '13860-2', label: '6" (148 мм), чёрный поролон', rrp: 1150, axis1: '6"', image: 'catalog-media/plate-flexedge.webp', imageWidth: 763, imageHeight: 763 },
+      { sku: '14212-24', label: '1,2" (30 мм)', rrp: 440, axis1: '30 мм', axis1Alt: '1,2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
+      { sku: '14220-24', label: '2" (48 мм)', rrp: 470, axis1: '48 мм', axis1Alt: '2"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
+      { sku: '14231-24', label: '3" (74 мм)', rrp: 510, axis1: '74 мм', axis1Alt: '3"', image: 'catalog-media/plate-flexedge-small.webp', imageWidth: 679, imageHeight: 494 },
+      { sku: '13850-2', label: '5" (123 мм), чёрный поролон', rrp: 900, axis1: '123 мм', axis1Alt: '5"', image: 'catalog-media/plate-flexedge.webp', imageWidth: 763, imageHeight: 763 },
+      { sku: '13860-2', label: '6" (148 мм), чёрный поролон', rrp: 1150, axis1: '148 мм', axis1Alt: '6"', image: 'catalog-media/plate-flexedge.webp', imageWidth: 763, imageHeight: 763 },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/plate-flexedge.webp',
@@ -858,9 +866,9 @@ export const products: Product[] = [
       // одинаковая у всех трёх диаметров, отличаются только размер и вес
       // (указаны в названии исполнения), поэтому общее фото у всех трёх
       // исполнений корректно само по себе, без пояснения на карточке.
-      { sku: '23731-04', label: '3" (74 мм), 5/16"-24, 40 г — для EX603', rrp: 650, axis1: '3"' },
-      { sku: '23854-04', label: '5" (123 мм), M8, 110 г — для машинок EX 5"', rrp: 1280, axis1: '5"' },
-      { sku: '23465-04', label: '6" (148 мм), M8, 134 г — для машинок EX 6"', rrp: 1570, axis1: '6"' },
+      { sku: '23731-04', label: '3" (74 мм), 5/16"-24, 40 г — для EX603', rrp: 650, axis1: '74 мм', axis1Alt: '3"' },
+      { sku: '23854-04', label: '5" (123 мм), M8, 110 г — для машинок EX 5"', rrp: 1280, axis1: '123 мм', axis1Alt: '5"' },
+      { sku: '23465-04', label: '6" (148 мм), M8, 134 г — для машинок EX 6"', rrp: 1570, axis1: '148 мм', axis1Alt: '6"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/plate-multihole.webp',
@@ -875,8 +883,8 @@ export const products: Product[] = [
     lead: 'Сменные подложки для шлифовальных машинок ES516, ES526, ES502 и ES700.',
     specs: [{ label: 'Диаметры', value: '123 и 148 мм' }],
     variants: [
-      { sku: '23651-02', label: '5" (123 мм)', rrp: 1729, axis1: '5"' },
-      { sku: '23665-04', label: '6" (148 мм)', rrp: 1729, axis1: '6"' },
+      { sku: '23651-02', label: '5" (123 мм)', rrp: 1729, axis1: '123 мм', axis1Alt: '5"' },
+      { sku: '23665-04', label: '6" (148 мм)', rrp: 1729, axis1: '148 мм', axis1Alt: '6"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/plate-sanding.webp',
@@ -972,9 +980,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34124-9', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34126-9', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34127-9', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34124-9', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34126-9', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34127-9', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-flat-t120.webp',
@@ -994,9 +1002,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34124-1', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34126-1', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34127-1', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34124-1', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34126-1', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34127-1', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-flat-t80.webp',
@@ -1016,9 +1024,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34124-6', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34126-6', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34127-6', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34124-6', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34126-6', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34127-6', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-flat-t60.webp',
@@ -1038,9 +1046,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34124-4', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34126-4', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34127-4', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34124-4', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34126-4', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34127-4', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-flat-t40.webp',
@@ -1060,9 +1068,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34124-7', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34126-7', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34127-7', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34124-7', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34126-7', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34127-7', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-flat-t10.webp',
@@ -1082,9 +1090,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34114-9', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34116-9', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34117-9', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34114-9', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34116-9', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34117-9', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-diamond-t120.webp',
@@ -1104,9 +1112,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34114-1', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34116-1', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34117-1', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34114-1', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34116-1', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34117-1', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-diamond-t80.webp',
@@ -1126,9 +1134,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34114-6', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34116-6', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34117-6', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34114-6', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34116-6', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34117-6', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-diamond-t60.webp',
@@ -1148,9 +1156,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34114-4', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34116-4', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34117-4', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34114-4', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34116-4', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34117-4', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-diamond-t40.webp',
@@ -1170,9 +1178,9 @@ export const products: Product[] = [
       { label: 'Центральное отверстие', value: '22 мм у 6" и 7"' },
     ],
     variants: [
-      { sku: '34114-7', label: '4" (100 мм)', rrp: 635, axis1: '4"' },
-      { sku: '34116-7', label: '6" (150 мм)', rrp: 770, axis1: '6"' },
-      { sku: '34117-7', label: '7" (180 мм)', rrp: 970, axis1: '7"' },
+      { sku: '34114-7', label: '4" (100 мм)', rrp: 635, axis1: '100 мм', axis1Alt: '4"' },
+      { sku: '34116-7', label: '6" (150 мм)', rrp: 770, axis1: '150 мм', axis1Alt: '6"' },
+      { sku: '34117-7', label: '7" (180 мм)', rrp: 970, axis1: '180 мм', axis1Alt: '7"' },
     ],
     axisLabel: 'Размер',
     image: 'catalog-media/foam-diamond-t10.webp',

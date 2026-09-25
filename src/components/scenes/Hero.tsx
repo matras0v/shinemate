@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowDown, ArrowUpRight, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react'
 
 import { useClearCoat } from '../../hooks/useClearCoat'
+import { DESKTOP_SCENE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useSmoothPointer } from '../../hooks/useSmoothPointer'
 import { EASE } from '../../lib/motion'
@@ -80,6 +81,21 @@ export function Hero() {
   const section = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
+  /*
+   * Угасание/сдвиг текста на скролле имеет смысл ТОЛЬКО в десктопной
+   * раскладке: там текстовая колонка absolute-позиционирована ПОВЕРХ
+   * закреплённого на весь экран (h-[100dvh]) кадра, и эффект читается как
+   * "текст уходит вглубь, кадр остаётся". На мобильном колонка — обычный
+   * блок в потоке документа СРАЗУ под кадром (см. комментарий у обёртки
+   * кадра ниже), поэтому scrollYProgress всей секции считается по её
+   * полной высоте (кадр + бейдж + h1 + лид + кнопки). Пока человек
+   * долистывает текст ДО кнопок, он уже прошёл заметную долю этой полной
+   * высоты — тот же прогресс, что гасит текст в десктопной версии, там
+   * гасил ещё читаемый, ещё видимый в экране текст почти сразу после
+   * начала скролла (клиент видел это как "кнопки исчезают, стоит чуть
+   * прокрутить"). На мобильном текст и кнопки теперь просто статичны.
+   */
+  const isDesktop = useMediaQuery(DESKTOP_SCENE_QUERY)
   const { ref: pointerRef, pointer } = useSmoothPointer<HTMLDivElement>(0.08)
 
   const [index, setIndex] = useState(0)
@@ -241,26 +257,65 @@ export function Hero() {
             />
           </AnimatePresence>
 
-          {/* Навигация карусели: единая "таблетка" со стрелками и счётчиком.
-              Лежит внутри контейнера фото (не всей секции) — раньше она была
-              привязана к левому краю всей секции и на lg заезжала прямо на
-              текстовую колонку и CTA-кнопки под ней. Внутри контейнера фото
-              она всегда остаётся над снимком, где бы текст ни заканчивался. */}
           {/*
-            Таблетка навигации карусели НИКОГДА не гаснет по таймеру — нет
-            и не было opacity-анимации, завязанной на время (проверено на
-            реальном проде: стрелки/точки остаются полностью непрозрачными
-            и через 8+ секунд бездействия). Размер кнопок здесь всё же
-            увеличен под палец: h-8 (32px) на десктопе достаточно для
-            мыши, но меньше рекомендуемых ~44px для тач-цели — теперь это
-            есть по умолчанию (мобильный кейс) и уменьшается только от sm.
+            Мобильная навигация: стрелки — отдельные компактные оверлеи по
+            бокам кадра (вертикально по центру), точки — маленькая таблетка
+            у нижнего края, без гигантского белого контейнера. Раньше на
+            телефоне была ТА ЖЕ таблетка, что и на десктопе — она съедала
+            заметную часть высоты первого экрана и читалась как отдельный
+            блок под фото, а не как элемент управления поверх него (клиент
+            отметил это отдельно). НИКОГДА не гаснет по таймеру — тот же
+            принцип, что и раньше, здесь тоже нет opacity-анимации по
+            времени. Скрыта от lg — там прежняя десктопная таблетка ниже.
           */}
-          <div className="absolute bottom-5 left-5 z-20 flex items-center gap-1 rounded-full bg-porcelain p-1.5 shadow-[0_4px_16px_rgba(26,28,30,0.14)] sm:gap-1.5 lg:bottom-8 lg:left-8">
+          <div className="lg:hidden">
             <button
               type="button"
               onClick={() => go(-1)}
               aria-label="Предыдущий слайд"
-              className="flex h-11 w-11 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain sm:h-8 sm:w-8"
+              className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-ink/35 text-porcelain backdrop-blur-sm transition-colors duration-300 ease-premium hover:bg-ink/55 active:bg-ink/60"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              aria-label="Следующий слайд"
+              className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-ink/35 text-porcelain backdrop-blur-sm transition-colors duration-300 ease-premium hover:bg-ink/55 active:bg-ink/60"
+            >
+              <ChevronRight size={20} />
+            </button>
+            <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-ink/30 px-1.5 py-1 backdrop-blur-sm">
+              {SLIDES.map((s, i) => (
+                <button
+                  key={s.slug}
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-label={`Слайд ${i + 1}: ${s.lines.join(' ')}`}
+                  aria-current={i === index}
+                  className="group flex h-8 w-6 items-center justify-center"
+                >
+                  <span
+                    className={`block h-1.5 rounded-full transition-all duration-500 ease-premium ${
+                      i === index ? 'w-4 bg-porcelain' : 'w-1.5 bg-porcelain/40 group-hover:bg-porcelain/70'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Навигация карусели на десктопе: единая "таблетка" со стрелками
+              и счётчиком, лежит внутри контейнера фото (не всей секции) —
+              раньше она была привязана к левому краю всей секции и на lg
+              заезжала прямо на текстовую колонку и CTA-кнопки под ней.
+              Скрыта ниже lg — там своя мобильная раскладка выше. */}
+          <div className="absolute bottom-8 left-8 z-20 hidden items-center gap-1.5 rounded-full bg-porcelain p-1.5 shadow-[0_4px_16px_rgba(26,28,30,0.14)] lg:flex">
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              aria-label="Предыдущий слайд"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
             >
               <ChevronLeft size={16} />
             </button>
@@ -278,7 +333,7 @@ export function Hero() {
                   onClick={() => goTo(i)}
                   aria-label={`Слайд ${i + 1}: ${s.lines.join(' ')}`}
                   aria-current={i === index}
-                  className="group flex h-11 w-8 items-center justify-center sm:h-6 sm:w-4"
+                  className="group flex h-6 w-4 items-center justify-center"
                 >
                   <span
                     className={`block h-1.5 rounded-full transition-all duration-500 ease-premium ${
@@ -295,7 +350,7 @@ export function Hero() {
               type="button"
               onClick={() => go(1)}
               aria-label="Следующий слайд"
-              className="flex h-11 w-11 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain sm:h-8 sm:w-8"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-graphite transition-colors duration-400 ease-premium hover:bg-ink hover:text-porcelain"
             >
               <ChevronRight size={16} />
             </button>
@@ -317,7 +372,7 @@ export function Hero() {
       </div>
 
       <motion.div
-        style={reduced ? undefined : { y: copyY, opacity: copyOpacity }}
+        style={reduced || !isDesktop ? undefined : { y: copyY, opacity: copyOpacity }}
         /*
          * До lg колонка — обычный блок в потоке документа СРАЗУ под кадром
          * (не absolute, без top-[46dvh]/bottom-0): высота содержимого
