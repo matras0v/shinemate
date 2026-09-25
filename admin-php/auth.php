@@ -200,9 +200,9 @@ function admin_clear_failed_logins(): void
 }
 
 /**
- * Возвращает 'ok' (не используется сейчас — код на email обязателен всегда,
- * оставлено для симметрии с 'fail'/'need_otp'), 'need_otp' (пароль верный,
- * код уже отправлен на почту) или 'fail'. Один и тот же лимит попыток
+ * Возвращает 'ok' (пароль верный и это всё, что нужно — либо
+ * REQUIRE_EMAIL_2FA=false, см. ниже), 'need_otp' (пароль верный, код уже
+ * отправлен на почту) или 'fail'. Один и тот же лимит попыток
  * (LOGIN_ATTEMPTS_FILE) считает и неверные пароли, и неверные коды —
  * это ОДИН бюджет попыток входа на IP, не два независимых.
  */
@@ -222,6 +222,16 @@ function admin_login(string $password): string
     session_regenerate_id(true);
     admin_clear_failed_logins();
 
+    // ВРЕМЕННЫЙ режим передачи клиенту (см. config.php): вся реализация
+    // кода на email ниже никуда не делась и продолжает работать в обычном
+    // порядке при REQUIRE_EMAIL_2FA=true — здесь просто пропускается сам
+    // запрос кода, если константа сейчас false. Ни URL, ни cookie, ни
+    // заголовок запроса на это не влияют — только серверная константа.
+    if (!REQUIRE_EMAIL_2FA) {
+        admin_complete_login();
+        return 'ok';
+    }
+
     $_SESSION['pending_2fa'] = true;
     $_SESSION['pending_2fa_since'] = time();
     admin_send_login_otp();
@@ -229,7 +239,7 @@ function admin_login(string $password): string
     return 'need_otp';
 }
 
-/** Второй шаг: только после этого сессия становится по-настоящему авторизованной. */
+/** Второй шаг (или сразу после пароля, если REQUIRE_EMAIL_2FA=false) — только после этого сессия становится по-настоящему авторизованной. */
 function admin_complete_login(): void
 {
     session_regenerate_id(true);
@@ -237,7 +247,7 @@ function admin_complete_login(): void
     $_SESSION['last_activity'] = time();
     $_SESSION['cred_version'] = admin_cred_version();
     unset($_SESSION['pending_2fa'], $_SESSION['pending_2fa_since']);
-    admin_audit_log('login_success');
+    admin_audit_log('login_success', ['emailCode' => REQUIRE_EMAIL_2FA ? 'required' : 'temporarily_disabled']);
 }
 
 function admin_pending_2fa(): bool

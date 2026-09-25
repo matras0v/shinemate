@@ -33,6 +33,8 @@ function admin_diagnostics(): array
         ['label' => 'Функция mail() доступна', 'ok' => function_exists('mail'), 'value' => function_exists('mail') ? 'есть' : 'нет'],
         ['label' => 'Получатель заявок', 'ok' => true, 'value' => CONTACT_TO],
         ['label' => 'Адрес отправителя писем', 'ok' => true, 'value' => CONTACT_FROM],
+        ['label' => 'Получатель кода входа', 'ok' => true, 'value' => admin_mask_email(admin_admin_email())],
+        ['label' => 'Подтверждение по email при входе', 'ok' => REQUIRE_EMAIL_2FA, 'value' => REQUIRE_EMAIL_2FA ? 'требуется' : 'временно отключено'],
         ['label' => 'Текущий хост', 'ok' => true, 'value' => (string)($_SERVER['HTTP_HOST'] ?? '—')],
     ];
 }

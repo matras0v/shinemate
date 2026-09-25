@@ -381,6 +381,7 @@ $categoryList = array_keys($categoryList);
   button.secondary { background: transparent; color: #565C60; padding: 0.5rem 0.75rem; }
   button.small { padding: 0.4rem 0.85rem; font-size: 0.8125rem; }
   .error { background: #FDECEA; color: #B3261E; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1.25rem; }
+  .warning { background: #FFF3E0; color: #8A4B00; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1.25rem; }
   .flash { background: #E7F3EA; color: #1E6B3A; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1.25rem; }
   .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
   .card {
@@ -623,6 +624,13 @@ $categoryList = array_keys($categoryList);
 
     <h2>Безопасность</h2>
 
+    <?php if (!REQUIRE_EMAIL_2FA): ?>
+      <p class="warning">⚠ Подтверждение входа по email временно отключено. Реализация никуда не делась — включается обратно одной строкой в config.php на сервере (REQUIRE_EMAIL_2FA), без переустановки.</p>
+    <?php endif; ?>
+    <?php if ($adminEmailMasked !== null && admin_admin_email() === CONTACT_TO): ?>
+      <p class="warning">⚠ Email администратора: не настроен для передачи клиенту (используется тот же адрес, что и для заявок с сайта).</p>
+    <?php endif; ?>
+
     <details class="section">
       <summary>Сменить пароль</summary>
       <form method="post" autocomplete="off">
@@ -647,9 +655,13 @@ $categoryList = array_keys($categoryList);
     <details class="section"<?= $recoveryCodesToShow !== null ? ' open' : '' ?>>
       <summary>
         Код входа на email:
-        <span class="badge-status on">текущий: <?= htmlspecialchars((string) $adminEmailMasked, ENT_QUOTES, 'UTF-8') ?></span>
+        <span class="badge-status <?= REQUIRE_EMAIL_2FA ? 'on' : 'off' ?>"><?= REQUIRE_EMAIL_2FA ? 'требуется' : 'временно отключён' ?> — <?= htmlspecialchars((string) $adminEmailMasked, ENT_QUOTES, 'UTF-8') ?></span>
       </summary>
-      <p style="font-size:0.875rem; color:#565C60;">При каждом входе после пароля на этот адрес приходит 6-значный код — без него войти нельзя, даже если пароль известен. Ввести другой email на самой странице входа невозможно — сменить его можно только здесь, уже после входа.</p>
+      <?php if (REQUIRE_EMAIL_2FA): ?>
+        <p style="font-size:0.875rem; color:#565C60;">При каждом входе после пароля на этот адрес приходит 6-значный код — без него войти нельзя, даже если пароль известен. Ввести другой email на самой странице входа невозможно — сменить его можно только здесь, уже после входа.</p>
+      <?php else: ?>
+        <p style="font-size:0.875rem; color:#565C60;">Сейчас после пароля код НЕ запрашивается (временный режим передачи, см. предупреждение выше) — адрес ниже настроен, но вход пока пропускает этот шаг.</p>
+      <?php endif; ?>
 
       <?php if ($recoveryCodesToShow !== null): ?>
         <div class="recovery-box">
