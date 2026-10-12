@@ -1701,6 +1701,10 @@ export const countByCategory = (id: CategoryId) =>
     .filter((p) => p.category === id)
     .reduce((total, p) => total + p.variants.length, 0)
 
+/** Комплектация определяется только данными SKU; фото с АКБ её не меняет. */
+export const batteryExcluded = (variant?: Variant) =>
+  variant?.label.includes('без АКБ') ?? false
+
 /** Минимальная РРЦ среди исполнений — для подписи «от …». */
 export const minPrice = (p: Product) => {
   const value = Math.min(...p.variants.map((v) => v.rrp))

@@ -15,6 +15,7 @@ import {
 } from '../../data/catalog'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
+import { useLead } from '../../lib/leadContext'
 import { EASE } from '../../lib/motion'
 import { navigate } from '../../lib/router'
 import { ProductCard } from './ProductCard'
@@ -32,6 +33,7 @@ const SORT_LABELS: Record<SortOrder, string> = {
 
 export function CatalogView({ category }: Props) {
   const reduced = useReducedMotion()
+  const { requestGeneral } = useLead()
   const [sort, setSort] = useState<SortOrder>('recommended')
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
@@ -167,12 +169,13 @@ export function CatalogView({ category }: Props) {
               На сайте собраны основные группы. Пришлём актуальный прайс целиком и подберём
               конфигурацию под ваши задачи и объёмы.
             </p>
-            <a
-              href="contacts"
+            <button
+              type="button"
+              onClick={requestGeneral}
               className="mt-7 inline-flex items-center rounded-full bg-graphite px-7 py-3.5 text-sm text-porcelain transition-colors duration-500 ease-premium hover:bg-ink"
             >
               Запросить прайс
-            </a>
+            </button>
           </div>
         </div>
       </div>

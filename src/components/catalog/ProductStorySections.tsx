@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 
-import { formatPrice, minPrice, type Product } from '../../data/catalog'
+import { batteryExcluded, formatPrice, minPrice, type Product } from '../../data/catalog'
 import {
   AssemblyChain,
   MachineExploded,
@@ -1120,6 +1120,11 @@ function CompatCard({ item }: { item: Product }) {
       <span className="mt-4 flex items-center justify-between gap-2 border-t border-graphite/[0.1] pt-4">
         <span className="text-[0.9375rem] tracking-tight text-graphite">
           {price != null ? `${item.variants.length > 1 ? 'от ' : ''}${formatPrice(price)}` : '—'}
+          {batteryExcluded(item.variants[0]) && (
+            <span className="mt-1 block text-[0.6875rem] leading-tight text-titanium">
+              Без АКБ и зарядного
+            </span>
+          )}
         </span>
         <ArrowRight
           size={15}

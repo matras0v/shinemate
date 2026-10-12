@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check, ChevronRight, X, ZoomIn } from 'lucide-react'
 
 import {
+  batteryExcluded,
   categoryTitle,
   formatPrice,
   getRelatedProducts,
@@ -80,6 +81,7 @@ export function ProductPage({ product }: Props) {
   }, [product.slug, product.variants])
   const selectedVariant: Variant | undefined =
     product.variants.find((v) => v.sku === selectedSku) ?? product.variants[0]
+  const withoutBattery = batteryExcluded(selectedVariant)
 
   /*
    * ВСЯ страница ниже читает не карточку, а ВЫБРАННОЕ исполнение.
@@ -311,6 +313,11 @@ export function ProductPage({ product }: Props) {
                 <ZoomIn size={17} />
               </span>
             </button>
+            {withoutBattery && (
+              <p className="mt-3 text-[0.8125rem] leading-relaxed text-titanium">
+                Аккумулятор на фото показан для иллюстрации и не входит в цену.
+              </p>
+            )}
 
             {story.gallery.length > 1 && (
               <ul
@@ -363,6 +370,11 @@ export function ProductPage({ product }: Props) {
             <p className="mt-3 text-[1.0625rem] text-slate">
               {view.kind}
             </p>
+            {withoutBattery && (
+              <p className="mt-3 inline-flex rounded-full border border-graphite/15 px-3 py-1 text-[0.75rem] font-medium text-graphite">
+                Без АКБ и зарядного
+              </p>
+            )}
             <p
               className="mt-6 max-w-[52ch] text-[1.0625rem] leading-relaxed text-ash"
             >
@@ -558,6 +570,11 @@ export function ProductPage({ product }: Props) {
               {selectedVariant?.status === 'out_of_stock' && (
                 <p className="w-full font-mono text-[0.75rem] uppercase tracking-[0.1em] text-ember">
                   Временно нет в наличии
+                </p>
+              )}
+              {withoutBattery && (
+                <p className="w-full text-[0.875rem] leading-relaxed text-graphite">
+                  Цена указана без аккумулятора и зарядного устройства.
                 </p>
               )}
               <p className="w-full font-mono text-[0.8125rem] tracking-tight text-slate">
@@ -859,6 +876,11 @@ export function ProductPage({ product }: Props) {
                         {price != null
                           ? `${candidate.variants.length > 1 ? 'от ' : ''}${formatPrice(price)}`
                           : '—'}
+                        {batteryExcluded(candidate.variants[0]) && (
+                          <span className="mt-1 block text-[0.6875rem] leading-tight text-titanium">
+                            Без АКБ и зарядного
+                          </span>
+                        )}
                       </span>
                       <ArrowRight
                         size={16}

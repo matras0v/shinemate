@@ -137,7 +137,24 @@ export function Contact({ onOpenConsent, standalone }: Props) {
         <motion.form
           {...riseProps(reduced, { y: 28, amount: 0.15 })}
           onSubmit={onSubmit}
-          className="min-w-0"
+          /*
+            Якорь для "Запросить прайс" — CTA со всего сайта ведут на
+            /contacts#request-form (см. leadContext.tsx), а не на верх
+            страницы "Контакты", где на standalone-версии первым идёт блок
+            с картами/адресами. id — ТОЛЬКО на standalone-варианте: тот же
+            компонент рендерится ещё и встроенным в главную (!standalone),
+            и во время перехода С главной НА /contacts (до того, как React
+            перерисует маршрут) document.getElementById ещё видит DOM
+            главной страницы — если бы id был на обеих версиях, поиск
+            находил бы форму embedded-версии на главной и скроллил туда,
+            а не к реальной цели на странице контактов, до которой доедет
+            только после смены маршрута. Итог такой гонки — прыжок мимо
+            формы, в самый низ уже другой, стандалон-страницы (см. футер).
+            scroll-mt компенсирует фиксированную шапку (h-[4.75rem] /
+            lg:h-[5.25rem] в Header.tsx) при scrollIntoView({block:'start'}).
+          */
+          id={standalone ? 'request-form' : undefined}
+          className="min-w-0 scroll-mt-24 lg:scroll-mt-28"
         >
           {product && (
             <div className="mb-8 flex items-center gap-4 rounded-2xl bg-mist p-4">

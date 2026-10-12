@@ -79,11 +79,7 @@ export function Footer({ onOpenDoc }: Props) {
                   {phone.display}
                 </a>
                 <span className="mt-1 block text-[0.8125rem] text-titanium">{phone.address}</span>
-                {/*
-                  Кнопка — только у номера, где WhatsApp реально проверен и
-                  работает. У второго номера whatsapp: null — ссылка на
-                  недоступный чат хуже, чем её отсутствие.
-                */}
+                {/* Кнопка — у любого номера, для которого задан company.phones[].whatsapp. */}
                 {phone.whatsapp && (
                   <a
                     href={phone.whatsapp}

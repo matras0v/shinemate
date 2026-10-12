@@ -8,13 +8,15 @@ type Props = {
   href: string
   variant?: 'solid' | 'ghost'
   className?: string
+  /** Переопределяет обычный переход по href — для CTA, которым нужно ещё и обновить lead-контекст. */
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 /**
  * Кнопка с очень слабым магнитным откликом: смещение ограничено 6 px,
  * чтобы движение читалось как качество отклика, а не как трюк.
  */
-export function MagneticButton({ children, href, variant = 'solid', className = '' }: Props) {
+export function MagneticButton({ children, href, variant = 'solid', className = '', onClick }: Props) {
   const ref = useRef<HTMLAnchorElement>(null)
   const reduced = useReducedMotion()
   const x = useMotionValue(0)
@@ -48,6 +50,7 @@ export function MagneticButton({ children, href, variant = 'solid', className = 
       style={{ x: sx, y: sy }}
       onPointerMove={onMove}
       onPointerLeave={reset}
+      onClick={onClick}
       className={`${base} ${skin} ${className}`}
     >
       {children}

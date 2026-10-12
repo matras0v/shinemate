@@ -92,11 +92,24 @@ export function productHref(product: { category: string; slug: string }) {
 
 const EVENT = 'app:navigate'
 
-/** Переход без перезагрузки. Принимает прикладной путь, пишет в адресную строку реальный. */
+/**
+ * Переход без перезагрузки. Принимает прикладной путь, пишет в адресную
+ * строку реальный.
+ *
+ * Сбрасывает скролл в (0,0) — в отличие от обычной навигации браузера,
+ * pushState/replaceState сами по себе НЕ трогают scrollY, и без явного
+ * сброса переход, например, с середины каталога на "Контакты" оставлял
+ * пользователя на той же позиции прокрутки — на новой странице там
+ * случайно оказывались карты/адреса вместо шапки страницы, что выглядело
+ * как «кнопка ведёт не туда». Для переходов с якорем (navigateTo ниже)
+ * это не проблема: scrollToHashAfterNavigate добивает до нужного якоря
+ * сразу вслед за этим прыжком в начало координат.
+ */
 export function navigate(appPath: string, options: { replace?: boolean } = {}) {
   const realPath = withBase(appPath)
   if (options.replace) window.history.replaceState({}, '', realPath)
   else window.history.pushState({}, '', realPath)
+  window.scrollTo(0, 0)
   window.dispatchEvent(new Event(EVENT))
 }
 

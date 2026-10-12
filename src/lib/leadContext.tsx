@@ -44,11 +44,13 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     setVariant(v ?? p.variants[0] ?? null)
     setIntent('retail')
     setRequestToken((t) => t + 1)
-    // Раньше вело на "/#contacts" — это домашняя страница со скроллом к её
-    // собственному разделу контактов, а не отдельная страница /contacts.
-    // С любого места сайта (например, со страницы каталога) это выглядело
-    // как переход на главную, а не как открытие формы.
-    navigateTo('/contacts')
+    // Ведёт СРАЗУ на форму (#request-form), а не на верх страницы
+    // "Контакты" — там первым идёт блок с картами/адресами (см.
+    // Contact.tsx: standalone-версия показывает ContactDetails раньше
+    // формы), и человек, нажавший «Запросить прайс» у конкретного
+    // товара, раньше первым делом видел карты, а не саму форму с
+    // карточкой товара.
+    navigateTo('/contacts#request-form')
   }, [])
 
   const requestWholesale = useCallback(() => {
@@ -67,7 +69,10 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     setVariant(null)
     setIntent('retail')
     setRequestToken((t) => t + 1)
-    navigateTo('/contacts')
+    // Тоже сразу на форму — см. комментарий в requestProduct выше. Общий
+    // CTA "Запросить прайс" (шапка, каталог) должен вести к самой форме,
+    // а не к верху страницы "Контакты" с картами.
+    navigateTo('/contacts#request-form')
   }, [])
 
   const clearProduct = useCallback(() => {

@@ -102,9 +102,18 @@ export function Header({ onHome, onOpenSearch }: Props) {
         шапкой больше не просвечивает.
       */
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-700 ease-premium ${
-        lifted
-          ? 'border-b border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl'
-          : 'border-b border-transparent bg-transparent'
+        open
+          ? // Мобильное меню открыто: подложка непрозрачная и БЕЗ blur, вне
+            // зависимости от прокрутки. Раньше здесь стояло то же условие,
+            // что и для "lifted" (95% непрозрачности), и если меню открывали
+            // на самом верху главной (scrollY===0, lifted===false), шапка
+            // была ПОЛНОСТЬЮ прозрачной — hero/фото товаров сквозь неё и сам
+            // выпадающий список сверху донизу. Это и был "hero bleed" с
+            // клиентских скриншотов.
+            'border-b border-graphite/[0.08] bg-porcelain'
+          : lifted
+            ? 'border-b border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl'
+            : 'border-b border-transparent bg-transparent'
       }`}
     >
       <div className="shell flex h-[4.75rem] items-center justify-between gap-4 lg:h-[5.25rem]">
@@ -154,17 +163,13 @@ export function Header({ onHome, onOpenSearch }: Props) {
               href={item.href}
               onClick={(e) => {
                 e.preventDefault()
-                setOpen(false)
-                // "Контакты" — не просто маршрут: если человек только что был
-                // в режиме "Розница/Опт" (intent остаётся в контексте), клик
-                // сюда должен вернуть розничный вид, а не просто попытаться
-                // сменить путь на тот же самый /contacts, где React ничего
-                // не перерисует, раз адрес не изменился.
-                if (item.href === 'contacts') {
-                  requestGeneral()
-                } else {
-                  go(item.href)
-                }
+                // Просто переход наверх страницы (go → navigateTo → navigate
+                // сбрасывает scrollY, см. router.ts) — "Контакты" открывает
+                // саму страницу, а не форму. Раньше здесь стоял requestGeneral(),
+                // который уводил сразу к форме внизу — клиент отметил, что
+                // "Контакты" должны открывать начало страницы с номерами и
+                // картой, а форма — только по отдельному CTA "Запросить прайс".
+                go(item.href)
               }}
               /*
                 Раньше «Контакты» шли жирным оранжевым в один ряд с обычными
@@ -359,7 +364,23 @@ export function Header({ onHome, onOpenSearch }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.45, ease: EASE }}
-            className="max-h-[calc(100dvh-4.75rem)] overflow-y-auto border-t border-graphite/[0.08] bg-porcelain/95 backdrop-blur-xl lg:hidden"
+            /*
+              bg-porcelain сплошной (не /95 + blur, как у самой шапки в
+              покое) — эта панель и есть содержимое меню, а не полупрозрачная
+              подложка поверх контента; сквозь неё ничего не должно
+              просвечивать ни на какой прокрутке. pb с safe-area — чтобы
+              последняя кнопка не упиралась в домашний индикатор iPhone.
+
+              min-h — рядом с max-h, а не вместо: без него высота панели
+              равна высоте её содержимого, и на маршрутах с коротким меню
+              (не раскрыт аккордеон "Каталог") ниже последней ссылки честно
+              видна уже РЕАЛЬНАЯ страница позади — не просвечивание сквозь
+              прозрачность (фон у панели сплошной), а самый обычный пробел
+              под её нижним краем, потому что панель короче экрана. С min-h
+              панель всегда дотягивает до низа видимой области вне
+              зависимости от того, сколько пунктов меню сейчас показано.
+            */
+            className="min-h-[calc(100dvh-4.75rem)] max-h-[calc(100dvh-4.75rem)] overflow-y-auto border-t border-graphite/[0.08] bg-porcelain pb-[env(safe-area-inset-bottom)] lg:hidden"
           >
             <nav className="shell flex flex-col py-2">
               <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-graphite/[0.06] py-4">
@@ -484,12 +505,7 @@ export function Header({ onHome, onOpenSearch }: Props) {
                   href={item.href}
                   onClick={(e) => {
                     e.preventDefault()
-                    setOpen(false)
-                    if (item.href === 'contacts') {
-                      requestGeneral()
-                    } else {
-                      go(item.href)
-                    }
+                    go(item.href)
                   }}
                   className="border-b border-graphite/[0.06] py-4 text-lg text-graphite"
                 >

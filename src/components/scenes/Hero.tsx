@@ -6,6 +6,7 @@ import { useClearCoat } from '../../hooks/useClearCoat'
 import { DESKTOP_SCENE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useSmoothPointer } from '../../hooks/useSmoothPointer'
+import { useLead } from '../../lib/leadContext'
 import { EASE } from '../../lib/motion'
 import { MagneticButton } from '../ui/MagneticButton'
 import { StaggerText } from '../ui/StaggerText'
@@ -81,6 +82,7 @@ export function Hero() {
   const section = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
+  const { requestGeneral } = useLead()
   /*
    * Угасание/сдвиг текста на скролле имеет смысл ТОЛЬКО в десктопной
    * раскладке: там текстовая колонка absolute-позиционирована ПОВЕРХ
@@ -474,7 +476,14 @@ export function Hero() {
           className="mt-7 flex flex-wrap items-center gap-3 lg:mt-10"
         >
           <MagneticButton href={slide.ctaHref}>Смотреть оборудование</MagneticButton>
-          <MagneticButton href="#contacts" variant="ghost">
+          <MagneticButton
+            href="#request-form"
+            variant="ghost"
+            onClick={(e) => {
+              e.preventDefault()
+              requestGeneral()
+            }}
+          >
             Запросить прайс
           </MagneticButton>
         </motion.div>

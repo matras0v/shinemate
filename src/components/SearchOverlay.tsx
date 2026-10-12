@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Search, X } from 'lucide-react'
 
-import { formatPriceOrInquire, minPrice, searchProducts, type Product } from '../data/catalog'
+import { batteryExcluded, formatPriceOrInquire, minPrice, searchProducts, type Product } from '../data/catalog'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { EASE } from '../lib/motion'
 import { navigateTo, productHref } from '../lib/router'
@@ -134,8 +134,13 @@ export function SearchOverlay({ open, onClose }: Props) {
                               {product.kind}
                             </span>
                           </span>
-                          <span className="shrink-0 text-[0.8125rem] text-slate">
-                            {formatPriceOrInquire(price)}
+                          <span className="max-w-[9rem] shrink-0 text-right text-[0.8125rem] text-slate">
+                            <span className="block">{formatPriceOrInquire(price)}</span>
+                            {batteryExcluded(product.variants[0]) && (
+                              <span className="mt-0.5 block text-[0.6875rem] leading-tight text-titanium">
+                                Без АКБ и зарядного
+                              </span>
+                            )}
                           </span>
                         </button>
                       </li>

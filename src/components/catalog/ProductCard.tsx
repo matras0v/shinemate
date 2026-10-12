@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-import { formatPriceOrInquire, minPrice, variantsLabel, type Product } from '../../data/catalog'
+import { batteryExcluded, formatPriceOrInquire, minPrice, variantsLabel, type Product } from '../../data/catalog'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { riseProps } from '../../lib/motion'
 import { productHref } from '../../lib/router'
@@ -39,6 +39,7 @@ export function ProductCard({ product, index }: Props) {
   // того же исполнения, а не товара по умолчанию: иначе показывали бы
   // зелёный T120 в артикуле рядом с оранжевым кругом на фото.
   const defaultVariant = product.variants[0]
+  const withoutBattery = batteryExcluded(defaultVariant)
   const cardImage = defaultVariant?.image ?? product.image
   const cardImageWidth = defaultVariant?.imageWidth ?? product.imageWidth
   const cardImageHeight = defaultVariant?.imageHeight ?? product.imageHeight
@@ -126,6 +127,9 @@ export function ProductCard({ product, index }: Props) {
         </div>
 
         <h3 className="mt-6 text-[1.375rem] tracking-tight sm:text-[1.625rem]">{product.model}</h3>
+        {withoutBattery && (
+          <p className="mt-1.5 text-[0.75rem] font-medium text-ash">Без АКБ и зарядного</p>
+        )}
         {/* Артикул виден сразу на карточке, а не только внутри drawer — для
             товара с одним исполнением это его SKU, для многовариантного —
             SKU того, что выбрано по умолчанию (бейдж выше поясняет, что есть ещё). */}
@@ -157,6 +161,11 @@ export function ProductCard({ product, index }: Props) {
             <p className="mt-1.5 truncate text-[1.25rem] tracking-tight">
               {defaultVariant?.status === 'on_request' ? 'По запросу' : formatPriceOrInquire(price)}
             </p>
+            {withoutBattery && (
+              <p className="mt-1 text-[0.75rem] leading-snug text-ash">
+                Цена без АКБ и зарядного устройства
+              </p>
+            )}
             {/* Задаётся только через /admin — у остальных карточек ничего не меняется. */}
             {defaultVariant?.status === 'out_of_stock' && (
               <p className="mt-1 font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-ember">Нет в наличии</p>
