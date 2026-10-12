@@ -1,4 +1,4 @@
-import { categoryTitle, products, productsByCategory, type Product } from './catalog'
+import { batteryExcluded, categoryTitle, products, productsByCategory, type Product } from './catalog'
 
 /**
  * Продуктовая история — то, что читает человек, открывший карточку товара.
@@ -663,23 +663,31 @@ function machineScenes(p: Product): StoryScene[] {
   }
 
   /*
-   * Комплект поставки — это ровно то, по чему выбирают аккумуляторный
-   * набор: у EB210 Kit три головки, шесть подложек, два аккумулятора и
-   * кейс, и всё это есть в прайсе. Только для аккумуляторных: сетевой
-   * машинке аккумулятор с зарядным в комплект приписывать нельзя.
+   * Наличие аксессуаров в includes не делает машинку KIT: у EB251-5,
+   * EB351-5/15 и EB350-3/12 перечислены подложка/рукоять/ключ, но АКБ и
+   * зарядное в цену не входят. Сцена и схема питания должны опираться на
+   * фактическую комплектность SKU, а не на число строк в includes.
    */
   if (p.category === 'cordless' && p.includes && p.includes.length >= 3) {
+    const bareTool = batteryExcluded(p.variants[0])
+    const includesBattery = p.includes.some((item) => /аккумулятор/i.test(item))
+    const includesCharger = p.includes.some((item) => /зарядн/i.test(item))
+    const completeKit = includesBattery && includesCharger
     const battery = platform && /10,8|10\.8/.test(platform) ? bySlug('battery-108v') : bySlug('battery-18v')
     const charger = bySlug('chargers')
     scenes.push({
-      title: 'Это комплект, а не одна машинка',
+      title: completeKit ? 'Что входит в комплект' : 'Что входит в поставку',
       // Строчной делается только первая буква пункта: сплошной toLowerCase
       // превращал модели головок DA12 · RO-L · RO-H в «da12, ro-l, ro-h».
       body: `В коробке: ${p.includes
         .map((x) => x.charAt(0).toLowerCase() + x.slice(1))
-        .join('; ')}. Отдельно докупать питание и оснастку под первый запуск не нужно — набор собран так, чтобы начать работу сразу.`,
-      metric: { value: String(p.includes.length), caption: 'Позиций в комплекте' },
-      ...(battery && charger
+        .join('; ')}.${bareTool
+          ? ' Аккумулятор и зарядное устройство в комплект не входят.'
+          : completeKit
+            ? ' Аккумулятор и зарядное устройство входят в комплект.'
+            : ''}`,
+      ...(completeKit ? { metric: { value: String(p.includes.length), caption: 'Позиций в комплекте' } } : {}),
+      ...(completeKit && battery && charger
         ? {
             diagram: {
               kind: 'mount' as const,
