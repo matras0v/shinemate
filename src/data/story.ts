@@ -2567,7 +2567,7 @@ export const storyKindLabel = (p: Product) => categoryTitle(p.category)
 const SCENE_SIZES: Record<string, [number, number]> = {
   'compound-apply': [746, 586],
   'eb210-kit': [1155, 650],
-  'eb251-5': [1155, 650],
+  'eb251-5': [900, 450],
   eb350: [1155, 650],
   eb351: [1155, 650],
   'ep801-g2': [1155, 650],

@@ -188,7 +188,7 @@ export const categories: {
     index: '04',
     title: 'Аккумуляторные машинки',
     subtitle: 'Платформы 18 В и 10,8 В: полировка и шлифование без кабеля.',
-    image: 'catalog-media/eb251-thumb.webp',
+    image: 'catalog-media/eb251-5-thumb.webp',
   },
   {
     id: 'plates',
@@ -606,9 +606,9 @@ export const products: Product[] = [
     ],
     includes: ['Опорная подложка 5" M14', 'Боковая рукоять', 'Ключ'],
     variants: [{ sku: 'EB251-5', label: 'машинка без АКБ и зарядного', rrp: 16039.8 }],
-    image: 'catalog-media/eb251.webp',
-    imageWidth: 791,
-    imageHeight: 791,
+    image: 'catalog-media/eb251-5.webp',
+    imageWidth: 800,
+    imageHeight: 739,
     featured: true,
   },
   {
